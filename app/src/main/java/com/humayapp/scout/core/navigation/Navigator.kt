@@ -1,27 +1,38 @@
 package com.humayapp.scout.core.navigation
 
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.serialization.NavBackStackSerializer
+import androidx.navigation3.runtime.serialization.NavKeySerializer
+import kotlin.collections.joinToString
+import kotlin.collections.lastIndex
 
 private fun createLogTag(navigatorId: String) = "Scout: [$navigatorId] navigator"
 
-val LocalRootStackNavigator = compositionLocalOf<StackNavigator> {
+val LocalRootStackNavigator = staticCompositionLocalOf<StackNavigator<NavKey>> {
     error("LocalRootStackNavigator not provided")
 }
 
-val LocalStackNavigator = compositionLocalOf<StackNavigator> {
+val LocalStackNavigator = staticCompositionLocalOf<StackNavigator<NavKey>> {
     error("LocalStackNavigator not provided")
 }
 
+
 // Created for logging purposes
 @Composable
-fun <T : NavKey> rememberStackNavigator(id: String, initialKey: T): StackNavigator {
+fun <T : NavKey> rememberStackNavigator(id: String, initialKey: T): StackNavigator<T> {
 
     Log.d(createLogTag(id), "Created [$id] navigator")
     DisposableEffect(Unit) {
@@ -30,17 +41,38 @@ fun <T : NavKey> rememberStackNavigator(id: String, initialKey: T): StackNavigat
         }
     }
 
-    val stack = rememberNavBackStack(initialKey)
+    val stack = rememberNavBackStack<T>(initialKey)
     return remember(stack) { StackNavigator(id, stack) }
 }
 
-class StackNavigator(
-    val id: String,
-    private val stack: NavBackStack<NavKey>,
-) {
-    val current: NavKey get() = stack.last()
+@Composable
+fun <T : NavKey> rememberNavBackStack(vararg elements: T): NavBackStack<T> {
+    return rememberSerializable(
+        serializer = NavBackStackSerializer(elementSerializer = NavKeySerializer())
+    ) {
+        NavBackStack(*elements)
+    }
+}
 
-    fun asBackStack(): NavBackStack<NavKey> = stack
+enum class NavAction { Push, Pop, PopAll }
+
+open class StackNavigator<T: NavKey>(
+    val id: String,
+    val stack: NavBackStack<T>,
+) {
+    private var lastNavTime = 0L
+    private val debounceMs = 300L
+
+    private fun canNavigate(): Boolean {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastNavTime < debounceMs) return false
+        lastNavTime = now
+        return true
+    }
+
+    val current: T get() = stack.last()
+
+    fun asBackStack(): NavBackStack<T> = stack
 
     // debugging only
     private fun logStack(action: String) {
@@ -52,28 +84,29 @@ class StackNavigator(
         val currentKey = "Current: ${current.toString().removeSuffix(suffix)}"
         val currentStack = "Stack: $entries"
 
-        Log.d(createLogTag(id), "[$id] navigator\n    $currentAction\n    $currentKey\n    $currentStack")
+        Log.d(
+            createLogTag(id),
+            "[$id] navigator\n    $currentAction\n    $currentKey\n    $currentStack"
+        )
     }
 
-    fun push(route: NavKey) {
+    fun push(route: T) {
+        if (!canNavigate()) return
         stack.add(route)
-
         logStack(action = "Push(${route.toString().removeSuffix("NavKey")})")
     }
 
-    fun pop() {
-        if (stack.isNotEmpty()) {
-            val removed = stack.removeAt(stack.lastIndex)
-            logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
-        } else {
-            Log.w(createLogTag(id), "[$id] pop called but stack is empty. Doing nothing.")
-        }
+    fun pop(): T? {
+        if (!canNavigate() || stack.isEmpty())  return null
+        val removed = stack.removeLast()
+        logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
+        return removed
     }
 
-    fun popAll(route: NavKey) {
+    fun popAll(route: T) {
+        if (!canNavigate()) return
         stack.clear()
         stack.add(route)
-
         logStack("popAll(${route.toString().removeSuffix("NavKey")})")
     }
 }

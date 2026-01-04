@@ -22,9 +22,9 @@ sealed interface RootNavKey : NavKey {
 // auth and main are hardcoded `popAll` since this would be the only behavior they need
 // forms is push and no need to call `.pop` in root navigators
 
-fun StackNavigator.navigateToMain() = this.popAll(RootNavKey.Main)
-fun StackNavigator.navigateToAuth() = this.popAll(RootNavKey.Auth)
-fun StackNavigator.navigateToForms(formType: FormType) = this.push(RootNavKey.Form(formType))
+fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
+fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
+fun StackNavigator<NavKey>.navigateToForms(formType: FormType) = this.push(RootNavKey.Form(formType))
 
 
 

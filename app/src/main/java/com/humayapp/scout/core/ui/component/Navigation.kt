@@ -63,7 +63,7 @@ data class NavigationItem(
     val key: NavKey,
     val label: String,
     @DrawableRes val icon: Int,
-    val navigationFunction: (navigator: StackNavigator) -> Unit,
+    val navigationFunction: (navigator: StackNavigator<NavKey>) -> Unit,
 )
 
 @Composable

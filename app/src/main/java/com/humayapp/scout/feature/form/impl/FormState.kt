@@ -1,23 +1,29 @@
 package com.humayapp.scout.feature.form.impl
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.lifecycle.ViewModel
 import com.humayapp.scout.feature.form.api.FormType
-import com.humayapp.scout.feature.form.api.id
 
-private fun createLogTag(formType: FormType) = "Scout: [${formType.id}] state"
-
-// TODO: make to rememberSaveable
+val LocalFormState = staticCompositionLocalOf<FormState> {
+    error("LocalFormState not provided")
+}
 
 @Composable
 fun rememberFormState(formType: FormType): FormState {
-    return remember(formType) { FormState(formType) }
+   return remember(formType) { FormState(formType) }
 }
 
+@Stable
+class FormState(val formType: FormType) : ViewModel() {
+    var mfid: String = ""
+        private set
 
-
-class FormState(
-    val formType: FormType
-) {
-
+    fun setMfid(mfid: String) {
+        this.mfid = mfid
+    }
 }
+
+private const val LOG_TAG = "Scout: FormState"

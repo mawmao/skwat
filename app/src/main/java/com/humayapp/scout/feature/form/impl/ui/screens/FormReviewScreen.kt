@@ -1,25 +1,22 @@
-package com.humayapp.scout.feature.form.impl
+package com.humayapp.scout.feature.form.impl.ui.screens
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
-import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.ui.component.ScoutButton
-import com.humayapp.scout.core.ui.component.ScoutOutlinedButton
 import com.humayapp.scout.core.ui.component.Screen
+import com.humayapp.scout.feature.form.api.id
+import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.navigation.navigateToMain
 
 @Composable
-fun FormReviewScreen(state: FormState) {
+fun FormReviewScreen() {
+
     val rootNavigator = LocalRootStackNavigator.current
-    val formsNavigator = LocalStackNavigator.current
+    val state = LocalFormState.current
 
     Screen {
-        Text("Form Review Screen")
-        ScoutOutlinedButton(text = "Back") {
-            // ask the user if they want to edit their form first
-            formsNavigator.pop()
-        }
+        Text("Form Review Screen - ${state.formType.id}")
         ScoutButton(text = "Finish") {
             rootNavigator.navigateToMain()
 

@@ -51,7 +51,7 @@ fun EntryProviderScope<NavKey>.mainSection(metadata: Map<String, Any>) {
         val isSettingsShown = retain { mutableStateOf(false) }
 
         val rootNavigator = LocalRootStackNavigator.current
-        val mainNavigator = rememberStackNavigator("main", initialKey = HomeNavKey)
+        val mainNavigator = rememberStackNavigator<NavKey>("main", initialKey = HomeNavKey)
 
         CompositionLocalProvider(LocalStackNavigator provides mainNavigator) {
             Scaffold(

@@ -22,7 +22,7 @@ import com.humayapp.scout.navigation.RootNavKey
 fun EntryProviderScope<NavKey>.authSection(metadata: Map<String, Any> = emptyMap()) {
     entry<RootNavKey.Auth>(metadata = metadata) {
 
-        val authNavigator = rememberStackNavigator(id = "auth", initialKey = LoginNavKey)
+        val authNavigator = rememberStackNavigator<NavKey>(id = "auth", initialKey = LoginNavKey)
 
         CompositionLocalProvider(LocalStackNavigator provides authNavigator) {
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

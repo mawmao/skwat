@@ -2,12 +2,13 @@ package com.humayapp.scout
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.navigation.StackNavigator
 import com.humayapp.scout.feature.auth.navigation.authSection
@@ -18,7 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun rememberScoutAppState(
-    rootNavigator: StackNavigator,
+    rootNavigator: StackNavigator<NavKey>,
     snackbarHostState: SnackbarHostState,
 ): ScoutAppState {
     return remember(rootNavigator, snackbarHostState) {
@@ -31,7 +32,7 @@ fun rememberScoutAppState(
 
 @Stable
 class ScoutAppState(
-    val rootNavigator: StackNavigator,
+    val rootNavigator: StackNavigator<NavKey>,
     val snackbarHostState: SnackbarHostState,
 
     // TODO: val networkMonitor: NetworkMonitor
@@ -45,17 +46,16 @@ class ScoutAppState(
 
 @Composable
 fun ScoutApp(state: ScoutAppState) {
-
-    val navigator = state.rootNavigator
-
-    CompositionLocalProvider(LocalRootStackNavigator provides navigator) {
-        NavDisplay(
-            backStack = navigator.asBackStack(),
-            entryProvider = entryProvider {
-                authSection(metadata = NavTransition.anchoredTop())
-                mainSection(metadata = NavTransition.anchoredBottom())
-                formSection(metadata = NavTransition.anchoredRight())
-            }
-        )
-    }
+    NavDisplay(
+        backStack = state.rootNavigator.asBackStack(),
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        entryProvider = entryProvider {
+            authSection(metadata = NavTransition.anchoredTop())
+            mainSection(metadata = NavTransition.anchoredBottom())
+            formSection(metadata = NavTransition.anchoredRight())
+        }
+    )
 }

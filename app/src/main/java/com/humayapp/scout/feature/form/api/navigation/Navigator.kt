@@ -1,11 +1,12 @@
 package com.humayapp.scout.feature.form.api.navigation
 
+import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.StackNavigator
 
-fun StackNavigator.navigateToFormScan() = this.push(FormScanNavKey)
+fun StackNavigator<NavKey>.navigateToFormScan() = this.push(FormScanNavKey)
 
-fun StackNavigator.navigateToFormConfirm() = this.push(FormConfirmNavKey)
+fun StackNavigator<NavKey>.navigateToFormConfirm() = this.push(FormConfirmNavKey)
 
-fun StackNavigator.navigateToFormWizard() = this.push(FormWizardNavKey)
+fun StackNavigator<NavKey>.navigateToFormWizard() = this.push(FormWizardNavKey)
 
-fun StackNavigator.navigateToFormReview() = this.push(FormReviewNavKey)
+fun StackNavigator<NavKey>.navigateToFormReview() = this.push(FormReviewNavKey)

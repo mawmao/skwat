@@ -1,5 +1,7 @@
 package com.humayapp.scout.core.navigation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,12 +14,18 @@ import androidx.navigation3.ui.NavDisplay
 
 typealias AnimOffset = (Int) -> Int
 
-
 object NavTransition {
-    fun anchoredTop() = verticalSlide(enterOffset = { -it }, exitOffset = { it }, duration = 400)
-    fun anchoredBottom() = verticalSlide(enterOffset = { it }, exitOffset = { -it }, duration = 400)
-    fun anchoredRight() = horizontalSlide(enterOffset = { it }, exitOffset = { -it }, duration = 360)
-    fun anchoredLeft() = horizontalSlide(enterOffset = { -it }, exitOffset = { it }, duration = 360)
+
+    const val DEFAULT_NAV_DURATION = 300
+
+    fun anchoredTop() = verticalSlide(enterOffset = { -it }, exitOffset = { it }, duration = DEFAULT_NAV_DURATION)
+    fun anchoredBottom() = verticalSlide(enterOffset = { it }, exitOffset = { -it }, duration = DEFAULT_NAV_DURATION)
+    fun anchoredRight() = horizontalSlide(enterOffset = { it }, exitOffset = { -it }, duration = DEFAULT_NAV_DURATION)
+    fun anchoredLeft() = horizontalSlide(enterOffset = { -it }, exitOffset = { it }, duration = DEFAULT_NAV_DURATION)
+
+    val screenTransitionEasing = FastOutSlowInEasing
+
+    fun <T>defaultTween(duration: Int = DEFAULT_NAV_DURATION): TweenSpec<T> = tween(duration, easing = screenTransitionEasing)
 
     fun fade(enterAlpha: Float = 0F, exitAlpha: Float = 0F, duration: Int = 150) =
         NavDisplay.transitionSpec {
@@ -32,53 +40,53 @@ object NavTransition {
         NavDisplay.transitionSpec {
             slideInVertically(
                 initialOffsetY = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             ) togetherWith slideOutVertically(
                 targetOffsetY = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         } + NavDisplay.popTransitionSpec {
             slideInVertically(
                 initialOffsetY = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             ) togetherWith slideOutVertically(
                 targetOffsetY = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         } + NavDisplay.predictivePopTransitionSpec {
             slideInVertically(
                 initialOffsetY = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             ) togetherWith slideOutVertically(
                 targetOffsetY = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         }
 
-    fun horizontalSlide(enterOffset: AnimOffset, exitOffset: AnimOffset, duration: Int = 450) =
+    fun horizontalSlide(enterOffset: AnimOffset, exitOffset: AnimOffset, duration: Int) =
         NavDisplay.transitionSpec {
             slideInHorizontally(
                 initialOffsetX = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = defaultTween(duration)
             ) togetherWith slideOutHorizontally(
                 targetOffsetX = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         } + NavDisplay.popTransitionSpec {
             slideInHorizontally(
                 initialOffsetX = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             ) togetherWith slideOutHorizontally(
                 targetOffsetX = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         } + NavDisplay.predictivePopTransitionSpec {
             slideInHorizontally(
                 initialOffsetX = exitOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             ) togetherWith slideOutHorizontally(
                 targetOffsetX = enterOffset,
-                animationSpec = tween(duration)
+                animationSpec = tween(duration, easing = screenTransitionEasing)
             )
         }
 }

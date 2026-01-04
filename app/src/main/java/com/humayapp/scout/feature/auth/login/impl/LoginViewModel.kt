@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.auth.login.impl
 
+import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
@@ -11,13 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 
-data class LoginUiState(
-    val isLoggingIn: Boolean = false,
-    val isRecoveringPassword: Boolean = false,
-)
-
 @HiltViewModel
 class LoginViewModel @Inject constructor() : ViewModel() {
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(LOG_TAG,  "LoginViewModel cleared")
+    }
 
     val emailState = TextFieldState()
     val passwordState = TextFieldState()
@@ -33,3 +34,10 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         passwordState.clearText()
     }
 }
+
+data class LoginUiState(
+    val isLoggingIn: Boolean = false,
+    val isRecoveringPassword: Boolean = false,
+)
+
+private const val LOG_TAG = "Scout: LoginViewModel"
