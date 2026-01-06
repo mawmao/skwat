@@ -1,55 +1,54 @@
-package com.humayapp.scout.feature.form.impl
+package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
-import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.form.api.navigation.WizardNavKey
+import androidx.compose.ui.text.input.ImeAction
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.WizardEntry
+import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class FieldData : WizardNavKey() {
+sealed class FieldData : WizardEntry() {
 
     @Serializable
     data object FarmerInformation : FieldData() {
         override val title = "Farmer Information"
         override val description = "Basic personal info for quick identification"
-        override val nextKey = PersonalDetails
         override val fields = listOf(
-            field(key = FIRST_NAME_KEY, type = FieldType.NAME, label = "First Name"),
-            field(key = LAST_NAME_KEY, type = FieldType.NAME, label = "Last Name"),
-            field(key = GENDER_KEY, type = FieldType.CARD_RADIO, label = "Gender"),
+            field(key = FIRST_NAME_KEY, type = FieldType.NAME, label = "First Name", imeAction = ImeAction.Next),
+            field(key = LAST_NAME_KEY, type = FieldType.NAME, label = "Last Name", imeAction = ImeAction.Done),
+            field(
+                key = GENDER_KEY,
+                type = FieldType.CARD_RADIO,
+                label = "Gender",
+                options = listOf("Male", "Female", "Other")
+            ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = PersonalDetails
     }
 
     @Serializable
     data object PersonalDetails : FieldData() {
         override val title = "Personal Details"
         override val description = "Additional personal info"
-        override val nextKey = FieldTiming
         override val fields = listOf(
             field(key = DATE_OF_BIRTH_KEY, type = FieldType.DATE, label = "Date of Birth"),
-            field(key = CELLPHONE_NO_KEY, type = FieldType.NUM_PHONE, label = "Cellphone No."),
+            field(
+                key = CELLPHONE_NO_KEY,
+                type = FieldType.NUM_PHONE,
+                label = "Cellphone No.",
+                imeAction = ImeAction.Done
+            ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = FieldTiming
     }
 
     @Serializable
     data object FieldTiming : FieldData() {
         override val title = "Field Timing"
         override val description = "Important dates for crop planning"
-        override val nextKey = null
         override val fields = listOf(
             field(
                 key = LAND_PREPARATION_DATE_KEY,
@@ -68,27 +67,30 @@ sealed class FieldData : WizardNavKey() {
                 options = listOf("Direct-seeded", "Transplanted")
             ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = FieldArea
     }
 
     @Serializable
     data object FieldArea : FieldData() {
         override val title = "Field Area"
         override val description = "Size of the field"
-        override val nextKey = FieldCondition
         override val fields = listOf(
             field(
                 key = TOTAL_FIELD_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Total Field Area (ha)",
+                imeAction = ImeAction.Done
             ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = FieldCondition
     }
 
     @Serializable
     data object FieldCondition : FieldData() {
         override val title = "Field Condition"
         override val description = "Current state of the field"
-        override val nextKey = FieldLocation
         override val fields = listOf(
             field(
                 key = SOIL_TYPE_KEY,
@@ -103,14 +105,14 @@ sealed class FieldData : WizardNavKey() {
                 options = listOf("Fallow", "Just Harvested", "Planted", "Land Preparation")
             ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = FieldLocation
     }
 
     @Serializable
     data object FieldLocation : FieldData() {
-        override val group = WizardGroupId("field")
         override val title = "Field Location"
         override val description = "Administrative info"
-        override val nextKey = GpsCoordinates
         override val fields = listOf(
             field(
                 key = PROVINCE_KEY,
@@ -129,11 +131,12 @@ sealed class FieldData : WizardNavKey() {
                 label = "Barangay"
             ),
         )
+
+        override fun nextScreen(answers: Map<String, Any>) = GpsCoordinates
     }
 
     @Serializable
     data object GpsCoordinates : FieldData() {
-        override val group = WizardGroupId("field")
         override val title = "GPS Coordinates"
         override val description = "Exact location of the field"
         override val fields = listOf(
@@ -143,21 +146,14 @@ sealed class FieldData : WizardNavKey() {
 
     companion object {
 
-        val pageOverrides: Map<WizardNavKey, @Composable (WizardNavKey) -> Unit> =
-            mapOf( GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) } )
+        val pageOverrides: WizardPageOverrides = mapOf(
+            GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) }
+        )
 
-        fun createFieldDataWizardMetadata(repeatCount: Int = 1) = wizardMetadata(
-            startKey = FarmerInformation,
-            keys = listOf(
-                FarmerInformation,
-                PersonalDetails,
-                FieldTiming,
-                FieldArea,
-                FieldCondition,
-                FieldLocation,
-                GpsCoordinates
-            ),
-            repeatCount = repeatCount
+        val startEntry = FarmerInformation
+        val entries = listOf(
+            FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
+            FieldCondition, FieldLocation, GpsCoordinates
         )
 
         const val FIRST_NAME_KEY = "first_name"
@@ -179,43 +175,3 @@ sealed class FieldData : WizardNavKey() {
 }
 
 
-@Composable
-fun DefaultFieldDataEntry(key: WizardNavKey) {
-    PagerEntry(key) { page ->
-        page.fields.fastForEach {
-            Text("Field: ${it.label}")
-        }
-    }
-}
-
-@Composable
-fun GpsCoordinatesPage(page: FieldData.GpsCoordinates) {
-    PagerEntry(page) {
-        Text("Map goes here")
-    }
-}
-
-@Composable
-fun PagerEntry(key: WizardNavKey, content: @Composable ColumnScope.(WizardNavKey) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(ScoutTheme.margin),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(top = ScoutTheme.spacing.small),
-            verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.extraSmall)
-        )
-        {
-            Text(text = key.title, style = ScoutTheme.material.typography.headlineMedium)
-            Text(
-                text = key.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Spacer(Modifier.height(ScoutTheme.spacing.medium))
-        content(key)
-    }
-}

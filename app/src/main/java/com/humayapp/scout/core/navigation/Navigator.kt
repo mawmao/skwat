@@ -4,20 +4,13 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSerializable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.serialization.NavBackStackSerializer
 import androidx.navigation3.runtime.serialization.NavKeySerializer
-import kotlin.collections.joinToString
-import kotlin.collections.lastIndex
 
 private fun createLogTag(navigatorId: String) = "Scout: [$navigatorId] navigator"
 
@@ -98,7 +91,7 @@ open class StackNavigator<T: NavKey>(
 
     fun pop(): T? {
         if (!canNavigate() || stack.isEmpty())  return null
-        val removed = stack.removeLast()
+        val removed = stack.removeAt(stack.lastIndex)
         logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
         return removed
     }

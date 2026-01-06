@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.theme.ScoutColors
 import com.humayapp.scout.core.ui.theme.ScoutTheme
@@ -27,7 +28,9 @@ import com.humayapp.scout.navigation.navigateToForms
 
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+) {
 
     val rootNavigator = LocalRootStackNavigator.current
 

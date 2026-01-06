@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.auth.login.impl
 
+import android.R.id.message
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,9 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
@@ -30,46 +34,72 @@ import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.ui.common.ConnectivityIndicator
 import com.humayapp.scout.core.ui.common.ScoutRegion
-import com.humayapp.scout.core.ui.component.ScoutButton
+import com.humayapp.scout.core.ui.component.ScoutErrorDialog
+import com.humayapp.scout.core.ui.component.ScoutLoadingButton
 import com.humayapp.scout.core.ui.component.ScoutLogo
 import com.humayapp.scout.core.ui.component.ScoutSecureTextField
 import com.humayapp.scout.core.ui.component.ScoutTextButton
 import com.humayapp.scout.core.ui.component.ScoutTextField
-import com.humayapp.scout.core.ui.rememberFocusRequester
 import com.humayapp.scout.core.ui.theme.ScoutTheme
+import com.humayapp.scout.core.ui.util.rememberFocusRequester
 import com.humayapp.scout.feature.auth.recovery.api.navigation.navigateToRecoveryOtp
 import com.humayapp.scout.navigation.navigateToMain
+import io.github.jan.supabase.auth.status.SessionSource
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = hiltViewModel(),
+    vm: LoginViewModel = hiltViewModel(),
 ) {
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
+
     val imeVisible = WindowInsets.isImeVisible
+    var authSuccess by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
 
     val rootNavigator = LocalRootStackNavigator.current
     val authNavigator = LocalStackNavigator.current
 
-    // NOTE: only do navigation after keyboard is completely hidden
-    LaunchedEffect(imeVisible, uiState.isLoggingIn) {
-        if (!imeVisible && uiState.isLoggingIn) {
-            viewModel.updateLoggingIn(false)
+    if (showError) {
+        ScoutErrorDialog(
+            title = "Error!",
+            message = uiState.errorMessage!!,
+            onDismissRequest = {
+                vm.onAction(LoginUiAction.ClearError)
+                showError = false
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        vm.sessionStatus.collectLatest { sessionStatus ->
+            if (sessionStatus is SessionStatus.Authenticated && sessionStatus.source is SessionSource.SignIn) {
+                authSuccess = true
+            } else if (sessionStatus is SessionStatus.NotAuthenticated && sessionStatus.isSignOut) {
+                // show snackbar to show logged out successfully
+            }
+        }
+    }
+
+    LaunchedEffect(imeVisible, authSuccess, uiState.errorMessage) {
+        if (!imeVisible && authSuccess) {
             rootNavigator.navigateToMain()
+        }
+        if (!imeVisible && uiState.errorMessage != null) {
+            showError = true
         }
     }
 
     LoginScreenContent(
         modifier = modifier,
-        emailState = viewModel.emailState,
-        passwordState = viewModel.passwordState,
+        emailState = vm.emailState,
+        passwordState = vm.passwordState,
         uiState = uiState,
-        onLogin = {
-            viewModel.updateLoggingIn(true)
-            viewModel.clearFields()
-        },
+        onLogin = { vm.onAction(LoginUiAction.LoginClick) },
         onForgotPassword = authNavigator::navigateToRecoveryOtp
     )
 }
@@ -150,14 +180,14 @@ private fun LoginForm(
             onKeyboardAction = {}
         )
         Spacer(modifier = Modifier.height(ScoutTheme.spacing.large))
-        ScoutButton(
+        ScoutLoadingButton(
             modifier = Modifier.fillMaxWidth(),
             text = "Login",
+            isLoading = uiState.isLoggingIn,
             onClick = {
                 when {
                     emailState.text.isEmpty() -> emailFocusRequester.requestFocus()
                     passwordState.text.isEmpty() -> passwordFocusRequester.requestFocus()
-
                     else -> {
                         onLogin()
                         focusManager.clearFocus()
@@ -174,7 +204,10 @@ private fun LoginForm(
             // TODO: could also disable when logging in
             ScoutTextButton(
                 text = "Forgot Password?",
-                style = ScoutTheme.material.typography.labelLarge.copy(fontSize = 14.sp, color = ScoutTheme.extras.colors.mutedOnBackground),
+                style = ScoutTheme.material.typography.labelLarge.copy(
+                    fontSize = 14.sp,
+                    color = ScoutTheme.extras.colors.mutedOnBackground
+                ),
                 isLoading = uiState.isRecoveringPassword,
                 onClick = onForgotPassword
             )

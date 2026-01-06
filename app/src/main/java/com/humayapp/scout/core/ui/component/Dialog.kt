@@ -1,5 +1,6 @@
 package com.humayapp.scout.core.ui.component
 
+import android.R.attr.text
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.humayapp.scout.core.ui.theme.ScoutIcons
+import com.humayapp.scout.core.ui.theme.ScoutTypography
 import kotlinx.coroutines.delay
 
 /**
@@ -82,65 +85,65 @@ fun ScoutDialog(
 }
 
 
-@Composable
-fun ScoutConfirmDialog(
-    modifier: Modifier = Modifier,
-    isVisible: Boolean,
-    @DrawableRes icon: Int = ScoutIcons.QuestionMark,
-    title: String = "Confirm",
-    message: String,
-    onDismissRequest: () -> Unit,
-) {
-
-    ScoutDialog(
-        isVisible = isVisible,
-        onDismiss = onDismissRequest,
-        content = {
-            Column {
-                Icon(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(24.dp)
-                        .size(42.dp),
-                    painter = painterResource(icon),
-                    contentDescription = "$title Icon",
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Column(
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider()
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    ScoutDialogButton(
-                        modifier = Modifier.weight(1F),
-                        text = "Cancel",
-                        onClick = onDismissRequest
-                    )
-                    ScoutDialogButton(modifier = Modifier.weight(1F), text = "OK", onClick = onDismissRequest)
-                }
-            }
-        }
-    )
-}
+//@Composable
+//fun ScoutConfirmDialog(
+//    modifier: Modifier = Modifier,
+//    isVisible: Boolean,
+//    @DrawableRes icon: Int = ScoutIcons.QuestionMark,
+//    title: String = "Confirm",
+//    message: String,
+//    onDismissRequest: () -> Unit,
+//) {
+//
+//    ScoutDialog(
+//        isVisible = isVisible,
+//        onDismiss = onDismissRequest,
+//        content = {
+//            Column {
+//                Icon(
+//                    modifier = modifier
+//                        .fillMaxWidth()
+//                        .padding(24.dp)
+//                        .size(42.dp),
+//                    painter = painterResource(icon),
+//                    contentDescription = "$title Icon",
+//                    tint = MaterialTheme.colorScheme.primary,
+//                )
+//                Column(
+//                    modifier = Modifier.padding(horizontal = 24.dp),
+//                ) {
+//                    Text(
+//                        text = title,
+//                        style = MaterialTheme.typography.headlineSmall,
+//                        color = MaterialTheme.colorScheme.primary
+//                    )
+//                    Spacer(modifier = Modifier.height(6.dp))
+//                    Text(
+//                        text = message,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+//                    )
+//                }
+//                Spacer(modifier = Modifier.height(24.dp))
+//                HorizontalDivider()
+//                Row(modifier = Modifier.fillMaxWidth()) {
+//                    ScoutDialogButton(
+//                        modifier = Modifier.weight(1F),
+//                        text = "Cancel",
+//                        onClick = onDismissRequest
+//                    )
+//                    ScoutDialogButton(modifier = Modifier.weight(1F), text = "OK", onClick = onDismissRequest)
+//                }
+//            }
+//        }
+//    )
+//}
 
 
 @Composable
 fun ScoutAlertDialog(
     modifier: Modifier = Modifier,
-    icon: ImageVector,
+    @DrawableRes icon: Int,
     title: @Composable () -> Unit,
     message: @Composable () -> Unit,
     onDismissRequest: () -> Unit,
@@ -154,7 +157,7 @@ fun ScoutAlertDialog(
                     .fillMaxWidth()
                     .padding(24.dp)
                     .size(42.dp),
-                imageVector = icon,
+                painter = painterResource(icon),
                 contentDescription = "$title Icon",
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -172,21 +175,50 @@ fun ScoutAlertDialog(
     }
 }
 
+//@Composable
+//fun ScoutAlertDialog(
+//    modifier: Modifier = Modifier,
+//    icon: ImageVector, // change to composable if needed
+//    title: String,
+//    message: String,
+//    onDismissRequest: () -> Unit,
+//) {
+//    ScoutAlertDialog(
+//        modifier = modifier,
+//        icon = icon,
+//        title = {
+//            Text(
+//                text = title,
+//                style = MaterialTheme.typography.headlineSmall,
+//                color = MaterialTheme.colorScheme.primary
+//            )
+//        },
+//        message = {
+//            Text(
+//                text = message,
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant,
+//            )
+//        },
+//        onDismissRequest = onDismissRequest
+//    )
+//}
+
+
 @Composable
-fun ScoutAlertDialog(
+fun ScoutErrorDialog(
     modifier: Modifier = Modifier,
-    icon: ImageVector, // change to composable if needed
     title: String,
     message: String,
-    onDismissRequest: () -> Unit,
+    onDismissRequest: () -> Unit
 ) {
     ScoutAlertDialog(
         modifier = modifier,
-        icon = icon,
+        icon = ScoutIcons.Error,
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = ScoutTypography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary
             )
         },
@@ -200,7 +232,6 @@ fun ScoutAlertDialog(
         onDismissRequest = onDismissRequest
     )
 }
-
 
 @Composable
 fun ScoutDialogButton(

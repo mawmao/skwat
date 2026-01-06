@@ -1,6 +1,5 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -19,7 +18,7 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 @Composable
 fun WizardProgressBar(
     modifier: Modifier = Modifier,
-    height: Dp = 8.dp,
+    height: Dp = 4.dp,
     totalCount: Int,
     currentCount: Int,
     backgroundColor: Color = ScoutTheme.material.colorScheme.secondary,

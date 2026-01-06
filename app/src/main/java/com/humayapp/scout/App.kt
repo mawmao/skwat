@@ -59,3 +59,4 @@ fun ScoutApp(state: ScoutAppState) {
         }
     )
 }
+

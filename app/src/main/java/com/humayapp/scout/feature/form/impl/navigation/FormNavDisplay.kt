@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
@@ -18,36 +16,25 @@ import com.humayapp.scout.feature.form.impl.ui.components.FormSectionTopAppBar
 import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormReviewScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormScanScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardSection
+import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardScreen
+
 
 @Composable
-fun FormNavDisplay(
-    modifier: Modifier,
-    onBack: () -> Unit
-) {
-    val formNavigator = LocalStackNavigator.current
+fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
 
-    Scaffold(
-        modifier = modifier,
-        topBar = { FormSectionTopAppBar(onBack = onBack) },
-    ) { innerPadding ->
+    val formBackStack = LocalStackNavigator.current.asBackStack()
+    val formTransition = NavTransition.anchoredRight()
+
+    Scaffold(modifier = modifier, topBar = { FormSectionTopAppBar(onBack = onBack) }) { innerPadding ->
         NavDisplay(
             modifier = Modifier.padding(innerPadding),
-            backStack = formNavigator.asBackStack(),
+            backStack = formBackStack,
             onBack = onBack,
             entryProvider = entryProvider {
-                entry<FormScanNavKey>(metadata = NavTransition.anchoredRight()) {
-                    FormScanScreen()
-                }
-                entry<FormConfirmNavKey>(metadata = NavTransition.anchoredRight()) {
-                    FormConfirmScreen()
-                }
-                entry<FormWizardNavKey>(metadata = NavTransition.anchoredRight()) {
-                    FormWizardSection()
-                }
-                entry<FormReviewNavKey>(metadata = NavTransition.anchoredRight()) {
-                    FormReviewScreen()
-                }
+                entry<FormScanNavKey>(metadata = formTransition) { FormScanScreen() }
+                entry<FormConfirmNavKey>(metadata = formTransition) { FormConfirmScreen() }
+                entry<FormWizardNavKey>(metadata = formTransition) { FormWizardScreen() }
+                entry<FormReviewNavKey>(metadata = formTransition) { FormReviewScreen() }
             }
         )
     }

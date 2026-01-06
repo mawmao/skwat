@@ -11,4 +11,6 @@ object ScoutIcons {
     val QuestionMark = R.drawable.question_mark_24px
     val Construction = R.drawable.construction_24px
     val Map = R.drawable.map_24px
+    val DateRange = R.drawable.date_range_24px
+    val Error = R.drawable.error_24px
 }

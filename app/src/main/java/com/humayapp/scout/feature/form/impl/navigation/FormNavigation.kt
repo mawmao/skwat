@@ -21,11 +21,13 @@ import com.humayapp.scout.navigation.navigateToMain
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
+
     entry<RootNavKey.Form>(metadata = metadata) { key ->
 
         val rootNavigator = LocalRootStackNavigator.current
 
         val formType = key.formType
+
         val formState = rememberFormState(formType)
         val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormScanNavKey)
 
@@ -44,7 +46,11 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
                         // on first wizard page, this should ask the user if they
                         // want to cancel the form collection, then go back to the
                         // home screen if yes, if not on first page, `formNavigator` pop works
-                        FormWizardNavKey -> rootNavigator.navigateToMain()
+                        FormWizardNavKey -> {
+                            if (formState.canScrollBack) formState.scrollWizardBack()
+                            else rootNavigator.navigateToMain()
+                        }
+
                         FormReviewNavKey -> formNavigator.pop()
                     }
                 }

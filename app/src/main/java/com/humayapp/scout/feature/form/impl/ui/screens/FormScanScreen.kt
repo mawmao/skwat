@@ -9,6 +9,7 @@ import com.humayapp.scout.feature.form.api.id
 import com.humayapp.scout.feature.form.api.navigation.navigateToFormConfirm
 import com.humayapp.scout.feature.form.impl.LocalFormState
 
+
 @Composable
 fun FormScanScreen() {
 
@@ -18,9 +19,8 @@ fun FormScanScreen() {
     Screen {
         Text("Form Scan Screen - ${state.formType.id}")
         ScoutButton(text = "Simulate Scan") {
-            state.setMfid("0601001")
+            state.mfid = "0601001"
             formsNavigator.navigateToFormConfirm()
         }
     }
-
 }

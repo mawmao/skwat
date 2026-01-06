@@ -16,7 +16,7 @@ typealias AnimOffset = (Int) -> Int
 
 object NavTransition {
 
-    const val DEFAULT_NAV_DURATION = 300
+    const val DEFAULT_NAV_DURATION = 320
 
     fun anchoredTop() = verticalSlide(enterOffset = { -it }, exitOffset = { it }, duration = DEFAULT_NAV_DURATION)
     fun anchoredBottom() = verticalSlide(enterOffset = { it }, exitOffset = { -it }, duration = DEFAULT_NAV_DURATION)
