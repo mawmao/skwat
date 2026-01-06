@@ -1,12 +1,11 @@
 package com.humayapp.scout.feature.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.auth.data.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.auth.exception.AuthRestException
-import io.github.jan.supabase.exceptions.HttpRequestException
-import io.ktor.client.plugins.HttpRequestTimeoutException
 import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,40 +24,41 @@ class MainSectionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainSectionUiState())
     val uiState: StateFlow<MainSectionUiState> = _uiState.asStateFlow()
 
-    private val _events = Channel<MainSectionEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
+    private val _uiError = MutableStateFlow<String?>(null)
+    val uiError = _uiError.asStateFlow()
 
-    fun toggleSettingsDialog(value: Boolean) = _uiState.update { it.copy(isSettingsShown = value) }
+    private val _uiEvent = Channel<MainSectionEvent>(Channel.BUFFERED)
+    val uiEvent = _uiEvent.receiveAsFlow()
 
-    fun clearError() = _uiState.update { it.copy(errorMessage = null) }
+    fun onAction(action: MainSectionAction) {
+        Log.d("Scout: MainSectionViewModel", "onAction($action)")
+        when (action) {
+            is MainSectionAction.LogoutRequest -> onLogout()
+            is MainSectionAction.ClearUiError -> _uiError.update { null }
+            is MainSectionAction.ToggleSettings -> _uiState.update { it.copy(isSettingsShown = action.isVisible) }
+        }
+    }
 
-    fun onLogout() {
+    private fun onLogout() {
         viewModelScope.launch {
-            val result = authRepository.signOut()
-            result.onSuccess {
-                _events.send(MainSectionEvent.SignOutSuccess)
-            }.onFailure { error ->
-                _uiState.update { it.copy(errorMessage = (getSignOutError(error))) }
+            when (val result = authRepository.signOut()) {
+                is AuthResult.Success -> _uiEvent.send(MainSectionEvent.LogoutSuccess)
+                else -> _uiError.update { result.message }
             }
         }
     }
-
-    private fun getSignOutError(error: Throwable): String {
-        return when (error) {
-            is AuthRestException -> "Authentication failed. Please check your credentials or try again."
-            is HttpRequestTimeoutException -> "Network timed out. Please try again."
-            is HttpRequestException -> "Unable to connect. Check your internet connection."
-            else -> "Something went wrong. Please try again."
-        }
-    }
-}
-
-sealed class MainSectionEvent {
-    object SignOutSuccess : MainSectionEvent()
 }
 
 data class MainSectionUiState(
-    val errorMessage: String? = null,
     val isSettingsShown: Boolean = false
 )
 
+sealed interface MainSectionAction {
+    object LogoutRequest : MainSectionAction
+    data class ToggleSettings(val isVisible: Boolean) : MainSectionAction
+    object ClearUiError : MainSectionAction
+}
+
+sealed class MainSectionEvent {
+    object LogoutSuccess : MainSectionEvent()
+}

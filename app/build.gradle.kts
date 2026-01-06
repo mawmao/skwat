@@ -94,6 +94,24 @@ android {
         compose = true
         buildConfig = true
     }
+
+    androidComponents {
+        onVariants { variant ->
+            val flavor = variant.productFlavors
+                .firstOrNull { it.first == "environment" }
+                ?.second
+                ?.replaceFirstChar { it.uppercaseChar().toString() }
+                ?.firstOrNull()
+                ?: ""
+
+            val buildType = variant.buildType
+                ?.replaceFirstChar { it.uppercaseChar().toString() }
+                ?.firstOrNull()
+                ?: ""
+
+            variant.manifestPlaceholders.put("app_label", "Recon $flavor$buildType")
+        }
+    }
 }
 
 dependencies {

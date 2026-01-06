@@ -4,15 +4,11 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.auth.data.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.github.jan.supabase.auth.exception.AuthRestException
-import io.github.jan.supabase.exceptions.HttpRequestException
-import io.ktor.client.plugins.HttpRequestTimeoutException
 import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,68 +22,62 @@ class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    val sessionStatus = authRepository.sessionStatus
-
+    // separated email and password state since they are frequently changing
     val emailState = TextFieldState()
     val passwordState = TextFieldState()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    private val _uiError = MutableStateFlow<String?>(null)
+    val uiError = _uiError.asStateFlow()
+
+    private val _uiEvent = Channel<LoginUiEvent>(Channel.BUFFERED)
+    val uiEvent = _uiEvent.receiveAsFlow()
+
     fun updateLoggingIn(value: Boolean) = _uiState.update { it.copy(isLoggingIn = value) }
-    fun updateRecoveringPassword(value: Boolean) = _uiState.update { it.copy(isRecoveringPassword = value) }
 
     fun onAction(action: LoginUiAction) {
         when (action) {
-            is LoginUiAction.LoginClick -> onLoginClick()
-            is LoginUiAction.ClearError -> clearError()
+            is LoginUiAction.LoginRequest -> onLogin()
+            is LoginUiAction.ClearUiError -> _uiError.update { null }
         }
     }
 
-    fun clearFields() {
-        emailState.clearText()
-        passwordState.clearText()
-    }
-
-    private fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
-
-    private fun onLoginClick() {
+    private fun onLogin() {
         viewModelScope.launch {
             updateLoggingIn(true)
 
             val email = emailState.text.toString()
             val password = passwordState.text.toString()
-            val result = authRepository.signIn(email, password)
+
+            when (val result = authRepository.signIn(email, password)) {
+                is AuthResult.Success -> {
+                    emailState.clearText()
+                    passwordState.clearText()
+                    _uiEvent.send(LoginUiEvent.LoginSuccess)
+                }
+                else -> _uiError.update { result.message }
+            }
 
             updateLoggingIn(false)
 
-            result.onSuccess {
-                clearFields()
-            }.onFailure { err ->
-                _uiState.update { it.copy(errorMessage = getSignInError(err)) }
-            }
-        }
-    }
-
-    private fun getSignInError(error: Throwable): String {
-        return when (error) {
-            is AuthRestException -> "Invalid email or password."
-            is HttpRequestTimeoutException -> "Network timed out. Try again."
-            is HttpRequestException -> "Check your internet connection."
-            else -> "Something went wrong. Please try again."
         }
     }
 }
 
+
+
 data class LoginUiState(
     val isLoggingIn: Boolean = false,
     val isRecoveringPassword: Boolean = false,
-    val errorMessage: String? = null
 )
 
-sealed class LoginUiAction {
-    object LoginClick : LoginUiAction()
-    object ClearError : LoginUiAction()
+sealed interface LoginUiAction {
+    object LoginRequest : LoginUiAction
+    object ClearUiError : LoginUiAction
+}
+
+sealed interface LoginUiEvent {
+    object LoginSuccess : LoginUiEvent
 }

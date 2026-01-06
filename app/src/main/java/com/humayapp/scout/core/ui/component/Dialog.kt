@@ -1,11 +1,9 @@
 package com.humayapp.scout.core.ui.component
 
-import android.R.attr.text
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,8 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,17 +33,13 @@ import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTypography
 import kotlinx.coroutines.delay
 
-/**
- * TODO: factor out to small composables to keep the main composable lean)
- */
-
-
 @Composable
 fun ScoutDialog(
     modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+
     Dialog(
         properties = DialogProperties(
             dismissOnClickOutside = true,
@@ -212,6 +204,8 @@ fun ScoutErrorDialog(
     message: String,
     onDismissRequest: () -> Unit
 ) {
+
+
     ScoutAlertDialog(
         modifier = modifier,
         icon = ScoutIcons.Error,
