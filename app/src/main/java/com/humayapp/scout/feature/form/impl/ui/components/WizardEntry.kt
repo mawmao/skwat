@@ -23,17 +23,19 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 
 @Composable
 fun DefaultWizardEntry(key: WizardEntry) {
+
     val state = LocalFormState.current
+
     WizardEntry(key) { page ->
         page.fields.fastForEach { field ->
             WizardField(
-                modifier = Modifier.fillMaxWidth(),
                 field = field,
-                value = state.getAnswer(field.key),
+                value = { state.getAnswer(field.key) },
                 onValueChange = { state.setAnswer(field.key, it) },
+                modifier = Modifier.fillMaxWidth(),
                 imeAction = field.imeAction
             )
-            Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+            Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
         }
     }
 }

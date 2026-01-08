@@ -48,7 +48,7 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 
 object ScoutButtonDefaults {
     val CornerShape: RoundedCornerShape
-        @Composable get() = ScoutTheme.shapes.medium
+        @Composable get() = ScoutTheme.shapes.cornerMedium
 
     val ContentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
 

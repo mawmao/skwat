@@ -1,5 +1,7 @@
 package com.humayapp.scout.core.ui.component
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -20,6 +22,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.humayapp.scout.core.ui.theme.InputFieldTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +32,8 @@ fun ScoutDropdownMenu(
     options: List<String>,
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -48,6 +53,8 @@ fun ScoutDropdownMenu(
                 .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
             expanded = expanded,
+            isError = isError,
+            errorMessage = errorMessage,
             value = selectedOption,
             onValueChange = {},
             label = label
@@ -81,16 +88,22 @@ fun ScoutDropdownField(
     expanded: Boolean,
     value: String,
     onValueChange: (String) -> Unit,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     label: String,
     enabled: Boolean = true,
 ) {
-    ScoutTextField(
-        modifier = modifier,
-        value = value,
-        onValueChange = onValueChange,
-        enabled = enabled,
-        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        label = label,
-        readOnly = true
-    )
+    Column(modifier = Modifier.animateContentSize(animationSpec = InputFieldTokens.fastSpatial())) {
+        ScoutTextField(
+            modifier = modifier,
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            isError = isError,
+            errorMessage = errorMessage,
+            label = label,
+            readOnly = true
+        )
+    }
 }

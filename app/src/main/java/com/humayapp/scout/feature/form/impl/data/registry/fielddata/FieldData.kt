@@ -1,7 +1,12 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
+
 import androidx.compose.ui.text.input.ImeAction
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
@@ -15,17 +20,30 @@ sealed class FieldData : WizardEntry() {
         override val title = "Farmer Information"
         override val description = "Basic personal info for quick identification"
         override val fields = listOf(
-            field(key = FIRST_NAME_KEY, type = FieldType.NAME, label = "First Name", imeAction = ImeAction.Next),
-            field(key = LAST_NAME_KEY, type = FieldType.NAME, label = "Last Name", imeAction = ImeAction.Done),
+            field(
+                key = FIRST_NAME_KEY,
+                type = FieldType.NAME,
+                label = "First Name",
+                imeAction = ImeAction.Next,
+                validator = Validators.name
+            ),
+            field(
+                key = LAST_NAME_KEY,
+                type = FieldType.NAME,
+                label = "Last Name",
+                imeAction = ImeAction.Done,
+                validator = Validators.name
+            ),
             field(
                 key = GENDER_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Gender",
-                options = listOf("Male", "Female", "Other")
+                options = listOf("Male", "Female", "Other"),
+                validator = Validators.nonEmpty
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = PersonalDetails
+        override fun nextScreen(answers: Map<String, Any?>) = PersonalDetails
     }
 
     @Serializable
@@ -33,16 +51,22 @@ sealed class FieldData : WizardEntry() {
         override val title = "Personal Details"
         override val description = "Additional personal info"
         override val fields = listOf(
-            field(key = DATE_OF_BIRTH_KEY, type = FieldType.DATE, label = "Date of Birth"),
+            field(
+                key = DATE_OF_BIRTH_KEY,
+                type = FieldType.DATE,
+                label = "Date of Birth",
+                validator = Validators.notFutureDate()
+            ),
             field(
                 key = CELLPHONE_NO_KEY,
                 type = FieldType.NUM_PHONE,
                 label = "Cellphone No.",
-                imeAction = ImeAction.Done
+                imeAction = ImeAction.Done,
+                validator = Validators.phone
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = FieldTiming
+        override fun nextScreen(answers: Map<String, Any?>) = FieldTiming
     }
 
     @Serializable
@@ -68,7 +92,7 @@ sealed class FieldData : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = FieldArea
+        override fun nextScreen(answers: Map<String, Any?>) = FieldArea
     }
 
     @Serializable
@@ -84,7 +108,7 @@ sealed class FieldData : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = FieldCondition
+        override fun nextScreen(answers: Map<String, Any?>) = FieldCondition
     }
 
     @Serializable
@@ -106,7 +130,7 @@ sealed class FieldData : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = FieldLocation
+        override fun nextScreen(answers: Map<String, Any?>) = FieldLocation
     }
 
     @Serializable
@@ -132,7 +156,7 @@ sealed class FieldData : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any>) = GpsCoordinates
+        override fun nextScreen(answers: Map<String, Any?>) = GpsCoordinates
     }
 
     @Serializable
@@ -142,18 +166,36 @@ sealed class FieldData : WizardEntry() {
         override val fields = listOf(
             field(key = COORDINATES_KEY, type = FieldType.GPS, label = "Field Location (GPS)")
         )
+
+
+        override fun nextScreen(answers: Map<String, Any?>) = Images
+    }
+
+    @Serializable
+    data object Images : FieldData() {
+        override val title = "Field & Crop Images"
+        override val description = "Document the field and rice crop from multiple angles"
+        override val fields = listOf(
+            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View"),
+            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View"),
+            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View"),
+            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view"),
+            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up"),
+        )
     }
 
     companion object {
 
         val pageOverrides: WizardPageOverrides = mapOf(
-            GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) }
+            FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
+            GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) },
+            Images to { page -> ImagesPage(page as Images) }
         )
 
         val startEntry = FarmerInformation
         val entries = listOf(
             FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
-            FieldCondition, FieldLocation, GpsCoordinates
+            FieldCondition, FieldLocation, GpsCoordinates, Images,
         )
 
         const val FIRST_NAME_KEY = "first_name"
@@ -171,6 +213,11 @@ sealed class FieldData : WizardEntry() {
         const val MUNICIPALITY_OR_CITY_KEY = "municipality_or_city"
         const val BARANGAY_KEY = "barangay"
         const val COORDINATES_KEY = "location"
+        const val IMG1_KEY = "img_1"
+        const val IMG2_KEY = "img_2"
+        const val IMG3_KEY = "img_3"
+        const val IMG4_KEY = "img_4"
+        const val IMG5_KEY = "img_5"
     }
 }
 

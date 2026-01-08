@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation3.runtime.NavKey
+import com.humayapp.scout.core.SANDBOX_ENABLE
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.ui.theme.ScoutTheme
@@ -59,9 +60,13 @@ class MainActivity : ComponentActivity() {
                 val snackbarHostState = remember { SnackbarHostState() }
                 val rootNavigator = rememberStackNavigator<NavKey>(
                     id = "root",
-                    initialKey = when (sessionStatus) {
-                        is SessionStatus.Authenticated -> RootNavKey.Main
-                        else -> RootNavKey.Auth
+
+                    // development only
+                    initialKey = if (SANDBOX_ENABLE) RootNavKey.Sandbox else {
+                        when (sessionStatus) {
+                            is SessionStatus.Authenticated -> RootNavKey.Main
+                            else -> RootNavKey.Auth
+                        }
                     }
                 );
 

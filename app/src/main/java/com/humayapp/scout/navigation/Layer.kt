@@ -8,6 +8,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface RootNavKey : NavKey {
 
+
+    // Sandbox (for development only)
+    @Serializable
+    data object Sandbox : RootNavKey
+
     @Serializable
     data object Main : RootNavKey
 

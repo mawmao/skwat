@@ -46,7 +46,7 @@ val ScoutTypography = Typography(
     ),
     headlineSmall = TextStyle( // text-xl/semibold
         fontFamily = fontFamily,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = (0.5).sp

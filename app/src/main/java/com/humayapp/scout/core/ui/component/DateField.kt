@@ -98,6 +98,8 @@ fun ScoutDateField(
     value: String?,
     onValueChange: (String) -> Unit,
     label: String,
+    isError: Boolean = false,
+    errorMessage: String? = null,
     enabled: Boolean = true,
     trailingIcon: @Composable (() -> Unit)? = null,
 ) {
@@ -121,6 +123,8 @@ fun ScoutDateField(
         value = display,
         onValueChange = { }, // read-only
         enabled = enabled,
+        isError = isError,
+        errorMessage = errorMessage,
         trailingIcon = trailingIcon ?: {
             Icon(
                 modifier = Modifier.size(16.dp),

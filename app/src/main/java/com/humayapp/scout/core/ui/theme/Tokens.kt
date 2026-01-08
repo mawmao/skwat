@@ -8,10 +8,10 @@ import androidx.compose.ui.unit.dp
 
 @Immutable
 data class Shapes(
-    val small: RoundedCornerShape = RoundedCornerShape(4.dp),
-    val medium: RoundedCornerShape = RoundedCornerShape(8.dp),
-    val mediumLarge: RoundedCornerShape = RoundedCornerShape(12.dp),
-    val large: RoundedCornerShape = RoundedCornerShape(16.dp)
+    val cornerSmall: RoundedCornerShape = RoundedCornerShape(4.dp),
+    val cornerMedium: RoundedCornerShape = RoundedCornerShape(8.dp),
+    val cornerMediumLarge: RoundedCornerShape = RoundedCornerShape(12.dp),
+    val cornerLarge: RoundedCornerShape = RoundedCornerShape(16.dp)
 )
 
 @Immutable
@@ -24,4 +24,5 @@ data class Spacing(
     val extraLarge: Dp = 32.dp,
     val margin: Dp = medium
 )
+
 

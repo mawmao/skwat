@@ -19,7 +19,7 @@ object ScoutColors {
     val Gray900 = Color(0xFF1C1C1E) // onBackground
 
     val Red100 = Color(0xFFFEECEC) // error
-    val Red500 = Color(0xFFC22323) // OnError
+    val Red500 = Color(0xFFC23030) // OnError
 
     val HumayGreen = Color(0XFF00A63E)
     val ScoutGreen = Color.hsl(hue = 120f, saturation = 0.45f, lightness = 0.55f)

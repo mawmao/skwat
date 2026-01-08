@@ -13,12 +13,18 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.room)
 }
 
 android {
     namespace = "com.humayapp.scout"
     compileSdk {
         version = release(36)
+    }
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+        generateKotlin = true
     }
 
     defaultConfig {
@@ -109,12 +115,21 @@ android {
                 ?.firstOrNull()
                 ?: ""
 
-            variant.manifestPlaceholders.put("app_label", "Recon $flavor$buildType")
+            variant.manifestPlaceholders.put("app_label", "Scout $flavor$buildType")
         }
     }
 }
 
 dependencies {
+    implementation(libs.accompanist.permissions)
+
+    implementation(libs.play.services.location)
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    implementation(libs.coil.compose)
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)

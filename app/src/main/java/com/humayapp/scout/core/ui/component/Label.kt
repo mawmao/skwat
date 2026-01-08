@@ -1,18 +1,21 @@
 package com.humayapp.scout.core.ui.component
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.humayapp.scout.core.ui.theme.InputFieldColors
+import com.humayapp.scout.core.ui.theme.InputFieldTokens
+import com.humayapp.scout.core.ui.theme.ScoutTheme
 
 // todo: review
 
@@ -20,29 +23,30 @@ import androidx.compose.ui.unit.dp
 fun ScoutLabel(
     label: String,
     modifier: Modifier = Modifier,
-    active: Boolean? = null,
-    space: Dp? = 6.dp,
+    enabled: Boolean = true,
+    isFocused: Boolean = false,
+    isError: Boolean = false,
+    colors: InputFieldColors = InputFieldColors.default(),
 ) {
-    val targetColor =
-        when (active) {
-            true -> MaterialTheme.colorScheme.onSurface
-            false -> MaterialTheme.colorScheme.onSurfaceVariant
-            null -> LocalContentColor.current
-        }
+    val targetColor = when {
+        !enabled -> colors.disabledColor
+        isFocused -> colors.focusedColor
+        isError -> colors.errorColor
+        else -> colors.unfocusedColor
+    }
 
-    val animatedColor by animateColorAsState(
-        targetValue = targetColor,
-        animationSpec = tween(durationMillis = 180)
-    )
+    Box(
+        Modifier
+            .wrapContentHeight()
 
-    Column {
+            // extract soon
+            .padding(horizontal = 4.dp, vertical = 8.dp)
+    ) {
         Text(
             text = label,
             modifier = modifier,
-            style = MaterialTheme.typography.bodyMedium,
-            color = animatedColor
+            style = InputFieldTokens.labelTextStyle,
+            color = targetColor
         )
-
-        space?.let { Spacer(Modifier.height(it)) }
     }
 }

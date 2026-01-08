@@ -13,4 +13,7 @@ object ScoutIcons {
     val Map = R.drawable.map_24px
     val DateRange = R.drawable.date_range_24px
     val Error = R.drawable.error_24px
+    val Image = R.drawable.image_24px
+    val MobileCamera = R.drawable.mobile_camera_24px
+    val LocationOn = R.drawable.location_on_24px
 }
