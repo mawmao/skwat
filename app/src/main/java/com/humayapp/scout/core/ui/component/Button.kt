@@ -263,7 +263,7 @@ fun ScoutIconButton(
 }
 
 @Composable
-fun ScoutIconButtonImpl(
+private fun ScoutIconButtonImpl(
     modifier: Modifier,
     onClick: () -> Unit,
     onDoubleTap: (() -> Unit)?,

@@ -96,9 +96,23 @@ enum class FieldType(
         inputTransformation = ScoutInputTransformations.Name,
         keyboardType = KeyboardType.Text,
     ),
+    NUM_WHOLE(
+        inputTransformation = ScoutInputTransformations.Whole,
+        keyboardType = KeyboardType.Number,
+    ),
     NUM_DECIMAL(
         inputTransformation = ScoutInputTransformations.Decimal,
         outputTransformation = ScoutOutputTransformations.Decimal,
+        keyboardType = KeyboardType.Number,
+    ),
+    NUM_DECIMAL_OR_NA(
+        inputTransformation = ScoutInputTransformations.DecimalOrNA,
+        outputTransformation = ScoutOutputTransformations.DecimalOrNA,
+        keyboardType = KeyboardType.Number,
+    ),
+    NUM_PERCENT(
+        inputTransformation = ScoutInputTransformations.Percentage,
+        outputTransformation = ScoutOutputTransformations.Percentage,
         keyboardType = KeyboardType.Number,
     ),
     NUM_PHONE(
@@ -112,4 +126,6 @@ enum class FieldType(
     IMAGE,
     CARD_RADIO,
     DATE,
+
+    TEXT, // discouraged because this can lead to error-prone data
 }

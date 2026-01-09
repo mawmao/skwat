@@ -1,9 +1,12 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
+import android.R.attr.onClick
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,10 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.util.fastForEach
+import com.humayapp.scout.core.ui.component.ScoutIconButton
+import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -41,7 +47,11 @@ fun DefaultWizardEntry(key: WizardEntry) {
 }
 
 @Composable
-fun WizardEntry(key: WizardEntry, content: @Composable ColumnScope.(WizardEntry) -> Unit) {
+fun WizardEntry(
+    key: WizardEntry,
+    actions: (@Composable RowScope.() -> Unit)? = null,
+    content: @Composable ColumnScope.(WizardEntry) -> Unit
+) {
 
     val focusManager = LocalFocusManager.current
 
@@ -52,18 +62,26 @@ fun WizardEntry(key: WizardEntry, content: @Composable ColumnScope.(WizardEntry)
             .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } },
         verticalArrangement = Arrangement.Top,
     ) {
-        Column(
-            modifier = Modifier.padding(top = ScoutTheme.spacing.small),
-            verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.extraSmall)
-        )
-        {
-            Text(text = key.title, style = ScoutTheme.material.typography.headlineMedium)
-            Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
-            Text(
-                text = key.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.padding(top = ScoutTheme.spacing.small),
+                verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.extraSmall)
+            ) {
+                Text(text = key.title, style = ScoutTheme.material.typography.headlineMedium)
+                Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+                Text(
+                    text = key.description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            actions?.let {
+                it()
+            }
         }
         Spacer(Modifier.height(ScoutTheme.spacing.medium))
         content(key)

@@ -1,33 +1,13 @@
 package com.humayapp.scout.feature.form.impl.data.registry.nutrient
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.FertilizerApplicationPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardField
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
-import com.humayapp.scout.feature.form.impl.ui.components.WizardEntry
 
 sealed class NutrientManagement : WizardEntry() {
 
@@ -42,12 +22,12 @@ sealed class NutrientManagement : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any?>): WizardEntry? = FertilizerApplication
+        override fun nextScreen(answers: Map<String, Any?>) = FertilizerApplication
     }
 
     data object FertilizerApplication : NutrientManagement() {
         override val title = "Fertilizer Application"
-        override val description = "Description: TODO"
+        override val description = "Records fertilizer use"
         override val fields = emptyList<WizardField>()
     }
 
@@ -73,7 +53,64 @@ sealed class NutrientManagement : WizardEntry() {
             FertilizedArea, FertilizerApplication
         )
 
+        val mapper = NutrientManagementMapper
+
         const val APPLIED_AREA_KEY = "applied_area_sqm"
+
+
+        fun fertilizerApplicationFields(index: Int): List<WizardField> = listOf(
+            field(
+                key = "${FERTILIZER_TYPE_KEY}_$index",
+                label = "Fertilizer Type",
+                type = FieldType.DROPDOWN,
+                options = listOf("Organic", "Inorganic", "Compost", "Other"),
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${BRAND_KEY}_$index",
+                type = FieldType.NAME,
+                label = "Brand Name",
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${NITROGEN_CONTENT_KEY}_$index",
+                type = FieldType.NUM_PERCENT,
+                label = "N %",
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${PHOSPHORUS_CONTENT_KEY}_$index",
+                type = FieldType.NUM_PERCENT,
+                label = "P %",
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${POTASSIUM_CONTENT_KEY}_$index",
+                type = FieldType.NUM_PERCENT,
+                label = "K %",
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${AMOUNT_APPLIED_KEY}_$index",
+                type = FieldType.NUM_DECIMAL,
+                label = "Amount Applied",
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${AMOUNT_UNIT_KEY}_$index",
+                type = FieldType.DROPDOWN,
+                label = "Unit",
+                options = listOf("kg", "g"),
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = "${CROP_STAGE_ON_APPLICATION_KEY}_$index",
+                type = FieldType.DROPDOWN,
+                label = "Crop Stage on Application",
+                options = listOf("Pre-planting", "Vegetative", "Flowering", "Maturity"),
+                validator = Validators.nonEmpty
+            ),
+        )
 
         // fertilizer application fields (one or more)
         const val FERTILIZER_TYPE_KEY = "fertilizer_type"
@@ -87,107 +124,5 @@ sealed class NutrientManagement : WizardEntry() {
     }
 }
 
-@Composable
-fun rememberFertilizerApplications(): MutableList<NutrientManagement.Companion.FertilizerApplicationItem> {
-    return remember { mutableStateListOf() }
-}
 
 
-// has a button to add a fertilizer application entry
-// should be a lazy list where i can add 'fertilizer application'
-// each entry should be a card and can be clicked to open a dialog to see the details
-@Composable
-fun FertilizerApplicationPage(
-    page: NutrientManagement.FertilizerApplication,
-) {
-    val applications = rememberFertilizerApplications()
-    var selectedApplication by remember { mutableStateOf<NutrientManagement.Companion.FertilizerApplicationItem?>(null) }
-
-    WizardEntry(page) {
-        Column {
-            LazyColumn {
-                itemsIndexed(applications) { index, app ->
-                    FertilizerApplicationCard(
-                        application = app,
-                        onClick = { selectedApplication = app }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Add button
-            Button(onClick = {
-                applications.add(NutrientManagement.Companion.FertilizerApplicationItem())
-            }) {
-                Text("Add Fertilizer Application")
-            }
-        }
-
-        // Dialog for editing details
-        selectedApplication?.let { app ->
-            FertilizerApplicationDialog(
-                application = app,
-                onDismiss = { selectedApplication = null }
-            )
-        }
-    }
-}
-
-
-@Composable
-fun FertilizerApplicationCard(
-    application: NutrientManagement.Companion.FertilizerApplicationItem,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Fertilizer: ${application.fertilizerType}")
-            Text("Brand: ${application.brand}")
-            Text("Amount: ${application.amount} ${application.amountUnit}")
-        }
-    }
-}
-
-@Composable
-fun FertilizerApplicationDialog(
-    application: NutrientManagement.Companion.FertilizerApplicationItem,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.padding(16.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-
-                TextField(
-                    value = application.fertilizerType,
-                    onValueChange = { application.fertilizerType = it },
-                    label = { Text("Fertilizer Type") }
-                )
-
-                TextField(
-                    value = application.brand,
-                    onValueChange = { application.brand = it },
-                    label = { Text("Brand") }
-                )
-
-                TextField(
-                    value = application.nitrogen,
-                    onValueChange = { application.nitrogen = it },
-                    label = { Text("Nitrogen %") }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(onClick = onDismiss) {
-                    Text("Done")
-                }
-            }
-        }
-    }
-}

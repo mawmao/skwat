@@ -16,4 +16,6 @@ object ScoutIcons {
     val Image = R.drawable.image_24px
     val MobileCamera = R.drawable.mobile_camera_24px
     val LocationOn = R.drawable.location_on_24px
+    val Close = R.drawable.close_24px
+    val Inventory = R.drawable.inventory_24px
 }

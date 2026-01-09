@@ -1,14 +1,11 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
-import android.R.attr.enabled
-import android.R.attr.label
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,16 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.ui.component.ScoutCardRadioGroup
 import com.humayapp.scout.core.ui.component.ScoutDateField
 import com.humayapp.scout.core.ui.component.ScoutDropdownMenu
 import com.humayapp.scout.core.ui.component.ScoutTextField
-import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.feature.form.impl.LocalFormState
+import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.FieldType.CARD_RADIO
 import com.humayapp.scout.feature.form.impl.model.FieldType.DATE
 import com.humayapp.scout.feature.form.impl.model.FieldType.DROPDOWN
@@ -36,6 +31,8 @@ import com.humayapp.scout.feature.form.impl.model.FieldType.GPS
 import com.humayapp.scout.feature.form.impl.model.FieldType.NAME
 import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_DECIMAL
 import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_PHONE
+import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_PERCENT
+import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_WHOLE
 import com.humayapp.scout.feature.form.impl.model.WizardField
 
 @Composable
@@ -45,7 +42,7 @@ fun WizardField(
     value: () -> String,
     onValueChange: (String) -> Unit,
     dynamicOptions: List<String>? = null,
-    imeAction: ImeAction,
+    imeAction: ImeAction = ImeAction.Unspecified,
 ) {
 
     WizardFieldImpl(
@@ -110,7 +107,7 @@ fun WizardFieldImpl(
         }
 
     when (field.type) {
-        NAME, NUM_DECIMAL, NUM_PHONE -> {
+        NAME, NUM_WHOLE, NUM_DECIMAL, NUM_PHONE, NUM_PERCENT -> {
             ScoutTextField(
                 modifier = focusModifier,
                 value = currentValue,

@@ -121,7 +121,6 @@ fun NativeOutlinedTextField(
         )
         .then(if (isError) Modifier.semantics { error("Error") } else Modifier)
         .defaultMinSize(
-            minWidth = 280.dp,
             minHeight = 56.dp,
         )
 

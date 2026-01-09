@@ -15,6 +15,21 @@ object ScoutOutputTransformations {
         }
     }
 
+    val DecimalOrNA = OutputTransformation {
+        val text = asCharSequence().toString()
+
+        if (text.equals("N/A", ignoreCase = true)) {
+            if (text != "N/A") {
+                replace(0, length, "N/A")
+            }
+            return@OutputTransformation
+        }
+
+        if (text.isNotEmpty() && text.first() == '.') {
+            insert(0, "0")
+        }
+    }
+
     val Percentage = OutputTransformation {
         val text = asCharSequence().toString()
         if (text.isEmpty()) return@OutputTransformation

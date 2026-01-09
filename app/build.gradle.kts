@@ -131,10 +131,16 @@ dependencies {
 
     implementation(libs.coil.compose)
 
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.work.runtime)
+
+    implementation(libs.hilt.work)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     ksp(libs.kotlin.metadata.jvm)
     ksp(libs.hilt.android.compiler)
+    ksp(libs.hilt.compiler)
+
 
     implementation(libs.supabase.ktor.client.okhttp)
     implementation(platform(libs.supabase.bom))

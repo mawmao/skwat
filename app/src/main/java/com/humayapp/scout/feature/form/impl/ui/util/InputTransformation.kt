@@ -21,25 +21,21 @@ object ScoutInputTransformations {
 
         if (len == 0) return@InputTransformation
 
-        // 1. Reject first char if whitespace
         if (len == 1 && text[0].isWhitespace()) {
             revertAllChanges()
             return@InputTransformation
         }
 
-        // 2. Reject invalid characters or too long
         if (len > 50 || text.any { !(it.isLetter() || it.isWhitespace() || it == '-' || it == '\'') }) {
             revertAllChanges()
             return@InputTransformation
         }
 
-        // 3. Reject double spaces
         if (len >= 2 && text[len - 1].isWhitespace() && text[len - 2].isWhitespace()) {
             revertAllChanges()
             return@InputTransformation
         }
 
-        // 4. Auto-capitalize first letter or after space
         val lastCharIndex = len - 1
         val lastChar = text[lastCharIndex]
         val prevCharIsSpace = lastCharIndex == 0 || text[lastCharIndex - 1].isWhitespace()
@@ -98,6 +94,29 @@ object ScoutInputTransformations {
         }
 
         if (currentText.length > 1 && currentText[0] == '0' && currentText[1].isDigit()) {
+            revertAllChanges()
+            return@InputTransformation
+        }
+    }
+
+    val DecimalOrNA = InputTransformation {
+        val text = asCharSequence().toString()
+
+        if (text.isEmpty()) return@InputTransformation
+
+        if (text.equals("N/A", ignoreCase = true)) {
+            if (text != "N/A") {
+                replace(0, length, "N/A")
+            }
+            return@InputTransformation
+        }
+
+        if (!text.all { it.isDigit() || it == '.' } || text.count { it == '.' } > 1) {
+            revertAllChanges()
+            return@InputTransformation
+        }
+
+        if (text.length > 1 && text[0] == '0' && text[1].isDigit()) {
             revertAllChanges()
             return@InputTransformation
         }

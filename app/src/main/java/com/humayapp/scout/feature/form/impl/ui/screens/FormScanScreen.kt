@@ -19,7 +19,7 @@ fun FormScanScreen() {
     Screen {
         Text("Form Scan Screen - ${state.formType.id}")
         ScoutButton(text = "Simulate Scan") {
-            state.mfid = "0601001"
+            state.mfid = "600401001"
             formsNavigator.navigateToFormConfirm()
         }
     }

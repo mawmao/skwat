@@ -16,6 +16,7 @@ import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.ValidationResult
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
+import com.humayapp.scout.feature.form.impl.model.WizardField
 import java.time.LocalDate
 
 val LocalFormState = staticCompositionLocalOf<FormState> {
@@ -29,7 +30,7 @@ fun rememberFormState(formType: FormType): FormState {
 
     return remember(formType) {
         FormState(
-            initialWizardEntry = formType.startEntry ?: error("no wizard entry provided"),
+            initialWizardEntry = formType.startEntry,
             entries = formType.entries,
             formType = formType,
             pagerState = pagerState
@@ -126,6 +127,22 @@ class FormState(
 
             is ValidationResult.Invalid -> {
                 errors[key] = r.message
+                false
+            }
+        }
+    }
+
+    fun validateField(field: WizardField): Boolean {
+        val value = answers[field.key] as? String ?: ""
+        val validator = field.validator ?: Validators.nonEmpty
+        return when (val r = validator(value)) {
+            ValidationResult.Valid -> {
+                errors[field.key] = null
+                true
+            }
+
+            is ValidationResult.Invalid -> {
+                errors[field.key] = r.message
                 false
             }
         }
