@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.form.impl.data.registry.cultural
 
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
+import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.overrides.RiceVarietyInformationPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
@@ -9,6 +10,7 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.JsonObject
 
 sealed class CulturalManagement : WizardEntry() {
 
@@ -311,6 +313,7 @@ sealed class CulturalManagement : WizardEntry() {
     }
 
     companion object {
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
 
         val pageOverrides: WizardPageOverrides = mapOf(
             RiceVarietyInformation to { page -> RiceVarietyInformationPage(page as RiceVarietyInformation) }

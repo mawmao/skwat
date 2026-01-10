@@ -38,7 +38,6 @@ import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.InputFieldTokens
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.core.ui.theme.ScoutTypography
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)

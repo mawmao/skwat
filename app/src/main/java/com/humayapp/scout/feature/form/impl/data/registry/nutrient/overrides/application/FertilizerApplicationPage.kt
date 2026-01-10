@@ -1,4 +1,4 @@
-package com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides
+package com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application
 
 import android.util.Log
 import androidx.compose.foundation.border
@@ -22,13 +22,8 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +33,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,39 +43,17 @@ import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement
-import com.humayapp.scout.feature.form.impl.model.WizardField
+import com.humayapp.scout.feature.form.impl.ui.components.DefaultWizardField
 import com.humayapp.scout.feature.form.impl.ui.components.WizardEntry
-import com.humayapp.scout.feature.form.impl.ui.components.WizardField
 import kotlinx.coroutines.launch
 
-// This would show an empty bottom sheet whenever the plus icon is clicked,
-// If a `FertilizerApplicationCard` is clicked, it should show the filled bottom sheet depending on the entry
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FertilizerApplicationPage(
-    page: NutrientManagement.FertilizerApplication,
-) {
-    val applications = remember { mutableStateListOf<Int>() }
-    var nextIndex by remember { mutableIntStateOf(1) }
-    var selectedIndex by remember { mutableStateOf<Int?>(null) }
+fun FertilizerApplicationPage(page: NutrientManagement.FertilizerApplication) {
 
-    val state = LocalFormState.current
-
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-        confirmValueChange = { it != SheetValue.PartiallyExpanded }
-    )
-    val scope = rememberCoroutineScope()
-    var showBottomSheet by remember { mutableStateOf(false) }
-
-    fun closeSheet() {
-        scope.launch { sheetState.hide() }.invokeOnCompletion {
-            if (!sheetState.isVisible) {
-                showBottomSheet = false
-            }
-        }
-    }
+    val formState = LocalFormState.current
+    val state = rememberFertilizerApplicationState(formState.answers.keys)
 
     WizardEntry(
         key = page,
@@ -90,49 +62,77 @@ fun FertilizerApplicationPage(
                 iconSize = 28.dp,
                 icon = ScoutIcons.Plus,
                 onClick = {
-                    selectedIndex = nextIndex
-                    showBottomSheet = true
+                    state.addNewApplication()
                 },
                 contentDescription = null
             )
         }
     ) { entry ->
-        Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (applications.isEmpty()) {
-                    item {
-                        EmptyApplicationPlaceholder()
-                    }
-                } else {
-                    items(applications) { index ->
-                        FertilizerApplicationCard(
-                            index = index,
-                            onClick = {
-                                selectedIndex = index
-                                showBottomSheet = true
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-        }
+        FertilizerApplicationList(
+            applications = state.applications,
+            onSelect = state::selectApplication
+        )
     }
 
-    if (showBottomSheet) {
+    FertilizerApplicationBottomSheet(page = page, state = state)
+}
+
+@Composable
+fun FertilizerApplicationList(
+    applications: List<Int>,
+    onSelect: (Int) -> Unit,
+) {
+    Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
+    Column(modifier = Modifier.fillMaxSize()) {
+        Spacer(Modifier.height(8.dp))
+
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (applications.isEmpty()) {
+                item {
+                    EmptyApplicationPlaceholder()
+                }
+            } else {
+                items(applications) { index ->
+                    FertilizerApplicationCard(index = index, onClick = { onSelect(index) })
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FertilizerApplicationBottomSheet(
+    page: NutrientManagement.FertilizerApplication,
+    state: FertilizerApplicationState,
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.PartiallyExpanded }
+    )
+    val formState = LocalFormState.current
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(state.showBottomSheet) {
+        if (state.showBottomSheet) scope.launch { sheetState.show() }
+        else scope.launch { sheetState.hide() }
+    }
+
+    if (state.showBottomSheet) {
         ModalBottomSheet(
             modifier = Modifier
                 .fillMaxHeight()
                 .padding(top = 124.dp),
-            onDismissRequest = { showBottomSheet = false },
+            onDismissRequest = {
+                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                    state.hideBottomSheet()
+                }
+            },
             dragHandle = {},
             sheetState = sheetState
         ) {
@@ -145,33 +145,27 @@ fun FertilizerApplicationPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (applications.contains(selectedIndex)) "Edit Application" else "New Application",
+                        text = if (state.isEditMode) "Edit Application" else "New Application",
                         style = ScoutTheme.material.typography.headlineSmall,
                         color = ScoutTheme.material.colorScheme.onBackground
                     )
                     ScoutIconButton(
                         icon = ScoutIcons.Close,
                         contentDescription = null,
-                        onClick = { closeSheet() }
+                        onClick = {
+                            scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                state.hideBottomSheet()
+                            }
+                        }
                     )
                 }
 
-                selectedIndex?.let { currentIndex ->
-                    val allFields = NutrientManagement.fertilizerApplicationFields(currentIndex)
+                state.selectedIndex?.let { currentIndex ->
+                    val allFields = page.indexedFields(currentIndex)
 
-                    @Composable
-                    fun BoundWizardField(field: WizardField, modifier: Modifier = Modifier) {
-                        WizardField(
-                            modifier = modifier,
-                            field = field,
-                            value = { state.getAnswer(field.key) },
-                            onValueChange = { v -> state.setAnswer(field.key, v) },
-                        )
-                        Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
-                    }
 
                     allFields.take(2).forEach { field ->
-                        BoundWizardField(field, Modifier.fillMaxWidth())
+                        DefaultWizardField(field, Modifier.fillMaxWidth())
                     }
 
                     Row(
@@ -180,7 +174,7 @@ fun FertilizerApplicationPage(
                     ) {
                         allFields.subList(2, 5).forEach { field ->
                             Box(modifier = Modifier.weight(1f)) {
-                                BoundWizardField(
+                                DefaultWizardField(
                                     field = field,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -197,14 +191,14 @@ fun FertilizerApplicationPage(
                         val unitField = allFields[6]
 
                         Box(modifier = Modifier.weight(0.7f)) {
-                            BoundWizardField(
+                            DefaultWizardField(
                                 field = amountField,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
 
                         Box(modifier = Modifier.weight(0.3f)) {
-                            BoundWizardField(
+                            DefaultWizardField(
                                 field = unitField,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -214,31 +208,33 @@ fun FertilizerApplicationPage(
 
 
                     allFields.lastOrNull()?.let { field ->
-                        BoundWizardField(field, Modifier.fillMaxWidth())
+                        DefaultWizardField(field, Modifier.fillMaxWidth())
                     }
                 }
 
                 Spacer(Modifier.weight(1f))
                 ScoutButton(
                     modifier = Modifier.fillMaxWidth(),
-                    text = if (applications.contains(selectedIndex)) "Save Changes" else "Add Application",
+                    text = if (state.isEditMode) "Save Changes" else "Add Application",
                     onClick = {
-                        selectedIndex?.let { currentIndex ->
+                        state.selectedIndex?.let { currentIndex ->
 
-                            val currentFields = NutrientManagement.fertilizerApplicationFields(currentIndex)
+                            val currentFields = page.indexedFields(currentIndex)
 
                             var allOk = true
                             currentFields.fastForEach { field ->
-                                val ok = state.validateField(field)
+                                val ok = formState.validateField(field)
                                 if (!ok) allOk = false
                             }
 
                             if (allOk) {
-                                if (!applications.contains(currentIndex)) {
-                                    applications.add(currentIndex)
-                                    nextIndex++
+                                if (!state.applications.contains(currentIndex)) {
+                                    state.applications.add(currentIndex)
+                                    state.nextIndex++
                                 }
-                                closeSheet()
+                                scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                    state.hideBottomSheet()
+                                }
                             } else {
                                 Log.d("Scout: Validation", "Validation failed for index $currentIndex")
                             }
@@ -250,7 +246,7 @@ fun FertilizerApplicationPage(
     }
 }
 
-
+// to be improved
 @Composable
 fun FertilizerApplicationCard(index: Int, onClick: () -> Unit) {
 
@@ -264,6 +260,7 @@ fun FertilizerApplicationCard(index: Int, onClick: () -> Unit) {
             .clickable { onClick() }
             .border(1.dp, ScoutTheme.material.colorScheme.onSurfaceVariant, ScoutTheme.shapes.cornerMedium),
     ) {
+
         val type = state.getAnswer("${NutrientManagement.FERTILIZER_TYPE_KEY}_$index")
         val brand = state.getAnswer("${NutrientManagement.BRAND_KEY}_$index")
         val amount = state.getAnswer("${NutrientManagement.AMOUNT_APPLIED_KEY}_$index")
@@ -308,11 +305,11 @@ fun FertilizerApplicationCard(index: Int, onClick: () -> Unit) {
     }
 }
 
+// to be improved
 @Composable
 fun EmptyApplicationPlaceholder() {
     val strokeColor = ScoutTheme.material.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
     val strokeWidth = 2.dp
-    val density = LocalDensity.current
 
     Box(
         modifier = Modifier

@@ -1,6 +1,5 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
-import android.R.attr.onClick
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,8 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.util.fastForEach
-import com.humayapp.scout.core.ui.component.ScoutIconButton
-import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.model.WizardEntry

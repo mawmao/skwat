@@ -5,7 +5,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,8 +23,8 @@ import com.humayapp.scout.core.ui.component.ScoutCardRadioGroup
 import com.humayapp.scout.core.ui.component.ScoutDateField
 import com.humayapp.scout.core.ui.component.ScoutDropdownMenu
 import com.humayapp.scout.core.ui.component.ScoutTextField
+import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
-import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.FieldType.CARD_RADIO
 import com.humayapp.scout.feature.form.impl.model.FieldType.DATE
 import com.humayapp.scout.feature.form.impl.model.FieldType.DROPDOWN
@@ -30,10 +32,11 @@ import com.humayapp.scout.feature.form.impl.model.FieldType.DROPDOWN_SEARCHABLE
 import com.humayapp.scout.feature.form.impl.model.FieldType.GPS
 import com.humayapp.scout.feature.form.impl.model.FieldType.NAME
 import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_DECIMAL
-import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_PHONE
 import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_PERCENT
+import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_PHONE
 import com.humayapp.scout.feature.form.impl.model.FieldType.NUM_WHOLE
 import com.humayapp.scout.feature.form.impl.model.WizardField
+
 
 @Composable
 fun WizardField(
@@ -191,3 +194,17 @@ fun WizardFieldImpl(
     }
 }
 
+
+// convenience composable
+// should only be used on form flow
+@Composable
+fun DefaultWizardField(field: WizardField, modifier: Modifier = Modifier) {
+    val state = LocalFormState.current
+    WizardField(
+        modifier = modifier,
+        field = field,
+        value = { state.getAnswer(field.key) },
+        onValueChange = { v -> state.setAnswer(field.key, v) },
+    )
+    Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
+}

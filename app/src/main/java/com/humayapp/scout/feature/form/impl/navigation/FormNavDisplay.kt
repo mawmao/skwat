@@ -18,10 +18,10 @@ import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.ui.components.FormSectionTopAppBar
 import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.FormReviewScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.FormReviewViewModel
 import com.humayapp.scout.feature.form.impl.ui.screens.FormScanScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardScreen
+import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewScreen
+import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewViewModel
 
 
 @Composable

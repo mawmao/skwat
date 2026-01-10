@@ -1,13 +1,28 @@
 package com.humayapp.scout.feature.form.impl.data.registry.nutrient
 
+import androidx.compose.runtime.Composable
+import com.humayapp.scout.feature.form.impl.FormDialogState
+import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
-import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.FertilizerApplicationPage
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application.FertilizerApplicationPage
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.review.NutrientManagementReviewContent
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardField
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+
+data class FormReviewRule(
+    val alertTitle: String = "",
+    val alertDescription: String = "",
+    val rule: (state: FormState) -> Unit,
+)
 
 sealed class NutrientManagement : WizardEntry() {
 
@@ -29,36 +44,30 @@ sealed class NutrientManagement : WizardEntry() {
         override val title = "Fertilizer Application"
         override val description = "Records fertilizer use"
         override val fields = emptyList<WizardField>()
-    }
 
-    companion object {
+        override val reviewRule: (FormState) -> Boolean = { state ->
+            // only checked one since you can't even add a single key without the other keys
+            val hasApplication = state.answers.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
+            if (!hasApplication) {
+                state.setDialog(
+                    FormDialogState(
+                        title = "Missing Application",
+                        message = "You need to add at least one fertilizer application before proceeding."
+                    )
+                )
+            }
 
-        data class FertilizerApplicationItem(
-            var fertilizerType: String = "",
-            var brand: String = "",
-            var nitrogen: String = "",
-            var phosphorus: String = "",
-            var potassium: String = "",
-            var amount: String = "",
-            var amountUnit: String = "",
-            var cropStage: String = ""
-        )
+            hasApplication
+        }
 
-        val pageOverrides: WizardPageOverrides = mapOf(
-            FertilizerApplication to { page -> FertilizerApplicationPage(page as FertilizerApplication) }
-        )
+        fun indexCount(answers: Map<String, Any?>): Int {
+            return answers.keys
+                .mapNotNull { "_(\\d+)$".toRegex().find(it)?.groupValues?.get(1)?.toInt() }
+                .distinct()
+                .count()
+        }
 
-        val startEntry = FertilizedArea
-        val entries = listOf(
-            FertilizedArea, FertilizerApplication
-        )
-
-        val mapper = NutrientManagementMapper
-
-        const val APPLIED_AREA_KEY = "applied_area_sqm"
-
-
-        fun fertilizerApplicationFields(index: Int): List<WizardField> = listOf(
+        fun indexedFields(index: Int): List<WizardField> = listOf(
             field(
                 key = "${FERTILIZER_TYPE_KEY}_$index",
                 label = "Fertilizer Type",
@@ -111,8 +120,22 @@ sealed class NutrientManagement : WizardEntry() {
                 validator = Validators.nonEmpty
             ),
         )
+    }
 
-        // fertilizer application fields (one or more)
+    companion object {
+
+        val pageOverrides: WizardPageOverrides = mapOf(
+            FertilizerApplication to { page -> FertilizerApplicationPage(page as FertilizerApplication) }
+        )
+
+        val startEntry = FertilizedArea
+        val entries = listOf(FertilizedArea, FertilizerApplication)
+        val mapper = NutrientManagementMapper
+        val reviewContent: @Composable ((FormState) -> Unit) = { state -> NutrientManagementReviewContent(state) }
+
+        fun serialize(answers: Map<String, Any?>): JsonObject = serializeImpl(answers)
+
+        const val APPLIED_AREA_KEY = "applied_area_sqm"
         const val FERTILIZER_TYPE_KEY = "fertilizer_type"
         const val BRAND_KEY = "brand"
         const val NITROGEN_CONTENT_KEY = "nitrogen_content_pct"
@@ -124,5 +147,35 @@ sealed class NutrientManagement : WizardEntry() {
     }
 }
 
+
+private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
+    val appliedArea = answers["applied_area_sqm"]
+
+    val indices = answers.keys
+        .mapNotNull { "_(\\d+)$".toRegex().find(it)?.groupValues?.get(1)?.toInt() }
+        .distinct()
+        .sorted()
+
+    val fertilizerApplications = indices.map { index ->
+        val fields = answers
+            .filterKeys { it.endsWith("_$index") }
+            .mapKeys { it.key.removeSuffix("_$index") }
+            .mapValues { (_, value) ->
+                when (value) {
+                    is Number -> JsonPrimitive(value)
+                    is Boolean -> JsonPrimitive(value)
+                    is String -> JsonPrimitive(value)
+                    null -> JsonNull
+                    else -> JsonPrimitive(value.toString())
+                }
+            }
+        JsonObject(fields)
+    }
+
+    return buildJsonObject {
+        put("applied_area_sqm", appliedArea?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+        put("fertilizer_application", JsonArray(fertilizerApplications))
+    }
+}
 
 

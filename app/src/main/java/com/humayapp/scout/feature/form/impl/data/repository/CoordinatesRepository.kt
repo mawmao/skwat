@@ -20,6 +20,15 @@ typealias Coordinates = Pair<Double, Double> // longitude, latitude
 fun emptyCoordinates(): Coordinates = Coordinates(0.0, 0.0)
 fun defaultGeom(): String = "POINT(0 0)"
 fun Coordinates.toDisplay(): String = "${this.first}, ${this.second}"
+
+// should only be called on strings that is transformed to `toDisplay`
+fun String.toGeometry(): String {
+    val parts = this.split(",").map { it.trim() }
+    val x = parts[0].toDouble()
+    val y = parts[1].toDouble()
+    return "POINT($x $y)"
+}
+
 fun Coordinates.asGeometry(): String = "POINT(${this.first} ${this.second})"
 fun Coordinates.isNotZero(): Boolean = this.first != 0.0 && this.second != 0.0
 

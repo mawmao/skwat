@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.humayapp.scout.core.ui.theme.InputFieldTokens
-import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.animateBorderStrokeAsState
 
 // modified version of Material3's OutlinedTextField

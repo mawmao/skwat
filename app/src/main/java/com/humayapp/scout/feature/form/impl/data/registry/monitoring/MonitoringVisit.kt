@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.form.impl.data.registry.monitoring
 
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
+import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
@@ -10,6 +11,7 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.JsonObject
 
 sealed class MonitoringVisit : WizardEntry() {
 
@@ -55,6 +57,8 @@ sealed class MonitoringVisit : WizardEntry() {
     }
 
     companion object {
+
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
 
         val pageOverrides: WizardPageOverrides = mapOf(
             Conditions to { page -> ConditionPage(page as Conditions) }

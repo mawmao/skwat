@@ -1,6 +1,5 @@
 package com.humayapp.scout.feature.form.impl.data.mapper
 
-import android.R.attr.order
 import android.util.Log
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
@@ -18,7 +17,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import java.time.OffsetDateTime
-import kotlin.collections.emptyList
 
 @Serializable
 abstract class FormMapper {

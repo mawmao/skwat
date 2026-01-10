@@ -49,14 +49,7 @@ fun ConditionPage(page: MonitoringVisit.Conditions) {
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
                         visible = cropStage != "Not Yet Planted" && formState.hasAnswer(CROP_STAGE_KEY),
-                        value = {
-                            if (cropStage == "Not Yet Planted") {
-                                formState.setAnswer(field.key, "N/A")
-                                formState.getAnswer(field.key)
-                            } else {
-                                formState.getAnswer(field.key)
-                            }
-                        },
+                        value = { formState.getAnswer(field.key) },
                         onValueChange = { formState.setAnswer(field.key, it) },
                         imeAction = ImeAction.Done,
                     )

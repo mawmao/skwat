@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.ui.util.ScoutInputTransformations
 import com.humayapp.scout.feature.form.impl.ui.util.ScoutOutputTransformations
 import java.time.LocalDate
@@ -29,6 +30,7 @@ abstract class WizardEntry {
     abstract val description: String
     abstract val fields: List<WizardField>
 
+    open val reviewRule: (FormState) -> Boolean = { true }
     open fun nextScreen(answers: Map<String, Any?>): WizardEntry? = null
 }
 

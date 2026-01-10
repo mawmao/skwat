@@ -2,11 +2,13 @@ package com.humayapp.scout.feature.form.impl.data.registry.damage
 
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
+import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.JsonObject
 
 sealed class DamageAssessment : WizardEntry() {
 
@@ -71,6 +73,8 @@ sealed class DamageAssessment : WizardEntry() {
     }
 
     companion object {
+
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
 
         val startEntry = CropStageAndSoilType
         val entries = listOf(CropStageAndSoilType, CauseOfDamage, DamageImpact)

@@ -2,15 +2,19 @@ package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
 
 import androidx.compose.ui.text.input.ImeAction
+import com.humayapp.scout.core.network.util.asJson
+import com.humayapp.scout.core.network.util.transformField
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper.FieldDataMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.repository.toGeometry
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 sealed class FieldData : WizardEntry() {
 
@@ -176,6 +180,18 @@ sealed class FieldData : WizardEntry() {
     }
 
     companion object {
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
+            rules = listOf(
+                transformField(GENDER_KEY) {
+                    when (it) {
+                        "Male" -> "male"
+                        "Female" -> "female"
+                        else -> it
+                    }
+                },
+                transformField(COORDINATES_KEY) { it.toGeometry() }
+            )
+        )
 
         val pageOverrides: WizardPageOverrides = mapOf(
             FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
@@ -188,6 +204,8 @@ sealed class FieldData : WizardEntry() {
             FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
             FieldCondition, FieldLocation, GpsCoordinates, Images,
         )
+
+        val mapper = FieldDataMapper
 
         const val FIRST_NAME_KEY = "first_name"
         const val LAST_NAME_KEY = "last_name"

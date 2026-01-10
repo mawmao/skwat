@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.model.FieldType
@@ -38,6 +39,11 @@ fun rememberFormState(formType: FormType): FormState {
     }
 }
 
+data class FormDialogState(
+    val title: String = "",
+    val message: String = "",
+)
+
 @Stable
 class FormState(
     initialWizardEntry: WizardEntry,
@@ -60,6 +66,8 @@ class FormState(
                 _answers[field.key] = LocalDate.now().toString()
             }
     }
+
+    var dialogState by mutableStateOf<FormDialogState?>(null)
 
     val errors = mutableStateMapOf<String, String?>()
 
@@ -148,7 +156,6 @@ class FormState(
         }
     }
 
-
     fun validatePage(entry: WizardEntry): Boolean {
         var allOk = true
         entry.fields.forEach { field ->
@@ -156,6 +163,14 @@ class FormState(
             if (!ok) allOk = false
         }
         return allOk
+    }
+
+    fun setDialog(state: FormDialogState) {
+        dialogState = state
+    }
+
+    fun clearDialog() {
+        dialogState = null
     }
 
     private fun validatePageSilent(entry: WizardEntry): Boolean {

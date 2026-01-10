@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.ui.component.ScoutButton
+import com.humayapp.scout.core.ui.component.ScoutErrorDialog
 import com.humayapp.scout.core.ui.component.ScoutOutlinedButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.api.navigation.navigateToFormReview
 import com.humayapp.scout.feature.form.impl.LocalFormState
-import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData.Companion.pageOverrides
 import com.humayapp.scout.feature.form.impl.ui.components.DefaultWizardEntry
 import com.humayapp.scout.feature.form.impl.ui.components.WizardProgressBar
 
@@ -30,6 +30,15 @@ fun FormWizardScreen() {
     val formState = LocalFormState.current
 
     val maxWidthModifier = Modifier.fillMaxWidth()
+
+
+    formState.dialogState?.let {
+        ScoutErrorDialog(
+            title = it.title,
+            message = it.message,
+            onDismissRequest = { formState.clearDialog() },
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -51,12 +60,13 @@ fun FormWizardScreen() {
                 modifier = maxWidthModifier,
                 text = if (formState.hasNextScreen) "Next Page" else "Review",
                 onClick = {
-                    if (formState.hasNextScreen) {
-                        if (formState.validatePage(formState.currentScreen)) {
-                            formState.scrollWizardNext()
-                        }
-                    } else {
-                        formNavigator.navigateToFormReview()
+                    val current = formState.currentScreen
+
+                    val allowed = current.reviewRule.invoke(formState)
+
+                    if (allowed) {
+                        if (formState.hasNextScreen) formState.scrollWizardNext()
+                        else formNavigator.navigateToFormReview()
                     }
                 }
             )

@@ -1,12 +1,9 @@
 package com.humayapp.scout.feature.form.impl.data.registry.production
 
-import androidx.compose.foundation.layout.Spacer
-import androidx.navigation.NavGraphBuilder
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
+import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
-import com.humayapp.scout.feature.form.impl.data.registry.production.Production.Companion.AVG_BAG_WEIGHT_KEY
-import com.humayapp.scout.feature.form.impl.data.registry.production.Production.Companion.BAGS_HARVESTED_KEY
 import com.humayapp.scout.feature.form.impl.data.registry.production.overrides.HarvestYieldPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -14,6 +11,7 @@ import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 sealed class Production : WizardEntry() {
 
@@ -80,6 +78,7 @@ sealed class Production : WizardEntry() {
     }
 
     companion object {
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
 
         val pageOverrides: WizardPageOverrides = mapOf(
             HarvestYield to { page -> HarvestYieldPage(page as HarvestYield) }
