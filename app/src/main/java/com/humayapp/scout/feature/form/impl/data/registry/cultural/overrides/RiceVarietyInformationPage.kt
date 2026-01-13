@@ -28,30 +28,30 @@ fun RiceVarietyInformationPage(page: CulturalManagement.RiceVarietyInformation) 
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
-                        value = { formState.getAnswer(field.key) },
+                        value = { formState.getFieldData(field.key) },
                         onValueChange = {
-                            formState.setAnswer(field.key, it)
-                            formState.removeAnswer(RICE_VARIETY_NO_KEY)
+                            formState.setFieldData(field.key, it)
+                            formState.clearFieldData(RICE_VARIETY_NO_KEY)
                         },
                         imeAction = ImeAction.Next,
                     )
                 }
 
                 RICE_VARIETY_NO_KEY -> {
-                    val riceVariety = formState.getAnswer(RICE_VARIETY_KEY)
+                    val riceVariety = formState.getFieldData(RICE_VARIETY_KEY)
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         visible = riceVariety != "Other" && riceVariety.isNotEmpty(),
                         field = field,
                         value = {
                             if (riceVariety == "Other") {
-                                formState.setAnswer(field.key, "N/A")
-                                formState.getAnswer(field.key)
+                                formState.setFieldData(field.key, "N/A")
+                                formState.getFieldData(field.key)
                             } else {
-                                formState.getAnswer(field.key)
+                                formState.getFieldData(field.key)
                             }
                         },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         imeAction = ImeAction.Next
                     )
                 }
@@ -59,8 +59,8 @@ fun RiceVarietyInformationPage(page: CulturalManagement.RiceVarietyInformation) 
                 RICE_VARIETY_MATURITY_DURATION_KEY -> {
                     WizardField(
                         field = field,
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         modifier = Modifier.fillMaxWidth(),
                         imeAction = field.imeAction
                     )

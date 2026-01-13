@@ -18,4 +18,7 @@ object ScoutIcons {
     val LocationOn = R.drawable.location_on_24px
     val Close = R.drawable.close_24px
     val Inventory = R.drawable.inventory_24px
+    val DataArray = R.drawable.data_array_24px
+    val Sort = R.drawable.sort_24px
+    val Back = R.drawable.arrow_back_24px
 }

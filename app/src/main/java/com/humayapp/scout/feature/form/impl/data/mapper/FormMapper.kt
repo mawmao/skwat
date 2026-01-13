@@ -1,6 +1,6 @@
 package com.humayapp.scout.feature.form.impl.data.mapper
 
-import android.util.Log
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.encodeFieldActivities
@@ -16,7 +16,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
-import java.time.OffsetDateTime
 
 @Serializable
 abstract class FormMapper {
@@ -56,20 +55,17 @@ abstract class FormMapper {
     ): JsonElement {
         return withContext(Dispatchers.IO) {
 
-            Log.v(LOG_TAG, "Fetching field ID for MFID ${entry.mfid}")
             val fieldId = client.getSingleId("fields") { filter { eq("mfid", entry.mfid) } }
-
-            Log.v(LOG_TAG, "Fetching current season's ID")
             val seasonId = client.getSingleId("seasons") { order("id", Order.DESCENDING) }
 
-            val fieldActivitiesJson =  Json.encodeFieldActivities(
+            val fieldActivitiesJson = Json.encodeFieldActivities(
                 fieldId = fieldId,
                 seasonId = seasonId,
                 activityType = entry.activityType,
                 collectedBy = entry.collectedBy,
                 collectedAt = entry.collectedAt,
-                imageUrls = emptyList(),
-                syncedAt = OffsetDateTime.now().toString()
+                imageUrls = entry.imageUrls ,
+                syncedAt = entry.syncedAt ?: unreachable("synced at is non-null at this point") // at `FormSyncWorker`
             )
 
             return@withContext fieldActivitiesJson

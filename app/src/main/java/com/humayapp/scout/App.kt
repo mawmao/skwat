@@ -15,6 +15,7 @@ import com.humayapp.scout.core.sandbox
 import com.humayapp.scout.feature.auth.navigation.authSection
 import com.humayapp.scout.feature.form.impl.navigation.formSection
 import com.humayapp.scout.feature.main.navigation.mainSection
+import com.humayapp.scout.navigation.RootNavKey
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -57,6 +58,8 @@ fun ScoutApp(state: ScoutAppState) {
             authSection(metadata = NavTransition.anchoredTop())
             mainSection(metadata = NavTransition.anchoredBottom())
             formSection(metadata = NavTransition.anchoredRight())
+
+            entry<RootNavKey.Detail>(metadata = NavTransition.anchoredRight()) { it.content() }
 
             // development only
             sandbox()

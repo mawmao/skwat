@@ -33,8 +33,8 @@ fun DefaultWizardEntry(key: WizardEntry) {
         page.fields.fastForEach { field ->
             WizardField(
                 field = field,
-                value = { state.getAnswer(field.key) },
-                onValueChange = { state.setAnswer(field.key, it) },
+                value = { state.getFieldData(field.key) },
+                onValueChange = { state.setFieldData(field.key, it) },
                 modifier = Modifier.fillMaxWidth(),
                 imeAction = field.imeAction
             )

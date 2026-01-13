@@ -12,7 +12,7 @@ import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManag
 import com.humayapp.scout.feature.form.impl.data.registry.production.Production
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
-import com.humayapp.scout.feature.form.impl.ui.components.FormReviewDefaultContent
+import com.humayapp.scout.feature.form.impl.ui.components.FormDetailsContent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -26,7 +26,7 @@ enum class FormType(
         override val entries = FieldData.entries
         override val mapper = FieldData.mapper
         override val overrides = FieldData.pageOverrides
-        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormReviewDefaultContent(state) }
+        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormDetailsContent(state) }
 
         override fun serializeAnswers(answers: Map<String, Any?>) = FieldData.serialize(answers)
     },
@@ -37,13 +37,11 @@ enum class FormType(
         override val mapper = CulturalManagement.mapper
         override val overrides = CulturalManagement.pageOverrides
 
-        // to be reviewed (transplanted vs direct seeded)
-        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormReviewDefaultContent(state) }
-
+        override val reviewContent: @Composable ((FormState) -> Unit) = { state ->
+            CulturalManagement.reviewContent(state)
+        }
 
         override fun serializeAnswers(answers: Map<String, Any?>) = CulturalManagement.serialize(answers)
-
-
     },
 
     NUTRIENT_MANAGEMENT(label = "Fertilization", description = "Fertilizer & soil data") {
@@ -63,7 +61,7 @@ enum class FormType(
         override val entries = Production.entries
         override val mapper = Production.mapper
         override val overrides = Production.pageOverrides
-        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormReviewDefaultContent(state) }
+        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormDetailsContent(state) }
 
         override fun serializeAnswers(answers: Map<String, Any?>) = Production.serialize(answers)
     },
@@ -73,7 +71,7 @@ enum class FormType(
         override val entries = MonitoringVisit.entries
         override val overrides = MonitoringVisit.pageOverrides
         override val mapper = MonitoringVisit.mapper
-        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormReviewDefaultContent(state) }
+        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormDetailsContent(state) }
 
         override fun serializeAnswers(answers: Map<String, Any?>) = MonitoringVisit.serialize(answers)
     },
@@ -83,7 +81,7 @@ enum class FormType(
         override val entries = DamageAssessment.entries
         override val mapper = DamageAssessment.mapper
         override val overrides = null
-        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormReviewDefaultContent(state) }
+        override val reviewContent: @Composable ((FormState) -> Unit) = { state -> FormDetailsContent(state) }
 
         override fun serializeAnswers(answers: Map<String, Any?>) = DamageAssessment.serialize(answers)
     };

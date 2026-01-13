@@ -20,6 +20,7 @@ fun ScoutLabel(
     isFocused: Boolean = false,
     isError: Boolean = false,
     colors: InputFieldColors = InputFieldColors.default(),
+    enableHorizontalPadding: Boolean = true,
 ) {
     val targetColor = when {
         !enabled -> colors.disabledColor
@@ -33,7 +34,10 @@ fun ScoutLabel(
             .wrapContentHeight()
 
             // extract soon
-            .padding(horizontal = 4.dp, vertical = 8.dp)
+            .padding(
+                horizontal = if (enableHorizontalPadding) 4.dp else 0.dp,
+                vertical = 8.dp
+            )
     ) {
         Text(
             text = label,

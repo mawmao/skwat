@@ -1,5 +1,6 @@
 package com.humayapp.scout.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.StackNavigator
 import com.humayapp.scout.feature.form.api.FormType
@@ -21,6 +22,9 @@ sealed interface RootNavKey : NavKey {
 
     @Serializable
     data class Form(val formType: FormType) : RootNavKey
+
+    @Serializable
+    data class Detail(val content: @Composable () -> Unit) : RootNavKey
 }
 
 // helpers
@@ -30,6 +34,7 @@ sealed interface RootNavKey : NavKey {
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
 fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
 fun StackNavigator<NavKey>.navigateToForms(formType: FormType) = this.push(RootNavKey.Form(formType))
+fun StackNavigator<NavKey>.navigateToDetail(content: @Composable () -> Unit) = this.push(RootNavKey.Detail(content))
 
 
 

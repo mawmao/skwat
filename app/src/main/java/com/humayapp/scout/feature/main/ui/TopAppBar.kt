@@ -23,7 +23,7 @@ import com.humayapp.scout.core.ui.component.ScoutIconButton
 import com.humayapp.scout.core.ui.component.ScoutLogo
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.main.history.api.navigation.HistoryNavKey
+import com.humayapp.scout.feature.history.api.navigation.HistoryNavKey
 import com.humayapp.scout.feature.main.home.api.navigation.HomeNavKey
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,16 +67,42 @@ fun MainSectionTopAppBar(
             }
         },
         actions = {
-            ScoutIconButton(
-                onClick = onSyncClick,
-                icon = ScoutIcons.Sync,
-                contentDescription = "Sync Icon Button"
-            )
-            ScoutIconButton(
-                onClick = onSettingsClick,
-                icon = ScoutIcons.Settings,
-                contentDescription = "Settings Icon Button"
-            )
+            AnimatedContent(
+                targetState = currentKey,
+                label = "TopBarIcon",
+                transitionSpec = {
+                    fadeIn(tween(150)) togetherWith fadeOut(tween(150)) using
+                            SizeTransform(clip = false)
+                }
+            ) { key ->
+                Row(
+                    modifier = Modifier.height(maxTitleHeight),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    when (key) {
+                        HomeNavKey -> {
+                            ScoutIconButton(
+                                onClick = onSyncClick,
+                                icon = ScoutIcons.Sync,
+                                contentDescription = "Sync Icon Button"
+                            )
+                        }
+
+                        HistoryNavKey -> {
+                            ScoutIconButton(
+                                onClick = {},
+                                icon = ScoutIcons.Sort,
+                                contentDescription = "Sort Icon Button"
+                            )
+                        }
+                    }
+                    ScoutIconButton(
+                        onClick = onSettingsClick,
+                        icon = ScoutIcons.Settings,
+                        contentDescription = "Settings Icon Button"
+                    )
+                }
+            }
         }
     )
 }

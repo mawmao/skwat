@@ -1,4 +1,4 @@
-package com.humayapp.scout.feature.main.history.api.navigation
+package com.humayapp.scout.feature.history.api.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.StackNavigator

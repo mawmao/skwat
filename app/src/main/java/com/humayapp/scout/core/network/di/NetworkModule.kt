@@ -1,7 +1,6 @@
 package com.humayapp.scout.core.network.di
 
 import com.humayapp.scout.BuildConfig
-import com.humayapp.scout.core.network.service.SupabaseService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,6 +10,7 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.logging.LogLevel
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.storage.Storage
 import jakarta.inject.Singleton
 
 @Module
@@ -28,12 +28,13 @@ object SupabaseModule {
 
             install(Postgrest)
             install(Auth)
+            install(Storage)
         }
     }
 
-    @Provides
-    @Singleton
-    fun providesSupabaseService(client: SupabaseClient): SupabaseService =
-        SupabaseService(client = client)
+//    @Provides
+//    @Singleton
+//    fun providesSupabaseService(client: SupabaseClient): SupabaseService =
+//        SupabaseService(client = client)
 
 }

@@ -23,9 +23,11 @@ import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.jan.supabase.auth.status.SessionStatus
 import jakarta.inject.Inject
+import kotlinx.coroutines.DelicateCoroutinesApi
 
 // should handle session
 
+@OptIn(DelicateCoroutinesApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 

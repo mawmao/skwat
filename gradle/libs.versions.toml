@@ -54,6 +54,7 @@ supabase-ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.r
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase-bom" }
 supabase-realtime-kt = { module = "io.github.jan-tennert.supabase:realtime-kt" }
 supabase-postgrest-kt = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
+supabase-storage-kt = { module = "io.github.jan-tennert.supabase:storage-kt" }
 supabase-auth-kt = { module = "io.github.jan-tennert.supabase:auth-kt" }
 
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }

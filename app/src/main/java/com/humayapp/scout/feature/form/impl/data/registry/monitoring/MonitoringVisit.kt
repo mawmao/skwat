@@ -10,6 +10,7 @@ import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import com.humayapp.scout.feature.form.impl.model.validateIf
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
@@ -23,7 +24,9 @@ sealed class MonitoringVisit : WizardEntry() {
                 key = MONITORING_DATE_KEY,
                 type = FieldType.DATE,
                 label = "Monitoring Date",
-                validator = Validators.notFutureDate()
+
+                // tbd
+                validator = Validators.mustBeToday()
             )
         )
 
@@ -38,7 +41,8 @@ sealed class MonitoringVisit : WizardEntry() {
                 key = CROP_STAGE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Crop Stage",
-                options = listOf("Not Yet Planted", "Emerging", "Vegetative", "Flowering", "Harvest Ready")
+                options = listOf("Not Yet Planted", "Emerging", "Vegetative", "Flowering", "Harvest Ready"),
+                validator = Validators.nonEmpty
             ),
             field(
                 key = SOIL_MOISTURE_STATUS_KEY,
@@ -51,7 +55,18 @@ sealed class MonitoringVisit : WizardEntry() {
                 key = AVG_PLANT_HEIGHT_KEY,
                 type = FieldType.NUM_DECIMAL_OR_NA,
                 label = "Average Plant Height",
-                // this should be also non-empty but check first if `crop-stage` != to "Not Yet Planted"
+
+                // check first if `crop-stage` != to "Not Yet Planted"
+                validator = validateIf(
+                    condition = { data ->
+                        val cropStage = data[CROP_STAGE_KEY] as? String
+                        cropStage != null && cropStage != "Not Yet Planted"
+                    },
+                    validator = Validators.floatRange(min = 0.0f, unit = "cm") { min, _, unit ->
+                        "Average plant height should be at least $min $unit"
+                    }
+                )
+
             )
         )
     }

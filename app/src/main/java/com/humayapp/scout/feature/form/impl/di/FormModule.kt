@@ -3,6 +3,8 @@ package com.humayapp.scout.feature.form.impl.di
 import android.content.Context
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.humayapp.scout.core.common.dispatcher.Dispatcher
+import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers.IO
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
 import com.humayapp.scout.core.database.dao.FormEntryDao
@@ -21,6 +23,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -48,8 +51,12 @@ object FormModule {
     @Provides
     @Singleton
     fun providesFormRepository(
-        formEntryDao: FormEntryDao
-    ): FormRepository = FormRepositoryImpl(formEntryDao = formEntryDao)
+        formEntryDao: FormEntryDao,
+        @Dispatcher(IO) ioDispatcher: CoroutineDispatcher,
+    ): FormRepository = FormRepositoryImpl(
+        formEntryDao = formEntryDao,
+        ioDispatcher = ioDispatcher
+    )
 
     @Provides
     @Singleton

@@ -20,9 +20,9 @@ import com.humayapp.scout.core.ui.component.NavigationItem
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
-import com.humayapp.scout.feature.main.history.api.navigation.HistoryNavKey
-import com.humayapp.scout.feature.main.history.api.navigation.navigateToHistory
-import com.humayapp.scout.feature.main.history.impl.navigation.historyEntryProvider
+import com.humayapp.scout.feature.history.api.navigation.HistoryNavKey
+import com.humayapp.scout.feature.history.api.navigation.navigateToHistory
+import com.humayapp.scout.feature.history.impl.navigation.historyEntryProvider
 import com.humayapp.scout.feature.main.home.api.navigation.HomeNavKey
 import com.humayapp.scout.feature.main.home.api.navigation.navigateToHome
 import com.humayapp.scout.feature.main.home.impl.navigation.homeEntryProvider
@@ -86,7 +86,9 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
                     }
                 )
             },
-            bottomBar = { MainSectionNavigationBar(navigator = mainNavigator, items = NavigationItems) }
+            bottomBar = {
+                MainSectionNavigationBar(navigator = mainNavigator, items = NavigationItems)
+            }
         ) { innerPadding ->
             NavDisplay(
                 modifier = Modifier.padding(innerPadding),
@@ -94,7 +96,7 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
                 onBack = mainNavigator::pop,
                 entryProvider = entryProvider {
                     homeEntryProvider(metadata = NavTransition.fade())
-                    historyEntryProvider(metadata = NavTransition.fade())
+                    historyEntryProvider()
                 },
             )
         }

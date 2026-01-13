@@ -1,7 +1,6 @@
 package com.humayapp.scout.feature.form.impl.data.registry.nutrient
 
 import androidx.compose.runtime.Composable
-import com.humayapp.scout.feature.form.impl.FormDialogState
 import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application.FertilizerApplicationPage
@@ -18,12 +17,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
-data class FormReviewRule(
-    val alertTitle: String = "",
-    val alertDescription: String = "",
-    val rule: (state: FormState) -> Unit,
-)
-
 sealed class NutrientManagement : WizardEntry() {
 
     data object FertilizedArea : NutrientManagement() {
@@ -34,6 +27,10 @@ sealed class NutrientManagement : WizardEntry() {
                 key = APPLIED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Fertilized Area (sqm)",
+
+                // todo: check max should not exceed monitoring field area in `CulturalManagement`
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -47,10 +44,10 @@ sealed class NutrientManagement : WizardEntry() {
 
         override val reviewRule: (FormState) -> Boolean = { state ->
             // only checked one since you can't even add a single key without the other keys
-            val hasApplication = state.answers.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
+            val hasApplication = state.fieldData.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
             if (!hasApplication) {
                 state.setDialog(
-                    FormDialogState(
+                    FormState.Dialog(
                         title = "Missing Application",
                         message = "You need to add at least one fertilizer application before proceeding."
                     )
@@ -60,12 +57,6 @@ sealed class NutrientManagement : WizardEntry() {
             hasApplication
         }
 
-        fun indexCount(answers: Map<String, Any?>): Int {
-            return answers.keys
-                .mapNotNull { "_(\\d+)$".toRegex().find(it)?.groupValues?.get(1)?.toInt() }
-                .distinct()
-                .count()
-        }
 
         fun indexedFields(index: Int): List<WizardField> = listOf(
             field(
@@ -79,31 +70,39 @@ sealed class NutrientManagement : WizardEntry() {
                 key = "${BRAND_KEY}_$index",
                 type = FieldType.NAME,
                 label = "Brand Name",
-                validator = Validators.nonEmpty
+                validator = Validators.name
             ),
             field(
                 key = "${NITROGEN_CONTENT_KEY}_$index",
                 type = FieldType.NUM_PERCENT,
                 label = "N %",
-                validator = Validators.nonEmpty
+                validator = Validators.floatRange(min = 0.0f, max = 100.0f, unit = "%") { min, max, unit ->
+                    "Nitrogen content must be between $min$unit and $max$unit"
+                }
             ),
             field(
                 key = "${PHOSPHORUS_CONTENT_KEY}_$index",
                 type = FieldType.NUM_PERCENT,
                 label = "P %",
-                validator = Validators.nonEmpty
+                validator = Validators.floatRange(min = 0.0f, max = 100.0f, unit = "%") { min, max, unit ->
+                    "Phosphorus content must be between $min$unit and $max$unit"
+                }
             ),
             field(
                 key = "${POTASSIUM_CONTENT_KEY}_$index",
                 type = FieldType.NUM_PERCENT,
                 label = "K %",
-                validator = Validators.nonEmpty
+                validator = Validators.floatRange(min = 0.0f, max = 100.0f, unit = "%") { min, max, unit ->
+                    "Potassium content must be between $min$unit and $max$unit"
+                }
             ),
             field(
                 key = "${AMOUNT_APPLIED_KEY}_$index",
                 type = FieldType.NUM_DECIMAL,
                 label = "Amount Applied",
-                validator = Validators.nonEmpty
+                validator = Validators.intRange(min = 0) { min, _, _ ->
+                    "Amount applied must be at least $min"
+                }
             ),
             field(
                 key = "${AMOUNT_UNIT_KEY}_$index",
@@ -131,6 +130,7 @@ sealed class NutrientManagement : WizardEntry() {
         val startEntry = FertilizedArea
         val entries = listOf(FertilizedArea, FertilizerApplication)
         val mapper = NutrientManagementMapper
+
         val reviewContent: @Composable ((FormState) -> Unit) = { state -> NutrientManagementReviewContent(state) }
 
         fun serialize(answers: Map<String, Any?>): JsonObject = serializeImpl(answers)

@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import com.humayapp.scout.core.ui.component.ScoutButton
 import com.humayapp.scout.core.ui.component.ScoutIconButton
 import com.humayapp.scout.core.ui.theme.ScoutIcons
@@ -53,7 +52,7 @@ import kotlinx.coroutines.launch
 fun FertilizerApplicationPage(page: NutrientManagement.FertilizerApplication) {
 
     val formState = LocalFormState.current
-    val state = rememberFertilizerApplicationState(formState.answers.keys)
+    val state = rememberFertilizerApplicationState(formState.fieldData.keys)
 
     WizardEntry(
         key = page,
@@ -61,9 +60,7 @@ fun FertilizerApplicationPage(page: NutrientManagement.FertilizerApplication) {
             ScoutIconButton(
                 iconSize = 28.dp,
                 icon = ScoutIcons.Plus,
-                onClick = {
-                    state.addNewApplication()
-                },
+                onClick = { state.addNewApplication() },
                 contentDescription = null
             )
         }
@@ -218,16 +215,13 @@ fun FertilizerApplicationBottomSheet(
                     text = if (state.isEditMode) "Save Changes" else "Add Application",
                     onClick = {
                         state.selectedIndex?.let { currentIndex ->
-
                             val currentFields = page.indexedFields(currentIndex)
 
-                            var allOk = true
-                            currentFields.fastForEach { field ->
-                                val ok = formState.validateField(field)
-                                if (!ok) allOk = false
+                            val validationResults = currentFields.map { field ->
+                                formState.validateField(field)
                             }
 
-                            if (allOk) {
+                            if (validationResults.all { it }) {
                                 if (!state.applications.contains(currentIndex)) {
                                     state.applications.add(currentIndex)
                                     state.nextIndex++
@@ -261,14 +255,14 @@ fun FertilizerApplicationCard(index: Int, onClick: () -> Unit) {
             .border(1.dp, ScoutTheme.material.colorScheme.onSurfaceVariant, ScoutTheme.shapes.cornerMedium),
     ) {
 
-        val type = state.getAnswer("${NutrientManagement.FERTILIZER_TYPE_KEY}_$index")
-        val brand = state.getAnswer("${NutrientManagement.BRAND_KEY}_$index")
-        val amount = state.getAnswer("${NutrientManagement.AMOUNT_APPLIED_KEY}_$index")
-        val unit = state.getAnswer("${NutrientManagement.AMOUNT_UNIT_KEY}_$index")
-        val n = state.getAnswer("${NutrientManagement.NITROGEN_CONTENT_KEY}_$index")
-        val p = state.getAnswer("${NutrientManagement.PHOSPHORUS_CONTENT_KEY}_$index")
-        val k = state.getAnswer("${NutrientManagement.POTASSIUM_CONTENT_KEY}_$index")
-        val stage = state.getAnswer("${NutrientManagement.CROP_STAGE_ON_APPLICATION_KEY}_$index")
+        val type = state.getFieldData("${NutrientManagement.FERTILIZER_TYPE_KEY}_$index")
+        val brand = state.getFieldData("${NutrientManagement.BRAND_KEY}_$index")
+        val amount = state.getFieldData("${NutrientManagement.AMOUNT_APPLIED_KEY}_$index")
+        val unit = state.getFieldData("${NutrientManagement.AMOUNT_UNIT_KEY}_$index")
+        val n = state.getFieldData("${NutrientManagement.NITROGEN_CONTENT_KEY}_$index")
+        val p = state.getFieldData("${NutrientManagement.PHOSPHORUS_CONTENT_KEY}_$index")
+        val k = state.getFieldData("${NutrientManagement.POTASSIUM_CONTENT_KEY}_$index")
+        val stage = state.getFieldData("${NutrientManagement.CROP_STAGE_ON_APPLICATION_KEY}_$index")
 
         Row(
             modifier = Modifier

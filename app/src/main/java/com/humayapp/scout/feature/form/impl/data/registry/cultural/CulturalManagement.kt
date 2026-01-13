@@ -1,11 +1,15 @@
 package com.humayapp.scout.feature.form.impl.data.registry.cultural
 
+import androidx.compose.runtime.Composable
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
+import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.overrides.RiceVarietyInformationPage
+import com.humayapp.scout.feature.form.impl.data.registry.cultural.review.CulturalManagementDetailsContent
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
@@ -21,16 +25,20 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = MONITORING_FIELD_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Monitoring Field Area (sqm)",
-                // TODO: validation = min(400.0)
-                // TODO: validation = minimum is 400sqm or 0.04 hectares (should check with total field area)
-                // TODO: validation = max should be the total field area in `FieldData`
+                label = "Monitoring Field Area (by square meters)",
+
+                // todo: check max should be the total field area in `FieldData
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.floatRange(min = 400.0f, unit = "sqm") { min, _, unit ->
+                    "Monitoring field area must be least $min $unit"
+                }
             ),
             field(
                 key = ECOSYSTEM_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Ecosystem",
-                options = listOf("Rainfed Lowland", "Irrigation")
+                options = listOf("Rainfed Lowland", "Irrigation"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -45,19 +53,24 @@ sealed class CulturalManagement : WizardEntry() {
                 key = ACTUAL_LAND_PREPARATION_METHOD,
                 type = FieldType.CARD_RADIO,
                 label = "Actual Land Preparation Method",
-                options = listOf("Wet", "Dry")
+                options = listOf("Wet", "Dry"),
+                validator = Validators.nonEmpty
             ),
             field(
                 key = ACTUAL_CROP_ESTABLISHMENT_DATE_KEY,
                 type = FieldType.DATE,
                 label = "Actual Crop Establishment Date",
-                // TODO: validation must be greater than estimated crop establishment
+
+                // todo: check max should be greater the estimated crop establishment in  in `FieldData
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.nonEmpty
             ),
             field(
                 key = ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Actual Crop Establishment Method",
-                options = listOf("Direct-seeded", "Transplanted")
+                options = listOf("Direct-seeded", "Transplanted"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -78,26 +91,15 @@ sealed class CulturalManagement : WizardEntry() {
                 key = SOWING_DATE_KEY,
                 type = FieldType.DATE,
                 label = "Sowing Date",
-                // todo: validation
-//                    constraints = {
-//                        dynamic { answers ->
-//                            before(
-//                                value = answers.getAnswerValue(ACTUAL_CROP_ESTABLISHMENT_DATE_KEY),
-//                                error = "Sowing date must be earlier than crop establishment"
-//                            )
-//                        }
-//                    }
+                validator = Validators.isAfterBy(ACTUAL_CROP_ESTABLISHMENT_DATE_KEY)
             ),
             field(
                 key = SEEDLING_AGE_AT_TRANSPLANTING_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Seedling Age at Transplanting (days)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..60.0,
-//                            error = "Seedling age should be between 10 to 60 days"
-//                        )
-//                    }
+                validator = Validators.intRange(min = 10, max = 60, unit = "days") { min, max, unit ->
+                    "Seedling age must be between $min and $max $unit"
+                }
             ),
         )
 
@@ -112,34 +114,28 @@ sealed class CulturalManagement : WizardEntry() {
                 key = D_BETWEEN_PLANT_ROW_1_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Between Plant Row (1)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance between rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance between rows must be between $min and $max"
+                }
             ),
             field(
                 key = D_BETWEEN_PLANT_ROW_2_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Between Plant Row (2)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance between rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance between rows must be between $min and $max"
+                }
             ),
             field(
                 key = D_BETWEEN_PLANT_ROW_3_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Between Plant Row (3)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance between rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance between rows must be between $min and $max"
+                }
             ),
         )
 
@@ -154,34 +150,28 @@ sealed class CulturalManagement : WizardEntry() {
                 key = D_WITHIN_PLANT_ROW_1_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Within Plant Row (1)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance within rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance within rows must be between $min and $max"
+                }
             ),
             field(
                 key = D_WITHIN_PLANT_ROW_2_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Within Plant Row (2)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance within rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance within rows must be between $min and $max"
+                }
             ),
             field(
                 key = D_WITHIN_PLANT_ROW_3_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Distance Within Plant Row (3)",
-//                    constraints = {
-//                        numLength(
-//                            range = 10.0..50.0,
-//                            error = "Distance within rows should be between 10 to 50"
-//                        )
-//                    }
+                // check unit
+                validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
+                    "Distance within rows must be between $min and $max"
+                }
             ),
         )
 
@@ -196,18 +186,16 @@ sealed class CulturalManagement : WizardEntry() {
                 key = SEEDING_RATE_KG_HA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Seeding Rate (kg/ha)",
-//                    constraints = {
-//                        numLength(
-//                            range = 15.0..200.0,
-//                            error = "Seeding rate should be between 15kg to 200kg"
-//                        )
-//                    }
+                validator = Validators.floatRange(min = 15.0f, max = 200.0f, unit = "kgs") { min, max, unit ->
+                    "Seeding rate must be between $min and $max $unit"
+                }
             ),
             field(
                 key = DIRECT_SEEDING_METHOD_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Direct Seeding Method",
-                options = listOf("Broadcasted")
+                options = listOf("Broadcasted"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -222,34 +210,25 @@ sealed class CulturalManagement : WizardEntry() {
                 key = NUM_PLANTS_1_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Number of Plants (1)",
-//                    constraints = {
-//                        numLength(
-//                            range = 5.0..50.0,
-//                            error = "Number of plants should be between 5 to 50"
-//                        )
-//                    }
+                validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
+                    "Number of plants must be between $min and $max"
+                }
             ),
             field(
                 key = NUM_PLANTS_2_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Number of Plants (2)",
-//                    constraints = {
-//                        numLength(
-//                            range = 5.0..50.0,
-//                            error = "Number of plants should be between 5 to 50"
-//                        )
-//                    }
+                validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
+                    "Number of plants must be between $min and $max"
+                }
             ),
             field(
                 key = NUM_PLANTS_3_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Number of Plants (3)",
-//                    constraints = {
-//                        numLength(
-//                            range = 5.0..50.0,
-//                            error = "Number of plants should be between 5 to 50"
-//                        )
-//                    }
+                validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
+                    "Number of plants must be between $min and $max"
+                }
             ),
         )
 
@@ -271,28 +250,24 @@ sealed class CulturalManagement : WizardEntry() {
                 key = RICE_VARIETY_NO_KEY,
                 type = FieldType.NUM_WHOLE, // 2 or 3 digits depending on rice variety
                 label = "Rice Variety No.",
-//                constraints = {
-//                    dynamic { answers ->
-//                        val variety = answers.getAnswerValue(RICE_VARIETY_KEY)
-//                        when (variety) {
-//                            "NSIC Rc" -> {
-//                                regex("^[0-9]{3}$", "Must be a 3-digit number (000–999)")
-//                                length(3, "Must be 3 digits")
-//                            }
-//
-//                            "PSB Rc" -> {
-//                                regex("^[0-9]{2}$", "Must be a 2-digit number (00–99)")
-//                                length(2, "Must be 2 digits")
-//                            }
-//                        }
-//                    }
-//                }
+                validator = Validators.lengthBasedOn(
+                    otherKey = RICE_VARIETY_KEY,
+                    mapping = mapOf(
+                        "NSIC Rc" to 3,
+                        "PSB Rc" to 2
+                    ),
+                    allowOther = true
+                )
             ),
             field(
                 key = RICE_VARIETY_MATURITY_DURATION_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Rice Variety Maturity Duration",
-                // todo: validation
+
+                // it is 90-150 in pdf, but reduced to 60 to be more flexible
+                validator = Validators.intRange(min = 60, max = 150, unit = "days") { min, max, unit ->
+                    "Rice variety maturity duration must be between $min and $max $unit"
+                }
             ),
         )
 
@@ -307,13 +282,16 @@ sealed class CulturalManagement : WizardEntry() {
                 key = SEED_CLASS_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Seed Class",
-                options = listOf("Foundation", "Hybrid", "Registered", "Certified", "Good")
+                options = listOf("Foundation", "Hybrid", "Registered", "Certified", "Good"),
+                validator = Validators.nonEmpty
             )
         )
     }
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
+
+        val reviewContent: @Composable ((FormState) -> Unit) = { state -> CulturalManagementDetailsContent(state) }
 
         val pageOverrides: WizardPageOverrides = mapOf(
             RiceVarietyInformation to { page -> RiceVarietyInformationPage(page as RiceVarietyInformation) }

@@ -1,5 +1,6 @@
 package com.humayapp.scout.core.navigation
 
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
@@ -20,12 +21,20 @@ object NavTransition {
 
     fun anchoredTop() = verticalSlide(enterOffset = { -it }, exitOffset = { it }, duration = DEFAULT_NAV_DURATION)
     fun anchoredBottom() = verticalSlide(enterOffset = { it }, exitOffset = { -it }, duration = DEFAULT_NAV_DURATION)
-    fun anchoredRight() = horizontalSlide(enterOffset = { it }, exitOffset = { -it }, duration = DEFAULT_NAV_DURATION)
+    fun anchoredRight(keepTransitionOnEnter: Boolean = false) =
+        horizontalSlide(
+            enterOffset = { it },
+            exitOffset = { -it },
+            duration = DEFAULT_NAV_DURATION,
+            keepTransitionOnEnter = keepTransitionOnEnter
+        )
+
     fun anchoredLeft() = horizontalSlide(enterOffset = { -it }, exitOffset = { it }, duration = DEFAULT_NAV_DURATION)
 
     val screenTransitionEasing = FastOutSlowInEasing
 
-    fun <T>defaultTween(duration: Int = DEFAULT_NAV_DURATION): TweenSpec<T> = tween(duration, easing = screenTransitionEasing)
+    fun <T> defaultTween(duration: Int = DEFAULT_NAV_DURATION): TweenSpec<T> =
+        tween(duration, easing = screenTransitionEasing)
 
     fun fade(enterAlpha: Float = 0F, exitAlpha: Float = 0F, duration: Int = 150) =
         NavDisplay.transitionSpec {
@@ -36,12 +45,17 @@ object NavTransition {
             fadeIn(tween(duration), enterAlpha) togetherWith fadeOut(tween(duration), exitAlpha)
         }
 
-    fun verticalSlide(enterOffset: AnimOffset, exitOffset: AnimOffset, duration: Int) =
+    fun verticalSlide(
+        enterOffset: AnimOffset,
+        exitOffset: AnimOffset,
+        duration: Int,
+        keepTransitionOnEnter: Boolean = false
+    ) =
         NavDisplay.transitionSpec {
             slideInVertically(
                 initialOffsetY = enterOffset,
                 animationSpec = tween(duration, easing = screenTransitionEasing)
-            ) togetherWith slideOutVertically(
+            ) togetherWith if (keepTransitionOnEnter) ExitTransition.KeepUntilTransitionsFinished else slideOutVertically(
                 targetOffsetY = exitOffset,
                 animationSpec = tween(duration, easing = screenTransitionEasing)
             )
@@ -63,12 +77,17 @@ object NavTransition {
             )
         }
 
-    fun horizontalSlide(enterOffset: AnimOffset, exitOffset: AnimOffset, duration: Int) =
+    fun horizontalSlide(
+        enterOffset: AnimOffset,
+        exitOffset: AnimOffset,
+        duration: Int,
+        keepTransitionOnEnter: Boolean = false
+    ) =
         NavDisplay.transitionSpec {
             slideInHorizontally(
                 initialOffsetX = enterOffset,
                 animationSpec = defaultTween(duration)
-            ) togetherWith slideOutHorizontally(
+            ) togetherWith if (keepTransitionOnEnter) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(
                 targetOffsetX = exitOffset,
                 animationSpec = tween(duration, easing = screenTransitionEasing)
             )

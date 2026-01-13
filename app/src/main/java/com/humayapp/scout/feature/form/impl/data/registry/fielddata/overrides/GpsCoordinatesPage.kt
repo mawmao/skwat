@@ -46,7 +46,7 @@ fun GpsCoordinatesPage(
     val locationPermissions = rememberMultiplePermissionsState(permissions = permission.permissions)
 
     LaunchedEffect(locationPermissions) {
-        if (!locationPermissions.allPermissionsGranted && !formState.hasAnswer(
+        if (!locationPermissions.allPermissionsGranted && !formState.hasFieldData(
                 COORDINATES_KEY
             )
         ) {
@@ -65,19 +65,19 @@ fun GpsCoordinatesPage(
     )
 
     LaunchedEffect(Unit) {
-        if (!formState.hasAnswer(COORDINATES_KEY)) {
+        if (!formState.hasFieldData(COORDINATES_KEY)) {
             vm.fetchCoordinates()
         }
     }
 
     LaunchedEffect(coordinatesState.coordinates) {
         if (coordinatesState.coordinates.isNotZero()) {
-            formState.setAnswer(COORDINATES_KEY, coordinatesState.coordinates.toDisplay())
+            formState.setFieldData(COORDINATES_KEY, coordinatesState.coordinates.toDisplay())
         }
     }
 
     WizardEntry(page) { entry ->
-        if (coordinatesState.coordinatesLoading && !formState.hasAnswer(COORDINATES_KEY)) {
+        if (coordinatesState.coordinatesLoading && !formState.hasFieldData(COORDINATES_KEY)) {
             // temporary
             // this should be changed because this looks like sh
             Box(
@@ -90,8 +90,8 @@ fun GpsCoordinatesPage(
             entry.fields.fastForEach { field ->
                 WizardField(
                     field = field,
-                    value = { formState.getAnswer(field.key) },
-                    onValueChange = { formState.setAnswer(field.key, it) },
+                    value = { formState.getFieldData(field.key) },
+                    onValueChange = { formState.setFieldData(field.key, it) },
                     modifier = Modifier.fillMaxWidth(),
                     imeAction = field.imeAction
                 )

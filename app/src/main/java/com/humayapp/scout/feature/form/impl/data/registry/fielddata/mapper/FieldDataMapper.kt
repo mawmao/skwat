@@ -4,7 +4,7 @@ import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.getSingleId
 import com.humayapp.scout.core.network.util.upsert
-import com.humayapp.scout.core.network.util.upsertAndGetId
+import com.humayapp.scout.core.network.util.upsertAndGet
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.SerialName
@@ -12,39 +12,37 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 
+// todo update form entry on farmer and field creation
+
 object FieldDataMapper : FormMapper() {
     override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
         val payload = Json.decodeFromString<FieldDataPayload>(entry.payloadJson)
-        val farmerId = client.upsertAndGetId(
+
+        val farmer = client.upsertAndGet(
             table = SupabaseDBTables.FARMERS,
-            item = Json.encodeToJsonElement(
-                Farmers(
-                    firstName = payload.firstName,
-                    lastName = payload.lastName,
-                    gender = payload.gender,
-                    dateOfBirth = payload.dateOfBirth,
-                    cellPhoneNo = payload.cellPhoneNo
-                )
-            ),
+            item = Farmers(
+                firstName = payload.firstName,
+                lastName = payload.lastName,
+                gender = payload.gender,
+                dateOfBirth = payload.dateOfBirth,
+                cellPhoneNo = payload.cellPhoneNo
+            )
         )
 
         val barangayId = client.getSingleId("barangays") {
             filter { eq("name", payload.barangay) }
         }
 
-        client.upsert(
+        val field = client.upsertAndGet(
             table = SupabaseDBTables.FIELDS,
-            item = Json.encodeToJsonElement(
-                Fields(
-                    farmerId = farmerId,
-                    barangayId = barangayId,
-                    mfid = entry.mfid,
-                    location = payload.location,
-                )
+            item = Fields(
+                farmerId = farmer.id,
+                barangayId = barangayId,
+                mfid = entry.mfid,
+                location = payload.location,
             ),
             onConflict = "mfid"
         )
-
 
         val parentId = upsertParent(entry, client)
 

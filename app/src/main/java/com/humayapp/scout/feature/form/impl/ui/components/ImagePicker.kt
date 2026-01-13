@@ -40,6 +40,39 @@ import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import java.io.File
 
+@Composable
+fun ImageBox(
+    modifier: Modifier = Modifier,
+    uri: Uri? = null,
+    aspectRatio: Float = 0f,
+) {
+
+    val color = InputFieldTokens.unfocusedColor
+
+    Box(
+        modifier = modifier
+            .then(if (aspectRatio > 0f) Modifier.aspectRatio(aspectRatio) else Modifier)
+            .border(1.dp, color, ScoutTheme.shapes.cornerMedium)
+            .clip(ScoutTheme.shapes.cornerMedium),
+        contentAlignment = Alignment.Center
+    ) {
+        if (uri != null) {
+            AsyncImage(
+                model = uri,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                painter = painterResource(ScoutIcons.Image),
+                contentDescription = null,
+                tint = color
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImagePickerBox(
@@ -79,34 +112,14 @@ fun ImagePickerBox(
         takePicture.launch(cameraUri!!)
     }
 
-    val color = InputFieldTokens.unfocusedColor
-
     Column(modifier = modifier) {
-        ScoutLabel(label = label)
+        ScoutLabel(label = label, enableHorizontalPadding = false)
 
-        Box(
-            modifier = Modifier
-                .then(if (aspectRatio > 0f) Modifier.aspectRatio(aspectRatio) else Modifier)
-                .border(1.dp, color, ScoutTheme.shapes.cornerMedium)
-                .clip(ScoutTheme.shapes.cornerMedium)
-                .clickable { showSheet = true },
-            contentAlignment = Alignment.Center
-        ) {
-            if (uri != null) {
-                AsyncImage(
-                    model = uri,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Icon(
-                    painter = painterResource(ScoutIcons.Image),
-                    contentDescription = null,
-                    tint = color
-                )
-            }
-        }
+        ImageBox(
+            uri = uri,
+            modifier = Modifier.clickable { showSheet = true },
+            aspectRatio = aspectRatio
+        )
     }
 
     // TODO: clean up
@@ -144,6 +157,7 @@ fun ImagePickerBox(
         }
     }
 }
+
 
 @Composable
 private fun SheetItem(

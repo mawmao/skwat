@@ -28,8 +28,8 @@ fun ConditionPage(page: MonitoringVisit.Conditions) {
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         imeAction = ImeAction.Next,
                     )
                 }
@@ -38,19 +38,19 @@ fun ConditionPage(page: MonitoringVisit.Conditions) {
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                     )
                 }
 
                 AVG_PLANT_HEIGHT_KEY -> {
-                    val cropStage = formState.getAnswer(CROP_STAGE_KEY)
+                    val cropStage = formState.getFieldData(CROP_STAGE_KEY)
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
-                        visible = cropStage != "Not Yet Planted" && formState.hasAnswer(CROP_STAGE_KEY),
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        visible = cropStage != "Not Yet Planted" && formState.hasFieldData(CROP_STAGE_KEY),
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         imeAction = ImeAction.Done,
                     )
                 }

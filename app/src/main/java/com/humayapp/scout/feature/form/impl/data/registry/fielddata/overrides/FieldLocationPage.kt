@@ -40,10 +40,10 @@ fun FieldLocationPage(
                 PROVINCE_KEY -> {
                     WizardField(
                         field = field,
-                        value = { formState.getAnswer(field.key) },
+                        value = { formState.getFieldData(field.key) },
                         onValueChange = {
-                            formState.setAnswer(field.key, it)
-                            formState.removeAnswer(MUNICIPALITY_OR_CITY_KEY)
+                            formState.setFieldData(field.key, it)
+                            formState.clearFieldData(MUNICIPALITY_OR_CITY_KEY)
                             vm.fetchMunicipalities(it)
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -54,11 +54,11 @@ fun FieldLocationPage(
                 MUNICIPALITY_OR_CITY_KEY -> {
                     WizardField(
                         field = field,
-                        visible = formState.hasAnswer(PROVINCE_KEY),
-                        value = { formState.getAnswer(field.key) },
+                        visible = formState.hasFieldData(PROVINCE_KEY),
+                        value = { formState.getFieldData(field.key) },
                         onValueChange = {
-                            formState.setAnswer(field.key, it)
-                            formState.removeAnswer(BARANGAY_KEY)
+                            formState.setFieldData(field.key, it)
+                            formState.clearFieldData(BARANGAY_KEY)
                             vm.fetchBarangays(it)
                         },
                         dynamicOptions = locationState.municipalities,
@@ -69,9 +69,9 @@ fun FieldLocationPage(
                 BARANGAY_KEY -> {
                     WizardField(
                         field = field,
-                        visible = formState.hasAnswer(PROVINCE_KEY) && formState.hasAnswer(MUNICIPALITY_OR_CITY_KEY),
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        visible = formState.hasFieldData(PROVINCE_KEY) && formState.hasFieldData(MUNICIPALITY_OR_CITY_KEY),
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         dynamicOptions = locationState.barangays,
                         imeAction = field.imeAction
                     )

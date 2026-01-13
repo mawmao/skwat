@@ -27,20 +27,20 @@ fun HarvestYieldPage(page: Production.HarvestYield) {
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         field = field,
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         imeAction = ImeAction.Next,
                     )
                 }
 
                 AVG_BAG_WEIGHT_KEY -> {
-                    val bagsHarvested = formState.getAnswer(BAGS_HARVESTED_KEY)
+                    val bagsHarvested = formState.getFieldData(BAGS_HARVESTED_KEY)
                     WizardField(
                         modifier = Modifier.fillMaxWidth(),
                         visible = bagsHarvested != "0",
                         field = field,
-                        value = { formState.getAnswer(field.key) },
-                        onValueChange = { formState.setAnswer(field.key, it) },
+                        value = { formState.getFieldData(field.key) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         imeAction = ImeAction.Done
                     )
                 }

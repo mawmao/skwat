@@ -5,6 +5,7 @@ import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
@@ -20,13 +21,15 @@ sealed class DamageAssessment : WizardEntry() {
                 key = CROP_STAGE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Crop Stage",
-                options = listOf("Seedling", "Vegetative", "Reproductive", "Maturity")
+                options = listOf("Seedling", "Vegetative", "Reproductive", "Maturity"),
+                validator = Validators.nonEmpty
             ),
             field(
                 key = SOIL_TYPE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Soil Type",
-                options = listOf("Clayey", "Loamy", "Sandy", "Silty", "Peaty")
+                options = listOf("Clayey", "Loamy", "Sandy", "Silty", "Peaty"),
+                validator = Validators.nonEmpty
             )
         )
 
@@ -39,14 +42,16 @@ sealed class DamageAssessment : WizardEntry() {
         override val fields = listOf(
             field(
                 key = OBSERVED_PEST_KEY,
-                type = FieldType.TEXT,
+                type = FieldType.TEXT, // must be a dropdown - tbd
                 label = "Observed Pest",
+                validator = Validators.nonEmpty
             ),
             field(
                 key = CAUSE_OF_DAMAGE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Cause of Damage",
-                options = listOf("Pest", "Disease", "Flood", "Drought", "Wind", "Other")
+                options = listOf("Pest", "Disease", "Flood", "Drought", "Wind", "Other"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -61,13 +66,19 @@ sealed class DamageAssessment : WizardEntry() {
                 key = SEVERITY_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Severity",
-                options = listOf("Low", "Moderate", "High", "Severe")
+                options = listOf("Low", "Moderate", "High", "Severe"),
+                validator = Validators.nonEmpty
             ),
             field(
                 key = AFFECTED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Affected Area (ha)",
-                // TODO: validation should be less than total field area
+
+                // todo: check max should be less than total field area in `FieldData`
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.floatRange(min = 0.04f, unit = "ha") { min, _, unit ->
+                    "Affected area must be at least $min $unit"
+                }
             ),
         )
     }

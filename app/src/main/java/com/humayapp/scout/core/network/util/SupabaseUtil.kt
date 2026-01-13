@@ -46,9 +46,15 @@ suspend inline fun <reified T : Any> SupabaseClient.upsert(
     table: String,
     item: T,
     onConflict: String = "id"
-) {
-    this.from(table).upsert(item) { this.onConflict = onConflict }
-}
+) = this.from(table).upsert(item) { this.onConflict = onConflict }
+
+
+suspend inline fun <reified T : Any> SupabaseClient.upsertAndGet(
+    table: String,
+    item: T,
+    onConflict: String = "id"
+): T = this.from(table).upsert(item) { this.onConflict = onConflict }.decodeSingle<T>()
+
 
 suspend inline fun <reified T> SupabaseClient.upsertAndGetId(
     table: String,

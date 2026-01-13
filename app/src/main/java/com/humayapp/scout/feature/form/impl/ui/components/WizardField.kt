@@ -106,7 +106,7 @@ fun WizardFieldImpl(
     val focusModifier = modifier
         .focusRequester(focusRequester)
         .onFocusChanged {
-            if (it.isFocused && state.hasError(field.key)) state.errors[field.key] = null
+            if (it.isFocused && state.hasError(field.key)) state.clearError(field.key)
         }
 
     when (field.type) {
@@ -203,8 +203,8 @@ fun DefaultWizardField(field: WizardField, modifier: Modifier = Modifier) {
     WizardField(
         modifier = modifier,
         field = field,
-        value = { state.getAnswer(field.key) },
-        onValueChange = { v -> state.setAnswer(field.key, v) },
+        value = { state.getFieldData(field.key) },
+        onValueChange = { v -> state.setFieldData(field.key, v) },
     )
     Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
 }

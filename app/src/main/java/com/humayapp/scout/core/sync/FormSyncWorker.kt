@@ -10,12 +10,21 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
-import com.humayapp.scout.core.network.service.SupabaseService
+import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.network.util.getSingleId
+import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
+import com.humayapp.scout.feature.form.impl.data.sync.uploadForm
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.storage.upload
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.time.Clock
 
 @HiltWorker
 class FormSyncWorker @AssistedInject constructor(
@@ -23,7 +32,7 @@ class FormSyncWorker @AssistedInject constructor(
     @Assisted val workerParams: WorkerParameters,
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     private val formRepository: FormRepository,
-    private val supabaseService: SupabaseService
+    private val supabase: SupabaseClient,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
 
     override suspend fun getForegroundInfo(): ForegroundInfo = appContext.syncForegroundInfo()
@@ -32,41 +41,76 @@ class FormSyncWorker @AssistedInject constructor(
         Log.i(LOG_TAG, "[Sync] Doing sync work.")
 
         return@withContext try {
-            val pending = formRepository.getPendingSyncOnce()
+            val entryId = inputData.getLong("ENTRY_ID", -1L)
+            val pending = if (entryId != -1L) {
+                listOfNotNull(formRepository.getEntryById(entryId))
+            } else {
+                formRepository.getPendingSyncOnce()
+            }
 
             if (pending.isEmpty()) {
                 Log.i(LOG_TAG, "[Sync] No pending forms found. Exiting sync.")
                 return@withContext Result.success()
             }
 
-            Log.i(LOG_TAG, "[Sync] Found ${pending.size} pending entries to sync")
-
-            Log.d(LOG_TAG, "Entries queued\n")
-            pending.forEach { entry ->
-                Log.d(LOG_TAG, "  Type ${entry.activityType.uppercase()} MFID ${entry.mfid}")
-            }
+            Log.i(LOG_TAG, "[Sync] Trying to sync ${pending.size} ${if (pending.size > 1) "entries" else "entry"}.")
 
             var hasError = false
+            val imageBucket = supabase.storage.from("form-images")
 
             for (entry in pending) {
 
-                Log.d(LOG_TAG, "[Sync] Starting upload for entry MFID ${entry.mfid}")
+                val formType = FormType.fromActivityType(entry.activityType)
+                val seasonId = supabase.getSingleId("seasons") { order("id", Order.DESCENDING) }
+                val activityType = entry.activityType
+                val mfid = entry.mfid
+                val timestamp = Clock.System.now()
+
+                Log.d(LOG_TAG, "[Sync] Starting upload for entry MFID ${entry.mfid}.")
 
                 try {
-                    supabaseService.uploadForm(entry)
-                    Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid}")
+                    // todo:
+                    // should create a transaction to update image remote path then upload entry
+                    // delete from bucket on transaction error
+
+                    val images = formRepository.getImagesOfEntryById(entry.id)
+
+                    val updatedImages = images.map { image ->
+                        val file = File(image.localPath)
+                        val remotePath = "${seasonId}/${activityType}/${mfid}/${timestamp}/${file.name}"
+
+                        imageBucket.upload(remotePath, file) { upsert = false }
+
+
+                        formRepository.updateImageRemotePath(image.id, remotePath)
+                        image.copy(remotePath = remotePath)
+                    }
+
+                    Log.d(LOG_TAG, "[Sync] imageUrls size = ${entry.imageUrls.size}")
+
+                    supabase.uploadForm(
+                        entry = entry.copy(
+                            imageUrls = buildImagePathsArray(updatedImages),
+                            syncedAt = timestamp
+                        )
+                    )
+
+                    Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
+
+                    Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")
                 } catch (e: Exception) {
                     hasError = true
-                    Log.e(LOG_TAG, "[Sync] Upload FAILED for MFID ${entry.mfid}: ${e.message}")
+                    Log.e(LOG_TAG, "[Sync] Upload failed for MFID ${entry.mfid} - ${formType.label}: ${e.message}.")
                     continue
                 }
 
                 try {
-                    formRepository.markAsSynced(entry.id)
-                    Log.i(LOG_TAG, "[Sync] Local sync mark successful for MFID ${entry.mfid}")
+                    formRepository.markAsSynced(entry.id, timestamp)
+
+                    Log.i(LOG_TAG, "[Sync] Local sync mark successful for MFID ${entry.mfid} - ${formType.label}.")
                 } catch (e: Exception) {
                     hasError = true
-                    Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for MFID ${entry.mfid}: ${e.message}")
+                    Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for MFID ${entry.mfid} - ${formType.label}: ${e.message}")
                 }
             }
 
@@ -79,14 +123,18 @@ class FormSyncWorker @AssistedInject constructor(
             }
 
         } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Sync] Fatal sync error")
+            Log.e(LOG_TAG, "[Sync] Fatal sync error", e)
             Result.failure()
         }
     }
 
     companion object {
 
-        private const val LOG_TAG = "Scout: FormSyncWorker"
+        private const val LOG_TAG = "Scout: Sync"
+
+        private fun buildImagePathsArray(images: List<FormImageEntity>): List<String> {
+            return images.mapNotNull { it.remotePath }
+        }
 
         fun startUpSyncWork() = OneTimeWorkRequestBuilder<FormSyncWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)

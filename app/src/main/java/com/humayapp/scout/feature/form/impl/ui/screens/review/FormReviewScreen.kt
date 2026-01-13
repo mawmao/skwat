@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
-import com.humayapp.scout.core.ui.component.ScoutButton
+import com.humayapp.scout.core.ui.component.ScoutLoadingButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.feature.form.impl.LocalFormState
@@ -24,6 +26,7 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
 
     val rootNavigator = LocalRootStackNavigator.current
     val state = LocalFormState.current
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
 
     ScoutUiEvents(vm.uiEvent) { event ->
         when (event) {
@@ -42,10 +45,11 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
         state.formType.reviewContent(state)
 
         Spacer(Modifier.weight(1f))
-        ScoutButton(
+        ScoutLoadingButton(
             modifier = Modifier.fillMaxWidth(),
             text = "Finish",
-            onClick = { vm.onAction(FormReviewAction.FormSubmit(state.answers)) }
+            isLoading = uiState.isLoading,
+            onClick = { vm.onAction(FormReviewAction.FormSubmit(state.fieldData)) }
         )
     }
 }

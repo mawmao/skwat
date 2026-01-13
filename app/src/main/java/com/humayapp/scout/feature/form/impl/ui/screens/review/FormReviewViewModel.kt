@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel(assistedFactory = FormReviewViewModel.Factory::class)
@@ -44,33 +46,29 @@ class FormReviewViewModel @AssistedInject constructor(
         }
     }
 
-//    private fun toggleBackConfirm(show: Boolean) =
-//        _state.update { it.copy(isBackConfirmShown = show) }
-
-//    private fun toggleExitConfirm(show: Boolean) =
-//        _state.update { it.copy(isExitConfirmShown = show) }
-
     private fun submitForm(answers: Map<String, Any?>) {
+        _uiState.update { it.copy(isLoading = true) }
+
         viewModelScope.launch {
-            val userId = getAuthenticatedUserId()
-
-            val payloadJson = formType.serializeAnswers(answers).toString()
-            val entry = FormEntryEntity(
-                mfid = mfid,
-                activityType = formType.id,
-                collectedBy = userId ?: "",
-                payloadJson = payloadJson,
-            )
-
             try {
-                val id = formRepository.saveFormEntry(entry)
-                if (id > 0) {
-                    Log.d(LOG_TAG, "form entry submission success")
-                    context.enqueueSyncWork()
-                    _uiEvent.send(FormReviewEvent.SubmitSuccess)
-                }
+                val userId = getAuthenticatedUserId() ?: unreachable("user id in this context can never be null")
+                val id = formRepository.saveFormWithImages(
+                    answers = answers,
+                    initialEntry = FormEntryEntity(
+                        mfid = mfid,
+                        activityType = formType.id,
+                        collectedBy = userId,
+                        payloadJson = "",
+                    ),
+                    context = context,
+                    serializerFn = { answers -> formType.serializeAnswers(answers).toString() }
+                )
+                context.enqueueSyncWork(entryId = id)
+                _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
-                Log.e(LOG_TAG, "Database insert failed")
+                Log.e(LOG_TAG, "Database insert failed", e)
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -99,9 +97,9 @@ class FormReviewViewModel @AssistedInject constructor(
 
 
 data class FormReviewScreenState(
-//    val currentForm: com.mawmao.recon.forms.model.Form,
     val isBackConfirmShown: Boolean = false,
     val isExitConfirmShown: Boolean = false,
+    val isLoading: Boolean = false
 )
 
 sealed class FormReviewEvent {
@@ -109,9 +107,5 @@ sealed class FormReviewEvent {
 }
 
 sealed class FormReviewAction {
-//    object ExitClick : ReviewAction()
-//    object ExitDismiss : ReviewAction()
-//    object BackClick : ReviewAction()
-//    object BackDismiss : ReviewAction()
     data class FormSubmit(val answers: Map<String, Any?>) : FormReviewAction()
 }

@@ -6,34 +6,41 @@ import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.production.overrides.HarvestYieldPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
+import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import io.github.jan.supabase.SupabaseClient
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 sealed class Production : WizardEntry() {
-
 
     object HarvestDetails : Production() {
         override val title = "Harvest Details"
         override val description = "Record harvest date and method used"
         override val fields = listOf(
-            field(key = HARVEST_DATE_KEY, type = FieldType.DATE, label = "Harvest Date"),
+            field(
+                key = HARVEST_DATE_KEY,
+                type = FieldType.DATE,
+                label = "Harvest Date",
+
+                // todo: check max should be 90-130 days after the actual establishment date in `CulturalManagement`
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.nonEmpty
+            ),
             field(
                 key = HARVEST_METHOD_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Harvesting Method",
                 options = listOf("Manual", "Mechanical", "Other"),
-                // TODO: validation should be 90-130 days after the actual establishment date
+
+                validator = Validators.nonEmpty
             )
         )
 
         override fun nextScreen(answers: Map<String, Any?>) = HarvestedAreaAndIrrigation
     }
 
-    @kotlinx.serialization.Serializable
     object HarvestedAreaAndIrrigation : Production() {
         override val title = "Harvested Area and Irrigation"
         override val description = "Record harvested area and irrigation adequacy during season"
@@ -41,22 +48,26 @@ sealed class Production : WizardEntry() {
             field(
                 key = AREA_HARVESTED,
                 type = FieldType.NUM_DECIMAL,
-                label = "Area Harvested (ha)",
-                // TODO: validation less than total field area
-                // TODO: validation greater than 0.04 hectares
+                label = "Area Harvested (by hectares)",
+
+                // todo: check max should be less than total field area in `FieldData`
+                // create a custom page to check only on validation of past forms feature are done
+                validator = Validators.floatRange(min = 0.04f, unit = "ha") { min, _, unit ->
+                    "Area harvested must be at least $min $unit"
+                }
             ),
             field(
                 key = IRRIGATION_SUPPLY,
                 type = FieldType.DROPDOWN,
                 label = "Irrigation Supply",
-                options = listOf("Not Enough", "Not Sufficient", "Sufficient", "Excessive")
+                options = listOf("Not Enough", "Not Sufficient", "Sufficient", "Excessive"),
+                validator = Validators.nonEmpty
             ),
         )
 
         override fun nextScreen(answers: Map<String, Any?>) = HarvestYield
     }
 
-    @Serializable
     object HarvestYield : Production() {
         override val title = "Harvest Yield (Bags)"
         override val description = "Record number of bags harvested and average bag weight"
@@ -65,13 +76,18 @@ sealed class Production : WizardEntry() {
                 key = BAGS_HARVESTED_KEY,
                 type = FieldType.NUM_WHOLE,
                 label = "Bags Harvested",
-                // todo: validation = min(0.0, "Bags harvested should not be less than 0")
+
+                validator = Validators.intRange(min = 0) { min, _, _ ->
+                    "Bags harvested must be at least $min"
+                }
             ),
             field(
                 key = AVG_BAG_WEIGHT_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Average Bag Weight (kg)",
-                // todo: validation: numLength(30.0..80.0, "Average bag weight should be between 30kg to 80kg")
+                validator = Validators.floatRange(min = 0.0f, max = 30.0f, unit = "kg") { min, max, unit ->
+                    "Bags harvested must be between $min$unit and $max$unit"
+                }
             ),
         )
 

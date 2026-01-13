@@ -15,6 +15,7 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import kotlinx.serialization.json.JsonObject
+import java.time.Period
 
 sealed class FieldData : WizardEntry() {
 
@@ -56,7 +57,7 @@ sealed class FieldData : WizardEntry() {
                 key = DATE_OF_BIRTH_KEY,
                 type = FieldType.DATE,
                 label = "Date of Birth",
-                validator = Validators.notFutureDate()
+                validator = Validators.dateOfBirth(16, 80)
             ),
             field(
                 key = CELLPHONE_NO_KEY,
@@ -77,18 +78,21 @@ sealed class FieldData : WizardEntry() {
             field(
                 key = LAND_PREPARATION_DATE_KEY,
                 type = FieldType.DATE,
-                label = "Land Preparation Start Date"
+                label = "Land Preparation Start Date",
+                validator = Validators.withinRange(Period.ofDays(30))
             ),
             field(
                 key = EST_CROP_ESTABLISHMENT_KEY,
                 type = FieldType.DATE,
-                label = "Estimated Crop Establishment Date"
+                label = "Estimated Crop Establishment Date",
+                validator = Validators.isAfterBy(otherKey = LAND_PREPARATION_DATE_KEY, after = Period.ofMonths(3))
             ),
             field(
                 key = EST_METHOD_OF_ESTABLISHMENT_KEY,
                 type = FieldType.CARD_RADIO,
                 label = "Estimated Method of Establishment",
-                options = listOf("Direct-seeded", "Transplanted")
+                options = listOf("Direct-seeded", "Transplanted"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -102,8 +106,11 @@ sealed class FieldData : WizardEntry() {
             field(
                 key = TOTAL_FIELD_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Total Field Area (ha)",
-                imeAction = ImeAction.Done
+                label = "Total Field Area (by hectares)",
+                imeAction = ImeAction.Done,
+                validator = Validators.floatRange(min = 0.04f, unit = "ha") { min, _, unit ->
+                    "Field area must be at least $min $unit"
+                }
             ),
         )
 
@@ -118,13 +125,15 @@ sealed class FieldData : WizardEntry() {
                 key = SOIL_TYPE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Soil Type",
-                options = listOf("Clayey", "Loamy", "Sandy", "Silty", "Peaty")
+                options = listOf("Clayey", "Loamy", "Sandy", "Silty", "Peaty"),
+                validator = Validators.nonEmpty
             ),
             field(
                 key = CURRENT_FIELD_CONDITION_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Current Field Condition",
-                options = listOf("Fallow", "Just Harvested", "Planted", "Land Preparation")
+                options = listOf("Fallow", "Just Harvested", "Planted", "Land Preparation"),
+                validator = Validators.nonEmpty
             ),
         )
 
@@ -139,17 +148,20 @@ sealed class FieldData : WizardEntry() {
                 key = PROVINCE_KEY,
                 type = FieldType.DROPDOWN_SEARCHABLE,
                 label = "Province",
-                options = listOf("Aklan", "Antique", "Capiz", "Iloilo", "Negros Occidental", "Guimaras")
+                options = listOf("Aklan", "Antique", "Capiz", "Iloilo", "Negros Occidental", "Guimaras"),
+                validator = Validators.nonEmpty,
             ),
             field(
                 key = MUNICIPALITY_OR_CITY_KEY,
                 type = FieldType.DROPDOWN_SEARCHABLE,
-                label = "Municipality or City"
+                label = "Municipality or City",
+                validator = Validators.nonEmpty,
             ),
             field(
                 key = BARANGAY_KEY,
                 type = FieldType.DROPDOWN_SEARCHABLE,
-                label = "Barangay"
+                label = "Barangay",
+                validator = Validators.nonEmpty,
             ),
         )
 
@@ -160,27 +172,33 @@ sealed class FieldData : WizardEntry() {
         override val title = "GPS Coordinates"
         override val description = "Exact location of the field"
         override val fields = listOf(
-            field(key = COORDINATES_KEY, type = FieldType.GPS, label = "Field Location (GPS)")
+            field(
+                key = COORDINATES_KEY,
+                type = FieldType.GPS,
+                label = "Field Location (GPS)",
+                validator = Validators.nonEmpty,
+            )
         )
-
 
         override fun nextScreen(answers: Map<String, Any?>) = Images
     }
 
+    // todo: validation
     data object Images : FieldData() {
         override val title = "Field & Crop Images"
         override val description = "Document the field and rice crop from multiple angles"
         override val fields = listOf(
-            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View"),
-            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View"),
-            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View"),
-            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view"),
-            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up"),
+            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View", validator = Validators.image),
+            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View", validator = Validators.image),
+            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View", validator = Validators.image),
+            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view", validator = Validators.image),
+            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up", validator = Validators.optionalImage),
         )
     }
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
+            includeKey = { !it.startsWith("img_") },
             rules = listOf(
                 transformField(GENDER_KEY) {
                     when (it) {

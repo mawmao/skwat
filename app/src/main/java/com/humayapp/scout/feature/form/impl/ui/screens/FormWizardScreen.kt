@@ -16,7 +16,9 @@ import com.humayapp.scout.core.ui.component.ScoutButton
 import com.humayapp.scout.core.ui.component.ScoutErrorDialog
 import com.humayapp.scout.core.ui.component.ScoutOutlinedButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
+import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.navigation.navigateToFormReview
+import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.ui.components.DefaultWizardEntry
 import com.humayapp.scout.feature.form.impl.ui.components.WizardProgressBar
@@ -58,14 +60,12 @@ fun FormWizardScreen() {
 
             ScoutButton(
                 modifier = maxWidthModifier,
-                text = if (formState.hasNextScreen) "Next Page" else "Review",
+                text = if (formState.canScrollNext) "Next Page" else "Review",
                 onClick = {
                     val current = formState.currentScreen
-
-                    val allowed = current.reviewRule.invoke(formState)
-
-                    if (allowed) {
-                        if (formState.hasNextScreen) formState.scrollWizardNext()
+                    val allValid = formState.validatePage(current) && current.reviewRule(formState)
+                    if (allValid) {
+                        if (formState.canScrollNext) formState.scrollWizardNext()
                         else formNavigator.navigateToFormReview()
                     }
                 }
@@ -75,30 +75,36 @@ fun FormWizardScreen() {
 }
 
 
+/**
+ * The pager responsible to show each form's wizard entry.
+ *
+ * - Shows the current progress via [WizardProgressBar].
+ * - Scrolls automatically to the current screen when [FormState.currentScreen] changes.
+ * - Renders each screen using a custom override from [FormType.overrides] if available, or falls back to [DefaultWizardEntry].
+ */
 @Composable
 fun WizardPager(modifier: Modifier = Modifier) {
-
     val formState = LocalFormState.current
-
+    val entries = formState.formType.entries
     val pagerState = formState.pagerState
     val currentScreen = formState.currentScreen
+    val formOverrides = formState.formType.overrides
 
     LaunchedEffect(currentScreen) {
-        val pageIndex = formState.entries.indexOf(currentScreen)
+        val pageIndex = entries.indexOf(currentScreen)
         if (pageIndex != -1 && pageIndex != pagerState.currentPage) {
-            pagerState.animateScrollToPage(page = pageIndex, animationSpec = NavTransition.defaultTween())
+            pagerState.animateScrollToPage(
+                page = pageIndex,
+                animationSpec = NavTransition.defaultTween()
+            )
         }
     }
 
     WizardProgressBar(currentCount = pagerState.currentPage + 1, totalCount = pagerState.pageCount)
 
-    HorizontalPager(
-        modifier = modifier,
-        state = pagerState,
-        userScrollEnabled = false
-    ) { page ->
-        val pageKey = formState.entries[page]
-        val renderer = formState.formType.overrides?.get(pageKey) ?: { DefaultWizardEntry(it) }
+    HorizontalPager(modifier = modifier, state = pagerState, userScrollEnabled = false) { page ->
+        val pageKey = entries[page]
+        val renderer = formOverrides?.get(pageKey) ?: { DefaultWizardEntry(it) }
         renderer(pageKey)
     }
 }

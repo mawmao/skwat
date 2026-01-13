@@ -26,7 +26,7 @@ object ScoutInputTransformations {
             return@InputTransformation
         }
 
-        if (len > 50 || text.any { !(it.isLetter() || it.isWhitespace() || it == '-' || it == '\'') }) {
+        if (len > 50 || text.any { c -> !c.isLetter() && c !in setOf(' ', '-', '\'') }) {
             revertAllChanges()
             return@InputTransformation
         }

@@ -4,6 +4,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 object SupabaseDBTables {
     const val FARMERS = "farmers"
@@ -35,13 +36,13 @@ data class FieldActivities(
     val collectedBy: String,
 
     @SerialName("collected_at")
-    val collectedAt: String,
+    val collectedAt: Instant,
 
     @SerialName("image_urls")
     @EncodeDefault
     val imageUrls: List<String> = emptyList(),
 
     @SerialName("synced_at")
-    val syncedAt: String
+    val syncedAt: Instant
 )
 
