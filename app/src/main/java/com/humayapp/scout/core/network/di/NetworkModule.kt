@@ -1,9 +1,15 @@
 package com.humayapp.scout.core.network.di
 
+import android.content.Context
+import coil3.ImageLoader
+import coil3.disk.DiskCache
+import coil3.disk.directory
+import coil3.memory.MemoryCache
 import com.humayapp.scout.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -32,9 +38,21 @@ object SupabaseModule {
         }
     }
 
-//    @Provides
-//    @Singleton
-//    fun providesSupabaseService(client: SupabaseClient): SupabaseService =
-//        SupabaseService(client = client)
-
+    @Provides
+    @Singleton
+    fun imageLoader(
+        @ApplicationContext context: Context,
+    ): ImageLoader = ImageLoader.Builder(context)
+        .memoryCache {
+            MemoryCache.Builder()
+                .maxSizePercent(context, 0.15)
+                .build()
+        }
+        .diskCache {
+            DiskCache.Builder()
+                .directory(context.cacheDir.resolve("image_cache"))
+                .maxSizePercent(0.02)
+                .build()
+        }
+        .build()
 }

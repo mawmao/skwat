@@ -34,6 +34,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.InputFieldTokens
 import com.humayapp.scout.core.ui.theme.ScoutIcons
@@ -58,7 +61,10 @@ fun ImageBox(
     ) {
         if (uri != null) {
             AsyncImage(
-                model = uri,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(uri)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

@@ -4,9 +4,8 @@
 - adding field data in `FormEntryEntity` for display in history
 
 # todo
-
-- form history [in progress]
-
+- settings
+- 
 - auth
     - remember feature
         - could check if first time login and show an onboarding
@@ -18,19 +17,20 @@
         - get from current room database entries
 
 - form confirmation
+
 - form wizard:
-    - remarks?
     - images handling [solution](#image-handling-solution)
       - image compression
       - image caching & storage optimization
+      
     - remaining form validations
+     
     - image box should expand and show the image as a modal when clicked and has value
 
 - sync
   - improve error handling & rollbacks
   - manual
 
-- settings
 
 # issues
 
@@ -54,6 +54,8 @@
 - disabled ui of textfields
 - dropdown menu items ui
 - field data location cascading field transition (should come from below last field)
+- form history ui
+- form remarks?
 
 # notes
 
