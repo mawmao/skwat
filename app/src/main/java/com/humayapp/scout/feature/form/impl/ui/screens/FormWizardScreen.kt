@@ -63,7 +63,7 @@ fun FormWizardScreen() {
                 text = if (formState.canScrollNext) "Next Page" else "Review",
                 onClick = {
                     val current = formState.currentScreen
-                    val allValid = formState.validatePage(current) && current.reviewRule(formState)
+                    val allValid = current.nextRule(formState) && formState.validatePage(current)
                     if (allValid) {
                         if (formState.canScrollNext) formState.scrollWizardNext()
                         else formNavigator.navigateToFormReview()

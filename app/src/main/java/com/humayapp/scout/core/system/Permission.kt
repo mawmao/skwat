@@ -20,4 +20,13 @@ object ScoutPermissions {
             android.Manifest.permission.ACCESS_COARSE_LOCATION
         )
     )
+
+    val Camera = Permission(
+        icon = ScoutIcons.MobileCamera,
+        title = "Allow Camera Access",
+        description = "The app needs it to take photos or scan QR codes",
+        permissions = listOf(
+            android.Manifest.permission.CAMERA
+        )
+    )
 }

@@ -23,11 +23,11 @@ import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
+import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.model.getOrEmpty
 import com.humayapp.scout.feature.form.impl.ui.components.FormFieldData
-import com.humayapp.scout.feature.form.impl.ui.components.ImageBox
 import com.humayapp.scout.feature.history.impl.ui.components.HistoryDetailTopAppBar
 
 @Composable

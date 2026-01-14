@@ -100,6 +100,13 @@ val ScoutTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = (0.5).sp
     ),
+    labelMedium = TextStyle( // text-sm/medium
+        fontFamily = fontFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = (0.5).sp
+    ),
     labelSmall = TextStyle( // text-xs/medium
         fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,

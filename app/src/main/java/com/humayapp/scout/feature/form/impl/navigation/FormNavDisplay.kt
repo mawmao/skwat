@@ -13,12 +13,10 @@ import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.feature.form.api.navigation.FormConfirmNavKey
 import com.humayapp.scout.feature.form.api.navigation.FormReviewNavKey
-import com.humayapp.scout.feature.form.api.navigation.FormScanNavKey
 import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.ui.components.FormSectionTopAppBar
 import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.FormScanScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewViewModel
@@ -27,21 +25,23 @@ import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewViewMode
 @Composable
 fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
 
-    val formBackStack = LocalStackNavigator.current.asBackStack()
+    val formNavigator = LocalStackNavigator.current
     val formTransition = NavTransition.anchoredRight()
     val state = LocalFormState.current
 
-    Scaffold(modifier = modifier, topBar = { FormSectionTopAppBar(onBack = onBack) }) { innerPadding ->
+    Scaffold(
+        modifier = modifier,
+        topBar = { FormSectionTopAppBar(onBack = onBack) }
+    ) { innerPadding ->
         NavDisplay(
             modifier = Modifier.padding(innerPadding),
-            backStack = formBackStack,
+            backStack = formNavigator.asBackStack(),
             onBack = onBack,
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator()
             ),
             entryProvider = entryProvider {
-                entry<FormScanNavKey>(metadata = formTransition) { FormScanScreen() }
                 entry<FormConfirmNavKey>(metadata = formTransition) { FormConfirmScreen() }
                 entry<FormWizardNavKey>(metadata = formTransition) { FormWizardScreen() }
                 entry<FormReviewNavKey>(metadata = formTransition) {

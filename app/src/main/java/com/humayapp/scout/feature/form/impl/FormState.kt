@@ -78,7 +78,6 @@ class FormState(
     fun validateField(field: WizardField): Boolean = _fieldValidator.validateField(field, fieldData)
     fun validatePage(entry: WizardEntry): Boolean = _fieldValidator.validatePage(entry, fieldData)
 
-
     fun setDialog(state: Dialog) {
         dialogState = state
     }

@@ -120,17 +120,15 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 fun <T> FormImagesLayout(
     items: List<T>,
     modifier: Modifier = Modifier,
-    aspectRatios: List<Float> = listOf(1f, 1f, 1f, 1f, 16f / 9f),
+    aspectRatios: List<Float> = listOf(1f, 1f, 1f, 1f, 1f),
+    title: (@Composable () -> Unit)? = null,
     imageContent: @Composable (item: T, aspectRatio: Float, modifier: Modifier) -> Unit
 ) {
     Column(modifier = modifier) {
-        Text(
-            "Images",
-            style = ScoutTheme.material.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            color = ScoutTheme.material.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(ScoutTheme.spacing.medium))
+        title?.let {
+            it()
+            Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

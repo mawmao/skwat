@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -24,10 +25,18 @@ fun WizardProgressBar(
     backgroundColor: Color = ScoutTheme.material.colorScheme.secondary,
     progressColor: Color = ScoutTheme.material.colorScheme.primary,
 ) {
-    val targetProgress = if (totalCount > 0) (currentCount.toFloat() / totalCount).coerceIn(0f, 1f) else 0f
-    val animatedProgress by animateFloatAsState(
+
+    val targetProgress = remember(totalCount, currentCount) {
+        if (totalCount > 0) (currentCount.toFloat() / totalCount).coerceIn(0f, 1f) else 0f
+    }
+
+    val animatedProgress = animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(durationMillis = NavTransition.DEFAULT_NAV_DURATION, easing = NavTransition.screenTransitionEasing),
+        animationSpec = tween(
+            durationMillis = NavTransition.DEFAULT_NAV_DURATION,
+            easing = NavTransition.screenTransitionEasing
+        ),
+        label = "WizardProgress"
     )
 
     Canvas(
@@ -35,7 +44,10 @@ fun WizardProgressBar(
             .fillMaxWidth()
             .height(height)
     ) {
+
+        val progressWidth = size.width * animatedProgress.value
+
         drawRect(color = backgroundColor, size = size)
-        drawRect(color = progressColor, size = Size(width = size.width * animatedProgress, height = size.height))
+        drawRect(color = progressColor, size = Size(width = progressWidth, height = size.height))
     }
 }

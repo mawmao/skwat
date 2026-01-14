@@ -48,6 +48,7 @@ class ScoutAppState(
 
 @Composable
 fun ScoutApp(state: ScoutAppState) {
+
     NavDisplay(
         backStack = state.rootNavigator.asBackStack(),
         entryDecorators = listOf(
@@ -60,6 +61,7 @@ fun ScoutApp(state: ScoutAppState) {
             formSection(metadata = NavTransition.anchoredRight())
 
             entry<RootNavKey.Detail>(metadata = NavTransition.anchoredRight()) { it.content() }
+            entry<RootNavKey.Overlay>(metadata = NavTransition.anchoredRight()) { it.content() }
 
             // development only
             sandbox()

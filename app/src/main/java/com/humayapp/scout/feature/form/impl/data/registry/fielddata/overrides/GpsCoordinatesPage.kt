@@ -41,8 +41,8 @@ fun GpsCoordinatesPage(
 
     val coordinatesState by vm.coordinatesState.collectAsStateWithLifecycle()
     val errors by vm.errors.collectAsStateWithLifecycle()
-    val permission = ScoutPermissions.Location
 
+    val permission = ScoutPermissions.Location
     val locationPermissions = rememberMultiplePermissionsState(permissions = permission.permissions)
 
     LaunchedEffect(locationPermissions) {

@@ -1,33 +1,88 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
+import com.humayapp.scout.core.ui.common.image.ImageCropDialog
+import com.humayapp.scout.core.ui.common.image.ImageOptionsBottomSheet
+import com.humayapp.scout.core.ui.common.image.ImagePreviewDialog
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.ui.components.FormImagesLayout
+import com.humayapp.scout.feature.form.impl.ui.components.ImageActionState
 import com.humayapp.scout.feature.form.impl.ui.components.ImagePickerBox
 import com.humayapp.scout.feature.form.impl.ui.components.WizardEntry
 
 @Composable
 fun ImagesPage(page: FieldData.Images) {
 
-    val state = LocalFormState.current
+    val formState = LocalFormState.current
+    var actionState by remember { mutableStateOf<ImageActionState>(ImageActionState.Idle) }
 
     WizardEntry(page) {
-        FormImagesLayout(
-            items = page.fields
-        ) { field, aspectRatio, modifier ->
+        FormImagesLayout(items = page.fields) { field, aspectRatio, modifier ->
             ImagePickerBox(
-                fieldKey = field.key,
                 label = field.label,
+                uri = formState.getFieldData(field.key).toUri(),
                 aspectRatio = aspectRatio,
                 modifier = modifier,
-                uri = state.getFieldData(field.key).toUri(),
-                onImageSelected = { k, uri ->
-                    state.setFieldData(k, uri.toString())
-                }
+                onClick = { actionState = ImageActionState.SelectingSource(field.key) }
             )
         }
+    }
+
+    if (actionState is ImageActionState.SelectingSource) {
+        val state = actionState as ImageActionState.SelectingSource
+
+        ImageOptionsBottomSheet(
+            key = state.fieldKey,
+            hasImage = formState.getFieldData(state.fieldKey).isNotBlank(),
+            onDismiss = { actionState = ImageActionState.Idle },
+            onRemove = {
+                formState.clearFieldData(state.fieldKey)
+                actionState = ImageActionState.Idle
+            },
+            onEdit = {
+                val currentUri = formState.getFieldData(state.fieldKey)
+                if (currentUri.isNotBlank()) {
+                    actionState = ImageActionState.Cropping(state.fieldKey, currentUri.toUri())
+                }
+            },
+            onPreview = {
+                val currentUri = formState.getFieldData(state.fieldKey)
+                if (currentUri.isNotBlank()) {
+                    actionState = ImageActionState.Preview(state.fieldKey, currentUri.toUri())
+                }
+            },
+            onImageResult = { uri ->
+                actionState = ImageActionState.Cropping(state.fieldKey, uri)
+            }
+        )
+    }
+
+    if (actionState is ImageActionState.Cropping) {
+        val state = actionState as ImageActionState.Cropping
+
+        ImageCropDialog(
+            uri = state.uri,
+            onDismiss = { actionState = ImageActionState.Idle },
+            onCropComplete = { croppedUri ->
+                formState.setFieldData(state.fieldKey, croppedUri.toString())
+                actionState = ImageActionState.Idle
+            }
+        )
+    }
+
+    if (actionState is ImageActionState.Preview) {
+        val state = actionState as ImageActionState.Preview
+
+        ImagePreviewDialog(
+            uri = state.uri,
+            onDismiss = { actionState = ImageActionState.Idle },
+        )
     }
 }
 

@@ -1,13 +1,16 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
 
+import android.util.Log
 import androidx.compose.ui.text.input.ImeAction
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.core.network.util.transformField
+import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper.FieldDataMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement.Companion.FERTILIZER_TYPE_KEY
 import com.humayapp.scout.feature.form.impl.data.repository.toGeometry
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
@@ -194,6 +197,20 @@ sealed class FieldData : WizardEntry() {
             field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view", validator = Validators.image),
             field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up", validator = Validators.optionalImage),
         )
+
+        override val nextRule: (FormState) -> Boolean = { state ->
+            val allValid = state.validatePage(this)
+            Log.d("Scout: FieldData.Images", "allValid = $allValid")
+            if (!allValid) {
+                state.setDialog(
+                    FormState.Dialog(
+                        title = "Incomplete Images",
+                        message = "Front, right, left, and back view are required"
+                    )
+                )
+            }
+            allValid
+        }
     }
 
     companion object {

@@ -17,6 +17,7 @@ import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.rememberFormState
 import com.humayapp.scout.navigation.RootNavKey
+import com.humayapp.scout.navigation.navigateToForms
 import com.humayapp.scout.navigation.navigateToMain
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +30,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         val formType = key.formType
 
         val formState = rememberFormState(formType)
-        val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormScanNavKey)
+        val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormConfirmNavKey(key.mfid))
 
         CompositionLocalProvider(
             LocalStackNavigator provides formNavigator,
@@ -39,19 +40,19 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
                 modifier = Modifier.fillMaxSize(),
                 onBack = {
                     when (formNavigator.current) {
-                        FormScanNavKey -> rootNavigator.navigateToMain()
-                        FormConfirmNavKey -> formNavigator.pop()
+                        // should ask if cancelling form process
+                        is FormConfirmNavKey -> rootNavigator.navigateToMain()
 
                         // it does not make sense to go back to confirmation screen
                         // on first wizard page, this should ask the user if they
                         // want to cancel the form collection, then go back to the
                         // home screen if yes, if not on first page, `formNavigator` pop works
-                        FormWizardNavKey -> {
+                        is FormWizardNavKey -> {
                             if (formState.canScrollBack) formState.scrollWizardBack()
                             else rootNavigator.navigateToMain()
                         }
 
-                        FormReviewNavKey -> formNavigator.pop()
+                        is FormReviewNavKey -> formNavigator.pop()
                     }
                 }
             )

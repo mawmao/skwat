@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data object FormScanNavKey : NavKey
 
 @Serializable
-data object FormConfirmNavKey : NavKey
+data class FormConfirmNavKey(val mfid: String) : NavKey
 
 @Serializable
 data object FormWizardNavKey : NavKey

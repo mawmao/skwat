@@ -1,8 +1,11 @@
 package com.humayapp.scout.core.ui.component
 
-import androidx.annotation.DrawableRes
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,13 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -30,8 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.humayapp.scout.core.ui.theme.ScoutIcons
+import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.theme.ScoutTypography
-import kotlinx.coroutines.delay
+import com.humayapp.scout.core.ui.util.scoutClickable
 
 @Composable
 fun ScoutDialog(
@@ -40,6 +40,8 @@ fun ScoutDialog(
     content: @Composable () -> Unit,
 ) {
 
+    val shape = ScoutTheme.shapes.cornerMediumLarge
+
     Dialog(
         properties = DialogProperties(
             dismissOnClickOutside = true,
@@ -47,7 +49,7 @@ fun ScoutDialog(
         ),
         onDismissRequest = onDismissRequest
     ) {
-        Surface(modifier = modifier, shape = RoundedCornerShape(14.dp)) {
+        Surface(modifier = modifier, shape = shape) {
             content()
         }
     }
@@ -135,66 +137,27 @@ fun ScoutDialog(
 @Composable
 fun ScoutAlertDialog(
     modifier: Modifier = Modifier,
-    @DrawableRes icon: Int,
+    icon: @Composable () -> Unit,
     title: @Composable () -> Unit,
     message: @Composable () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     ScoutDialog(modifier = modifier, onDismissRequest = onDismissRequest) {
-        Column(
-            horizontalAlignment = Alignment.Start
-        ) {
-            Icon(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .size(42.dp),
-                painter = painterResource(icon),
-                contentDescription = "$title Icon",
-                tint = MaterialTheme.colorScheme.primary,
-            )
+        Column(horizontalAlignment = Alignment.Start) {
+            icon()
             Column(
-                modifier = Modifier.padding(horizontal = 24.dp),
+                modifier = Modifier.padding(horizontal = ScoutTheme.spacing.large),
             ) {
                 title()
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(ScoutTheme.spacing.smallMedium))
                 message()
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider()
+            Spacer(modifier = Modifier.height(ScoutTheme.spacing.largeExtraLarge))
+            HorizontalDivider(color = ScoutTheme.material.colorScheme.secondary)
             ScoutDialogButton(text = "OK", onClick = onDismissRequest)
         }
     }
 }
-
-//@Composable
-//fun ScoutAlertDialog(
-//    modifier: Modifier = Modifier,
-//    icon: ImageVector, // change to composable if needed
-//    title: String,
-//    message: String,
-//    onDismissRequest: () -> Unit,
-//) {
-//    ScoutAlertDialog(
-//        modifier = modifier,
-//        icon = icon,
-//        title = {
-//            Text(
-//                text = title,
-//                style = MaterialTheme.typography.headlineSmall,
-//                color = MaterialTheme.colorScheme.primary
-//            )
-//        },
-//        message = {
-//            Text(
-//                text = message,
-//                style = MaterialTheme.typography.bodyMedium,
-//                color = MaterialTheme.colorScheme.onSurfaceVariant,
-//            )
-//        },
-//        onDismissRequest = onDismissRequest
-//    )
-//}
 
 
 @Composable
@@ -204,16 +167,24 @@ fun ScoutErrorDialog(
     message: String,
     onDismissRequest: () -> Unit
 ) {
-
-
     ScoutAlertDialog(
         modifier = modifier,
-        icon = ScoutIcons.Error,
+        icon = {
+            Icon(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .size(42.dp),
+                painter = painterResource(ScoutIcons.Error),
+                contentDescription = "$title Icon",
+                tint = ScoutTheme.extras.colors.danger,
+            )
+        },
         title = {
             Text(
                 text = title,
                 style = ScoutTypography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = ScoutTheme.extras.colors.danger
             )
         },
         message = {
@@ -233,30 +204,14 @@ fun ScoutDialogButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val ripple = ripple(bounded = true)
-    val interactionSource = remember { MutableInteractionSource() }
-    var isDismissing by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isDismissing) {
-        if (isDismissing) {
-            delay(120L)
-            onClick()
-        }
-    }
-
     Text(
         text = text,
         textAlign = TextAlign.Center,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = ScoutTheme.material.typography.labelMedium,
+        color = ScoutTheme.material.colorScheme.onSurfaceVariant,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple,
-                enabled = !isDismissing,
-                onClick = { if (!isDismissing) isDismissing = true }
-            )
+            .scoutClickable(onClick = onClick)
             .padding(vertical = 16.dp)
     )
 }

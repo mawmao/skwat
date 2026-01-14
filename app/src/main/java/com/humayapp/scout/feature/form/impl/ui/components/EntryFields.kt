@@ -2,8 +2,10 @@ package com.humayapp.scout.feature.form.impl.ui.components
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.util.fastForEach
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.model.WizardField
@@ -20,7 +22,17 @@ fun <ImageType> FormFieldData(
 
     if (imageFields.isNotEmpty()) {
         val imageItems = imageFields.zip(images) { field, img -> field to img }
-        FormImagesLayout(items = imageItems) { (field, img), aspect, modifier ->
+        FormImagesLayout(
+            items = imageItems,
+            title = {
+                Text(
+                    "Images",
+                    style = ScoutTheme.material.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = ScoutTheme.material.colorScheme.onSurface,
+                )
+            }
+        ) { (field, img), aspect, modifier ->
             imageContent(field, img, aspect, modifier)
         }
     }

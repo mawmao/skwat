@@ -1,8 +1,6 @@
 package com.humayapp.scout
 
 import android.app.Application
-import androidx.compose.runtime.Composer
-import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil3.ImageLoader

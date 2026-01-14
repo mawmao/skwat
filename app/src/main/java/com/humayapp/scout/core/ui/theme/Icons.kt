@@ -21,4 +21,6 @@ object ScoutIcons {
     val DataArray = R.drawable.data_array_24px
     val Sort = R.drawable.sort_24px
     val Back = R.drawable.arrow_back_24px
+    val Trash = R.drawable.delete_24px
+    val Crop = R.drawable.crop_24px
 }

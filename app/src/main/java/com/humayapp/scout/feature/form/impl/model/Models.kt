@@ -49,7 +49,7 @@ abstract class WizardEntry {
     abstract val description: String
     abstract val fields: List<WizardField>
 
-    open val reviewRule: (FormState) -> Boolean = { true }
+    open val nextRule: (FormState) -> Boolean = { true }
     open fun nextScreen(answers: Map<String, Any?>): WizardEntry? = null
 }
 

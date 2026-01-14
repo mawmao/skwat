@@ -9,13 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
+import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.FormState
-import java.util.Map.entry
 
 @Composable
 fun FormDetailsContent(state: FormState) {
@@ -30,7 +31,17 @@ fun FormDetailsContent(state: FormState) {
     }
 
     if (imageFields.isNotEmpty()) {
-        FormImagesLayout(items = imageFields) { field, aspectRatio, modifier ->
+        FormImagesLayout(
+            items = imageFields,
+            title = {
+                Text(
+                    "Images",
+                    style = ScoutTheme.material.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = ScoutTheme.material.colorScheme.onSurface,
+                )
+            }
+        ) { field, aspectRatio, modifier ->
             val path = state.getFieldData(field.key)
 
             Column(modifier = modifier) {

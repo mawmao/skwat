@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface RootNavKey : NavKey {
 
-
     // Sandbox (for development only)
     @Serializable
     data object Sandbox : RootNavKey
@@ -21,20 +20,24 @@ sealed interface RootNavKey : NavKey {
     data object Auth : RootNavKey
 
     @Serializable
-    data class Form(val formType: FormType) : RootNavKey
+    data class Form(val formType: FormType, val mfid: String) : RootNavKey
 
     @Serializable
     data class Detail(val content: @Composable () -> Unit) : RootNavKey
+
+    @Serializable
+    data class Overlay(val content: @Composable () -> Unit) : RootNavKey
 }
 
-// helpers
 // auth and main are hardcoded `popAll` since this would be the only behavior they need
-// forms is push and no need to call `.pop` in root navigators
-
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
 fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
-fun StackNavigator<NavKey>.navigateToForms(formType: FormType) = this.push(RootNavKey.Form(formType))
+
+fun StackNavigator<NavKey>.navigateToForms(formType: FormType, mfid: String) = this.push(RootNavKey.Form(formType, mfid))
 fun StackNavigator<NavKey>.navigateToDetail(content: @Composable () -> Unit) = this.push(RootNavKey.Detail(content))
+
+
+fun StackNavigator<NavKey>.navigateToOverlay(content: @Composable () -> Unit) = this.push(RootNavKey.Overlay(content))
 
 
 

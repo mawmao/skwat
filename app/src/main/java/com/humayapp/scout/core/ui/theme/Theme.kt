@@ -37,11 +37,11 @@ object ScoutTheme {
     val extras: ScoutExtras
         @Composable @ReadOnlyComposable get() = LocalScoutExtras.current
 
-    val spacing: Spacing
-        @Composable @ReadOnlyComposable get() = Spacing()
+    val spacing: ScoutSpacing
+        @Composable @ReadOnlyComposable get() = LocalScoutSpacing.current
 
-    val shapes: Shapes
-        @Composable @ReadOnlyComposable get() = Shapes()
+    val shapes: ScoutShapes
+        @Composable @ReadOnlyComposable get() = LocalScoutShapes.current
 
     val margin: Dp
         @Composable @ReadOnlyComposable get() = spacing.medium
@@ -49,8 +49,15 @@ object ScoutTheme {
 
 @Composable
 fun ScoutTheme(content: @Composable () -> Unit) {
+
+    val spacing = ScoutSpacing()
+    val shapes = ScoutShapes()
+    val extras = ScoutExtras()
+
     CompositionLocalProvider(
-        LocalScoutExtras provides ScoutExtras()
+        LocalScoutExtras provides extras,
+        LocalScoutSpacing provides spacing,
+        LocalScoutShapes provides shapes
     ) {
         MaterialTheme(
             colorScheme = LightColorScheme,

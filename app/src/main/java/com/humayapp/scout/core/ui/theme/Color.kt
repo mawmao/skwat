@@ -1,7 +1,5 @@
 package com.humayapp.scout.core.ui.theme
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 object ScoutColors {
@@ -9,6 +7,8 @@ object ScoutColors {
     val White = Color.White
 
     val Gray100 = Color(0xFFF2F2F7) // background
+
+    val Gray150 = Color(0x55D9D9D9) // secondary
     val Gray300 = Color(0xFFD9D9D9) // secondary
 
     val Gray500 = Color(0xFFA3A3A4) // onSurfaceVariant
@@ -18,7 +18,7 @@ object ScoutColors {
     val Gray800 = Color(0xD91C1C1E) // mutedOnBackground
     val Gray900 = Color(0xFF1C1C1E) // onBackground
 
-    val Red100 = Color(0xFFFEECEC) // error
+    val Red100 = Color.hsl(hue = 0f, saturation = 0.80f, lightness = 0.94f) // error
     val Red500 = Color(0xFFC23030) // OnError
 
     val HumayGreen = Color(0XFF00A63E)
@@ -27,19 +27,4 @@ object ScoutColors {
     val ScoutLogoGreenLight = Color(0xFF009A4D)
 }
 
-@Immutable
-data class ScoutExtras(
-    val colors: Colors = Colors()
-) {
-    @Immutable
-    data class Colors(
-        val mutedOnBackground: Color = ScoutColors.Gray800,
-        val mutedOnSurfaceVariant: Color = ScoutColors.MutedGray500,
-        val logoDark: Color = ScoutColors.ScoutLogoGreenDark,
-        val logoLight: Color = ScoutColors.ScoutLogoGreenLight,
-        val danger: Color = ScoutColors.Red500,
-    )
-}
-
-val LocalScoutExtras = staticCompositionLocalOf { ScoutExtras() }
 

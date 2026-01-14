@@ -51,14 +51,19 @@ class LoginViewModel @Inject constructor(
             val email = emailState.text.toString()
             val password = passwordState.text.toString()
 
-            when (val result = authRepository.signIn(email, password)) {
-                is AuthResult.Success -> {
-                    emailState.clearText()
-                    passwordState.clearText()
-                    _uiEvent.send(LoginUiEvent.LoginSuccess)
-                }
-                else -> _uiError.update { result.message }
-            }
+            //temporary
+            emailState.clearText()
+            passwordState.clearText()
+            _uiEvent.send(LoginUiEvent.LoginSuccess)
+
+//            when (val result = authRepository.signIn(email, password)) {
+//                is AuthResult.Success -> {
+//                    emailState.clearText()
+//                    passwordState.clearText()
+//                    _uiEvent.send(LoginUiEvent.LoginSuccess)
+//                }
+//                else -> _uiError.update { result.message }
+//            }
 
             updateLoggingIn(false)
 

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +24,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.ripple
@@ -36,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -144,6 +148,52 @@ fun ScoutOutlinedButton(
     }
 }
 
+@Composable
+fun ScoutGhostButton(
+    modifier: Modifier = Modifier,
+    text: String,
+    prefixIcon: (@Composable () -> Unit)? = null,
+    suffixIcon: (@Composable () -> Unit)? = null,
+    enabled: Boolean = true,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium),
+    containerColor: Color = Color.Transparent,
+    contentColor: Color = ScoutButtonDefaults.filledContainerColor,
+    shape: Shape = ScoutButtonDefaults.CornerShape,
+    contentPadding: PaddingValues = ScoutButtonDefaults.ContentPadding,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp),
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier.semantics { role = Role.Button },
+        enabled = enabled,
+        shape = shape,
+        color = containerColor,
+        contentColor = Color.Transparent,
+        interactionSource = interactionSource,
+    ) {
+        Row(
+            Modifier
+                .defaultMinSize(
+                    minWidth = ButtonDefaults.MinWidth,
+                    minHeight = ButtonDefaults.MinHeight,
+                )
+                .padding(contentPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = horizontalArrangement,
+        ) {
+            prefixIcon?.let { it() }
+            Text(
+                text = text,
+                color = contentColor,
+                style = textStyle
+            )
+            suffixIcon?.let { it() }
+        }
+    }
+}
 
 @Composable
 fun ScoutLoadingButton(
@@ -157,7 +207,7 @@ fun ScoutLoadingButton(
     contentColor: Color = ScoutButtonDefaults.filledContentColor,
     shape: Shape = ScoutButtonDefaults.CornerShape,
     contentPadding: PaddingValues = ScoutButtonDefaults.ContentPadding,
-    textStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp)
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp),
 ) {
     ScoutButton(
         text = text,
@@ -190,7 +240,10 @@ fun ScoutTextButton(
     modifier: Modifier = Modifier,
     text: String,
     isLoading: Boolean = false,
-    style: TextStyle = ScoutTheme.material.typography.labelLarge.copy(fontSize = 14.sp, color = ScoutTheme.extras.colors.mutedOnBackground),
+    style: TextStyle = ScoutTheme.material.typography.labelLarge.copy(
+        fontSize = 14.sp,
+        color = ScoutTheme.extras.colors.mutedOnBackground
+    ),
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,

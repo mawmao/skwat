@@ -5,7 +5,7 @@ import com.humayapp.scout.core.navigation.StackNavigator
 
 fun StackNavigator<NavKey>.navigateToFormScan() = this.push(FormScanNavKey)
 
-fun StackNavigator<NavKey>.navigateToFormConfirm() = this.push(FormConfirmNavKey)
+fun StackNavigator<NavKey>.navigateToFormConfirm(mfid: String) = this.push(FormConfirmNavKey(mfid))
 
 fun StackNavigator<NavKey>.navigateToFormWizard() = this.push(FormWizardNavKey)
 

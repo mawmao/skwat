@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,7 +50,6 @@ fun WizardField(
     dynamicOptions: List<String>? = null,
     imeAction: ImeAction = ImeAction.Unspecified,
 ) {
-
     WizardFieldImpl(
         modifier = modifier,
         field = field,
@@ -97,17 +99,23 @@ fun WizardFieldImpl(
 ) {
 
     val state = LocalFormState.current
-    val error = state.getError(field.key)
 
     val focusRequester = remember { FocusRequester() }
 
-    val currentValue by rememberUpdatedState(value())
+    val error by remember(state, field.key) {
+        derivedStateOf { state.getError(field.key) }
+    }
+
+    val currentValue by remember(value) {
+        derivedStateOf { value() }
+    }
 
     val focusModifier = modifier
         .focusRequester(focusRequester)
         .onFocusChanged {
             if (it.isFocused && state.hasError(field.key)) state.clearError(field.key)
         }
+
 
     when (field.type) {
         NAME, NUM_WHOLE, NUM_DECIMAL, NUM_PHONE, NUM_PERCENT -> {

@@ -42,7 +42,7 @@ sealed class NutrientManagement : WizardEntry() {
         override val description = "Records fertilizer use"
         override val fields = emptyList<WizardField>()
 
-        override val reviewRule: (FormState) -> Boolean = { state ->
+        override val nextRule: (FormState) -> Boolean = { state ->
             // only checked one since you can't even add a single key without the other keys
             val hasApplication = state.fieldData.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
             if (!hasApplication) {
