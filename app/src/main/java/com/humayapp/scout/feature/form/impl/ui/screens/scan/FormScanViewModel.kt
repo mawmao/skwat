@@ -20,8 +20,10 @@ class FormScanViewModel @Inject constructor(
     private val cameraManager: CameraManager
 ) : ViewModel() {
 
+    val isTorchOn = cameraManager.isTorchOn
     val surfaceRequest = cameraManager.surfaceRequest
     val scannedBarcode = cameraManager.scannedBarcode
+    val isCameraReady = cameraManager.isCameraReady
 
     fun resetScannedBarcode() {
         cameraManager.resetBarcode()
@@ -33,8 +35,21 @@ class FormScanViewModel @Inject constructor(
         }
     }
 
-    companion object {
-        private const val LOG_TAG = "Scout: ScanViewModel"
+    fun enableTorch(value: Boolean) = cameraManager.enableTorch(value)
+
+    override fun onCleared() {
+        super.onCleared()
+        cameraManager.stopCamera()
+    }
+
+    fun onPause() {
+        cameraManager.pause()
+    }
+
+    fun onResume(lifecycleOwner: LifecycleOwner) {
+        viewModelScope.launch {
+            cameraManager.resume(lifecycleOwner)
+        }
     }
 }
 

@@ -40,7 +40,7 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 fun ImageBox(
     modifier: Modifier = Modifier,
     uri: Uri? = null,
-    aspectRatio: Float = 0f,
+    aspectRatio: Float?,
 ) {
     val context = LocalContext.current
     val borderColor = InputFieldTokens.unfocusedColor
@@ -57,7 +57,7 @@ fun ImageBox(
 
     Box(
         modifier = modifier
-            .then(if (aspectRatio > 0f) Modifier.aspectRatio(aspectRatio) else Modifier)
+            .then(if (aspectRatio != null) Modifier.aspectRatio(aspectRatio) else Modifier)
             .border(1.dp, borderColor, shape)
             .clip(shape),
         contentAlignment = Alignment.Center

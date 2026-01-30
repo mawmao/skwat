@@ -2,29 +2,65 @@ package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.system.LocationMonitor
 import com.humayapp.scout.feature.form.impl.data.repository.Coordinates
 import com.humayapp.scout.feature.form.impl.data.repository.CoordinatesRepository
 import com.humayapp.scout.feature.form.impl.data.repository.LocationRepository
 import com.humayapp.scout.feature.form.impl.data.repository.emptyCoordinates
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class FieldDataViewModel @Inject constructor(
     private val locationRepository: LocationRepository,
-    private val coordinatesRepository: CoordinatesRepository
+    private val coordinatesRepository: CoordinatesRepository,
+    private val locationMonitor: LocationMonitor,
 ) : ViewModel() {
 
     private val _locationState = MutableStateFlow<LocationState>(LocationState())
     val locationState = _locationState.asStateFlow()
 
-    private val _coordinatesState = MutableStateFlow<CoordinatesState>(CoordinatesState())
-    val coordinatesState = _coordinatesState.asStateFlow()
+    val coordinatesState: StateFlow<CoordinatesState> =
+        locationMonitor.isEnabled
+            .flatMapLatest { enabled ->
+                if (!enabled) {
+                    flowOf(
+                        CoordinatesState(
+                            locationServicesDisabled = true,
+                            coordinatesLoading = false
+                        )
+                    )
+                } else {
+                    coordinatesRepository.coordinates
+                        .map { coords ->
+                            CoordinatesState(
+                                coordinates = coords,
+                                locationServicesDisabled = false
+                            )
+                        }
+                        .onStart {
+                            emit(CoordinatesState(coordinatesLoading = true))
+                        }
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = CoordinatesState()
+            )
 
     private val _errors = MutableStateFlow<Errors>(Errors())
     val errors = _errors.asStateFlow()
@@ -114,22 +150,22 @@ class FieldDataViewModel @Inject constructor(
         }
     }
 
-    fun fetchCoordinates() {
-        coordinatesJob?.cancel()
-        coordinatesJob = viewModelScope.launch {
-            _coordinatesState.update { it.copy(coordinatesLoading = true) }
-            runCatching {
-                coordinatesRepository.getCoordinates()
-            }.onSuccess { coordinates ->
-                _coordinatesState.update {
-                    it.copy(coordinates = coordinates, coordinatesLoading = false)
-                }
-            }.onFailure { err ->
-                _coordinatesState.update { it.copy(coordinatesLoading = false) }
-                _errors.update { it.copy(coordinates = err.message) }
-            }
-        }
-    }
+//    fun fetchCoordinates() {
+//        coordinatesJob?.cancel()
+//        coordinatesJob = viewModelScope.launch {
+//            _coordinatesState.update { it.copy(coordinatesLoading = true, locationServicesDisabled = false) }
+//            runCatching {
+//                coordinatesRepository.getCoordinates()
+//            }.onSuccess { coordinates ->
+//                _coordinatesState.update {
+//                    it.copy(coordinates = coordinates, coordinatesLoading = false)
+//                }
+//            }.onFailure { err ->
+//                _coordinatesState.update { it.copy(coordinatesLoading = false) }
+//                _errors.update { it.copy(coordinates = err.message) }
+//            }
+//        }
+//    }
 
     data class Errors(
         val location: String? = null,
@@ -147,5 +183,6 @@ class FieldDataViewModel @Inject constructor(
     data class CoordinatesState(
         val coordinates: Coordinates = emptyCoordinates(),
         val coordinatesLoading: Boolean = false,
+        val locationServicesDisabled: Boolean = false
     )
 }

@@ -33,7 +33,6 @@ fun FormWizardScreen() {
 
     val maxWidthModifier = Modifier.fillMaxWidth()
 
-
     formState.dialogState?.let {
         ScoutErrorDialog(
             title = it.title,
@@ -43,9 +42,7 @@ fun FormWizardScreen() {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-
         WizardPager(modifier = Modifier.weight(1f))
-
         Column(
             modifier = maxWidthModifier.padding(ScoutTheme.margin),
             verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.small)

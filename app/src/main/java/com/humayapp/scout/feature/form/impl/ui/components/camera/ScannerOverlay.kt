@@ -23,7 +23,7 @@ fun ScannerOverlay(
     cornerLineLength: Dp = 32.dp
 ) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = modifier) {

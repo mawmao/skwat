@@ -11,9 +11,12 @@ import com.google.android.gms.location.Priority
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
+
 
 typealias Coordinates = Pair<Double, Double> // longitude, latitude
 
@@ -42,13 +45,15 @@ interface CoordinatesService {
 }
 
 interface CoordinatesRepository {
+    val coordinates: Flow<Coordinates>
+
     suspend fun getCoordinates(): Coordinates
 }
 
 class CoordinatesServiceGms @Inject constructor(
     private val fusedLocationClient: FusedLocationProviderClient,
+    @ApplicationContext private val context: Context
 ) : CoordinatesService {
-
 
     @RequiresPermission(allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION])
     override suspend fun getCoordinates(
@@ -57,6 +62,8 @@ class CoordinatesServiceGms @Inject constructor(
         initialDelayMillis: Long,
         backoffFactor: Double
     ): Coordinates {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
         var delayMillis = initialDelayMillis
         repeat(retries + 1) { attempt ->
             val location = withTimeoutOrNull(timeoutMillis) {
@@ -92,20 +99,17 @@ class CoordinatesServiceImpl @Inject constructor(
 
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            cont.resume(Coordinates(0.0, 0.0)) { _, _, _ -> }
-            return@suspendCancellableCoroutine
-        }
-
         val lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
         if (lastKnown != null) {
-            cont.resume(Coordinates(lastKnown.longitude, lastKnown.latitude)) { _, _, _ -> }
+            cont.resume(Coordinates(lastKnown.longitude, lastKnown.latitude))
             return@suspendCancellableCoroutine
         }
 
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
-                cont.resume(Coordinates(location.longitude, location.latitude)) { _, _, _ -> }
+                if(cont.isActive) {
+                    cont.resume(Coordinates(location.longitude, location.latitude))
+                }
                 locationManager.removeUpdates(this)
             }
 
@@ -128,8 +132,11 @@ class CoordinatesRepositoryImpl @Inject constructor(
     private val coordinatesService: CoordinatesService
 ) : CoordinatesRepository {
 
+    override val coordinates: Flow<Coordinates> = flow {
+        emit(getCoordinates())
+    }
+
     override suspend fun getCoordinates(): Coordinates {
-        val result = coordinatesService.getCoordinates()
-        return result
+        return coordinatesService.getCoordinates()
     }
 }

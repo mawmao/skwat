@@ -5,6 +5,8 @@ import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.system.CameraManager
 import com.humayapp.scout.core.system.ConnectivityManagerNetworkMonitor
+import com.humayapp.scout.core.system.LocationMonitor
+import com.humayapp.scout.core.system.LocationProviderMonitor
 import com.humayapp.scout.core.system.NetworkMonitor
 import dagger.Module
 import dagger.Provides
@@ -28,6 +30,12 @@ object SystemModule {
         @Dispatcher(ScoutDispatchers.IO) ioDispatcher: CoroutineDispatcher,
     ): NetworkMonitor = ConnectivityManagerNetworkMonitor(context, ioDispatcher)
 
+    @Provides
+    @Singleton
+    fun provideLocationMonitor(
+        @ApplicationContext context: Context,
+        @Dispatcher(ScoutDispatchers.IO) ioDispatcher: CoroutineDispatcher,
+    ): LocationMonitor = LocationProviderMonitor(context, ioDispatcher)
 
     @Provides
     @Singleton

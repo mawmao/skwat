@@ -31,7 +31,7 @@ fun ImagePickerBox(
     label: String,
     uri: Uri?,
     modifier: Modifier = Modifier,
-    aspectRatio: Float = 0f,
+    aspectRatio: Float? = null,
     onClick: () -> Unit
 ) {
     Column(modifier = modifier) {

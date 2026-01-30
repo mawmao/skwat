@@ -1,8 +1,7 @@
 package com.humayapp.scout.core.ui.common.image
 
-import android.R.attr.translationX
-import android.R.attr.translationY
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -60,6 +59,8 @@ import com.humayapp.scout.core.ui.util.ScoutSizeUtils
 import com.humayapp.scout.core.ui.util.cropImage
 import kotlinx.coroutines.launch
 
+private const val LOG_TAG = "Scout: ImageCropDialog"
+
 @Composable
 fun ImageCropDialog(
     uri: Uri,
@@ -97,9 +98,19 @@ fun ImageCropDialog(
                 .background(Color.Black)
         ) {
             CropToolbar(
-                onCancel = onDismiss,
+                onCancel = {
+                    Log.d(LOG_TAG, "Cancel clicked")
+                    onDismiss()
+                },
                 onDone = {
+                    Log.d(LOG_TAG, "Done clicked")
+                    Log.d(
+                        LOG_TAG,
+                        "Crop params scale=${cropState.value.scale} offset=${cropState.value.offset} " +
+                                "container=$containerSize content=$displayedImageSize cropBox=$cropBoxSize"
+                    )
                     scope.launch {
+                        Log.d(LOG_TAG, "Crop coroutine start")
                         val cropped = cropImage(
                             context = context,
                             uri = uri,
@@ -110,7 +121,13 @@ fun ImageCropDialog(
                             cropBoxSizePx = cropBoxSize,
                             outputSize = IntSize(600, 600)
                         )
-                        if (cropped != null) onCropComplete(cropped)
+                        Log.d(LOG_TAG, "cropImage result=$cropped")
+
+                        if (cropped != null) {
+                            onCropComplete(cropped)
+                        } else {
+                            Log.e(LOG_TAG, "cropImage returned null")
+                        }
                     }
                 }
             )
@@ -121,6 +138,7 @@ fun ImageCropDialog(
                     .weight(1f)
                     .clipToBounds()
                     .onGloballyPositioned { coordinates ->
+                        Log.d(LOG_TAG, "Container size=$containerSize")
                         containerSize = coordinates.size
                     },
                 contentAlignment = Alignment.Center

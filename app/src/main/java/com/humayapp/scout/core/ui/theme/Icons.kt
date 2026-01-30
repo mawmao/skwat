@@ -23,4 +23,7 @@ object ScoutIcons {
     val Back = R.drawable.arrow_back_24px
     val Trash = R.drawable.delete_24px
     val Crop = R.drawable.crop_24px
+    val Flashlight = R.drawable.flashlight_on_24px
+    val Barcode = R.drawable.barcode_24px
+    val QrCodeScanner = R.drawable.qr_code_scanner_24px
 }

@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,11 +66,16 @@ fun ImagesPage(page: FieldData.Images) {
 
     if (actionState is ImageActionState.Cropping) {
         val state = actionState as ImageActionState.Cropping
+        Log.d(LOG_TAG, "Show CropDialog key=${state.fieldKey} uri=${state.uri}")
 
         ImageCropDialog(
             uri = state.uri,
-            onDismiss = { actionState = ImageActionState.Idle },
+            onDismiss = {
+                Log.d(LOG_TAG, "CropDialog dismissed")
+                actionState = ImageActionState.Idle
+            },
             onCropComplete = { croppedUri ->
+                Log.d(LOG_TAG, "Crop complete uri=$croppedUri")
                 formState.setFieldData(state.fieldKey, croppedUri.toString())
                 actionState = ImageActionState.Idle
             }
@@ -86,3 +92,4 @@ fun ImagesPage(page: FieldData.Images) {
     }
 }
 
+private const val LOG_TAG = "Scout: ImagesPage"

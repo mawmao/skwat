@@ -2,8 +2,8 @@
 
 # todo
 
-- additional damage assessment 
- 
+- confirm ui
+
 - settings
  
 - settings on history detail to delete image cache
@@ -22,11 +22,10 @@
   
 
 
+
 # issues
 
 #### high
-
-- coordinates handling (if scanned without turning on location)
 
 #### medium
 
@@ -37,15 +36,8 @@
 #### low
 
 - disabled ui of textfields (esp in login)
-- dropdown menu items ui
-- field data location cascading field transition (should come from below last field)
-- form history ui
+- dropdown menu items ui (font weight)
 - form remarks?
-
-# notes
-
-## image-handling-solution
-
 
 # considerations
 

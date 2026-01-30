@@ -123,6 +123,7 @@ android {
 dependencies {
 
     implementation(libs.accompanist.permissions)
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     implementation(libs.play.services.location)
 

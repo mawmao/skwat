@@ -40,7 +40,8 @@ object FormModule {
     @Singleton
     fun provideCoordinatesService(
         fusedLocationClient: FusedLocationProviderClient,
-    ): CoordinatesService = CoordinatesServiceGms(fusedLocationClient)
+        @ApplicationContext context: Context
+    ): CoordinatesService = CoordinatesServiceGms(fusedLocationClient, context)
 
     @Provides
     @Singleton

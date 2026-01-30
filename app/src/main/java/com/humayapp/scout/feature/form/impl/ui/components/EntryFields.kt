@@ -15,7 +15,7 @@ fun <ImageType> FormFieldData(
     fields: List<WizardField>,
     getAnswer: (String) -> String,
     images: List<ImageType> = emptyList(),
-    imageContent: @Composable (field: WizardField, image: ImageType?, aspectRatio: Float, modifier: Modifier) -> Unit
+    imageContent: @Composable (field: WizardField, image: ImageType?, aspectRatio: Float?, modifier: Modifier) -> Unit
 ) {
     val imageFields = fields.filter { it.key.startsWith("img_") }.sortedBy { it.key }
     val otherFields = fields.filter { !it.key.startsWith("img_") }

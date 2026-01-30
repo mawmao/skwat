@@ -30,7 +30,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         val formType = key.formType
 
         val formState = rememberFormState(formType)
-        val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormConfirmNavKey(key.mfid))
+        val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormWizardNavKey)
 
         CompositionLocalProvider(
             LocalStackNavigator provides formNavigator,
@@ -40,7 +40,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
                 modifier = Modifier.fillMaxSize(),
                 onBack = {
                     when (formNavigator.current) {
-                        // should ask if cancelling form process
+                        // currently unused. to remove soon.
                         is FormConfirmNavKey -> rootNavigator.navigateToMain()
 
                         // it does not make sense to go back to confirmation screen

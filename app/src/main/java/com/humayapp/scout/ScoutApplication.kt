@@ -9,9 +9,15 @@ import coil3.SingletonImageLoader
 import com.humayapp.scout.core.sync.Sync
 import dagger.hilt.android.HiltAndroidApp
 import jakarta.inject.Inject
+import jakarta.inject.Named
+import java.util.concurrent.ExecutorService
 
 @HiltAndroidApp
 class ScoutApplication : Application(), Configuration.Provider, SingletonImageLoader.Factory {
+
+    @Inject
+    @Named("CAMERA")
+    lateinit var cameraExecutor: ExecutorService
 
     @Inject
     lateinit var imageLoader: dagger.Lazy<ImageLoader>
@@ -31,5 +37,10 @@ class ScoutApplication : Application(), Configuration.Provider, SingletonImageLo
         Sync.initialize(context = this)
 
 //        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        cameraExecutor.shutdown()
     }
 }
