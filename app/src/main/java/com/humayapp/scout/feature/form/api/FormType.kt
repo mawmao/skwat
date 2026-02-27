@@ -21,6 +21,7 @@ enum class FormType(
     val label: String,
     val description: String,
 ) {
+    @Serializable
     FIELD_DATA(label = "Farmer's Profile", description = "Register farmers") {
         override val startEntry = FieldData.startEntry
         override val entries = FieldData.entries

@@ -1,6 +1,5 @@
 package com.humayapp.scout.feature.form.impl.ui.components
 
-import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -24,7 +22,6 @@ import androidx.compose.ui.util.fastForEach
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
-import com.humayapp.scout.feature.form.impl.model.field
 
 
 @Composable

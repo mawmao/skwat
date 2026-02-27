@@ -1,6 +1,5 @@
 package com.humayapp.scout.core.ui.common.image
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,12 +19,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 
 @Composable
 fun ImagePreviewDialog(
-    uri: Uri,
+    uri: String,
     onDismiss: () -> Unit,
 ) {
     Dialog(
@@ -39,7 +39,7 @@ fun ImagePreviewDialog(
                 .clickable { onDismiss() }
         ) {
             AsyncImage(
-                model = uri,
+                model = uri.toUri(),
                 contentDescription = "Full size image",
                 modifier = Modifier
                     .fillMaxWidth()

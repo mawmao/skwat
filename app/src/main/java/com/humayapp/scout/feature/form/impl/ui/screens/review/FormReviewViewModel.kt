@@ -52,6 +52,8 @@ class FormReviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             try {
                 val userId = getAuthenticatedUserId() ?: unreachable("user id in this context can never be null")
+                Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
+
                 val id = formRepository.saveFormWithImages(
                     answers = answers,
                     initialEntry = FormEntryEntity(

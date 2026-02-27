@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
@@ -63,7 +64,7 @@ private const val LOG_TAG = "Scout: ImageCropDialog"
 
 @Composable
 fun ImageCropDialog(
-    uri: Uri,
+    uri: String,
     onDismiss: () -> Unit,
     onCropComplete: (Uri) -> Unit
 ) {
@@ -71,7 +72,7 @@ fun ImageCropDialog(
 
     val scope = rememberCoroutineScope()
 
-    val painter = rememberAsyncImagePainter(model = uri)
+    val painter = rememberAsyncImagePainter(model = uri.toUri())
     val painterState by painter.state.collectAsStateWithLifecycle()
 
     val imageIntrinsicSize = if (painterState is AsyncImagePainter.State.Success) {
@@ -113,7 +114,7 @@ fun ImageCropDialog(
                         Log.d(LOG_TAG, "Crop coroutine start")
                         val cropped = cropImage(
                             context = context,
-                            uri = uri,
+                            uri = uri.toUri(),
                             scale = cropState.value.scale,
                             contentOffset = cropState.value.offset,
                             containerSize = containerSize,

@@ -21,7 +21,7 @@ val LocalFormState = staticCompositionLocalOf<FormState> {
 }
 
 @Composable
-fun rememberFormState(formType: FormType): FormState {
+fun rememberFormState(formType: FormType, mfid: String): FormState {
 
     val pagerState = rememberPagerState(pageCount = { formType.entries.size })
 
@@ -30,7 +30,8 @@ fun rememberFormState(formType: FormType): FormState {
             initialWizardEntry = formType.startEntry,
             pagerEntries = formType.entries,
             formType = formType,
-            pagerState = pagerState
+            pagerState = pagerState,
+            mfid = mfid
         )
     }
 }
@@ -42,10 +43,9 @@ class FormState(
     pagerEntries: List<WizardEntry>,
 
     val formType: FormType,
-    val pagerState: PagerState
+    val pagerState: PagerState,
+    val mfid: String,
 ) {
-    var mfid: String = ""
-
     val allFields = pagerEntries.flatMap { it.fields }
 
     private val _fieldStore = FieldStore(allFields)

@@ -19,8 +19,6 @@ import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
 import com.humayapp.scout.feature.form.impl.rememberFormState
 import com.humayapp.scout.feature.form.impl.ui.components.FormSectionTopAppBar
-import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanScreen
 import com.humayapp.scout.navigation.RootNavKey
 
 const val SANDBOX_ENABLE = false
@@ -28,7 +26,6 @@ const val SANDBOX_ENABLE = false
 @OptIn(ExperimentalMaterial3Api::class)
 fun EntryProviderScope<NavKey>.sandbox() {
     entry<RootNavKey.Sandbox>(metadata = NavTransition.fade()) {
-        FormScanScreen(formType = FormType.FIELD_DATA)
 //        CompositionLocalProvider(
 //            LocalFormState provides rememberFormState(FormType.FIELD_DATA),
 //            LocalStackNavigator provides rememberStackNavigator<NavKey>("field_data form", FormConfirmNavKey("1231"))
@@ -40,7 +37,7 @@ fun EntryProviderScope<NavKey>.sandbox() {
 //                Box(
 //                    modifier = Modifier.fillMaxSize().padding(innerPadding),
 //                ) {
-//                    FormConfirmScreen()
+//                    ImagesPage(FieldData.Images)
 //                }
 //            }
 //        }

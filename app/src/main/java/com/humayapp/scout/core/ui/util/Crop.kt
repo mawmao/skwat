@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntSize
-import androidx.core.content.PackageManagerCompat.LOG_TAG
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers

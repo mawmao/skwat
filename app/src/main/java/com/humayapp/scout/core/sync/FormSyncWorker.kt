@@ -67,6 +67,7 @@ class FormSyncWorker @AssistedInject constructor(
                 val timestamp = Clock.System.now()
 
                 Log.d(LOG_TAG, "[Sync] Starting upload for entry MFID ${entry.mfid}.")
+                Log.d(LOG_TAG, "[Sync] Entry data = ${entry}.")
 
                 try {
                     // todo:
@@ -86,7 +87,14 @@ class FormSyncWorker @AssistedInject constructor(
                         image.copy(remotePath = remotePath)
                     }
 
-                    Log.d(LOG_TAG, "[Sync] imageUrls size = ${entry.imageUrls.size}")
+                    Log.d(
+                        LOG_TAG, "[Sync] Trying to upload final entry copy = ${
+                            entry.copy(
+                                imageUrls = buildImagePathsArray(updatedImages),
+                                syncedAt = timestamp
+                            )
+                        }"
+                    )
 
                     supabase.uploadForm(
                         entry = entry.copy(
@@ -110,7 +118,10 @@ class FormSyncWorker @AssistedInject constructor(
                     Log.i(LOG_TAG, "[Sync] Local sync mark successful for MFID ${entry.mfid} - ${formType.label}.")
                 } catch (e: Exception) {
                     hasError = true
-                    Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for MFID ${entry.mfid} - ${formType.label}: ${e.message}")
+                    Log.e(
+                        LOG_TAG,
+                        "[Sync] Local sync mark FAILED for MFID ${entry.mfid} - ${formType.label}: ${e.message}"
+                    )
                 }
             }
 

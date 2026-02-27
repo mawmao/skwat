@@ -1,9 +1,12 @@
 package com.humayapp.scout.feature.form.impl.data.mapper
 
+import android.util.Log
 import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.encodeFieldActivities
+import com.humayapp.scout.core.network.util.getFieldIdByMfid
+import com.humayapp.scout.core.network.util.getLatestStartedSeasonId
 import com.humayapp.scout.core.network.util.getSingleId
 import com.humayapp.scout.core.network.util.upsert
 import com.humayapp.scout.core.network.util.upsertAndGetId
@@ -39,41 +42,49 @@ abstract class FormMapper {
         )
     }
 
-    protected suspend fun upsertParent(entry: FormEntryEntity, client: SupabaseClient): Int {
-        val parentData = buildParentData(client = client, entry = entry)
-        val parentId = client.upsertAndGetId(
-            table = SupabaseDBTables.FIELD_ACTIVITIES,
-            item = parentData,
-            onConflict = "field_id, season_id, activity_type"
-        )
-        return parentId
+    protected suspend fun upsertParent(
+        entry: FormEntryEntity,
+        client: SupabaseClient,
+        fieldId: Int? = null
+    ): Int {
+        val parentData = buildParentData(client = client, entry = entry, fieldId = fieldId)
+
+        return try {
+            val id = client.upsertAndGetId(
+                table = SupabaseDBTables.FIELD_ACTIVITIES,
+                item = parentData,
+                onConflict = "field_id, season_id, activity_type"
+            )
+            id
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "upsertAndGetId failed for mfid=${entry.mfid}. ParentData: $parentData", e)
+            throw e
+        }
     }
 
     protected suspend fun buildParentData(
         client: SupabaseClient,
         entry: FormEntryEntity,
+        fieldId: Int? = null,
     ): JsonElement {
         return withContext(Dispatchers.IO) {
+            val resolvedFieldId = fieldId ?: run { client.getFieldIdByMfid(entry.mfid) }
+            val seasonId = client.getLatestStartedSeasonId()
 
-            val fieldId = client.getSingleId("fields") { filter { eq("mfid", entry.mfid) } }
-            val seasonId = client.getSingleId("seasons") { order("id", Order.DESCENDING) }
-
-            val fieldActivitiesJson = Json.encodeFieldActivities(
-                fieldId = fieldId,
+            Json.encodeFieldActivities(
+                fieldId = resolvedFieldId,
                 seasonId = seasonId,
                 activityType = entry.activityType,
                 collectedBy = entry.collectedBy,
                 collectedAt = entry.collectedAt,
-                imageUrls = entry.imageUrls ,
-                syncedAt = entry.syncedAt ?: unreachable("synced at is non-null at this point") // at `FormSyncWorker`
+                imageUrls = entry.imageUrls,
+                syncedAt = entry.syncedAt ?: unreachable("synced at is non-null at this point")
             )
-
-            return@withContext fieldActivitiesJson
         }
     }
 
     companion object {
-        private const val LOG_TAG = "Scout: FormMapper"
+        const val LOG_TAG = "Scout: FormMapper"
     }
 }
 

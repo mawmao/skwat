@@ -49,17 +49,17 @@ fun ImagesPage(page: FieldData.Images) {
             onEdit = {
                 val currentUri = formState.getFieldData(state.fieldKey)
                 if (currentUri.isNotBlank()) {
-                    actionState = ImageActionState.Cropping(state.fieldKey, currentUri.toUri())
+                    actionState = ImageActionState.Cropping(state.fieldKey, currentUri)
                 }
             },
             onPreview = {
                 val currentUri = formState.getFieldData(state.fieldKey)
                 if (currentUri.isNotBlank()) {
-                    actionState = ImageActionState.Preview(state.fieldKey, currentUri.toUri())
+                    actionState = ImageActionState.Preview(state.fieldKey, currentUri)
                 }
             },
             onImageResult = { uri ->
-                actionState = ImageActionState.Cropping(state.fieldKey, uri)
+                actionState = ImageActionState.Cropping(state.fieldKey, uri.toString())
             }
         )
     }

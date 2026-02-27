@@ -12,12 +12,10 @@ import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.feature.form.api.id
 import com.humayapp.scout.feature.form.api.navigation.FormConfirmNavKey
 import com.humayapp.scout.feature.form.api.navigation.FormReviewNavKey
-import com.humayapp.scout.feature.form.api.navigation.FormScanNavKey
 import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.rememberFormState
 import com.humayapp.scout.navigation.RootNavKey
-import com.humayapp.scout.navigation.navigateToForms
 import com.humayapp.scout.navigation.navigateToMain
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +27,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
 
         val formType = key.formType
 
-        val formState = rememberFormState(formType)
+        val formState = rememberFormState(formType, key.mfid)
         val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormWizardNavKey)
 
         CompositionLocalProvider(

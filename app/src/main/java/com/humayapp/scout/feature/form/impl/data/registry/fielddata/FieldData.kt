@@ -10,18 +10,20 @@ import com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper.Field
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
-import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement.Companion.FERTILIZER_TYPE_KEY
 import com.humayapp.scout.feature.form.impl.data.repository.toGeometry
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import java.time.Period
 
+@Serializable
 sealed class FieldData : WizardEntry() {
 
+    @Serializable
     data object FarmerInformation : FieldData() {
         override val title = "Farmer Information"
         override val description = "Basic personal info for quick identification"
@@ -52,6 +54,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = PersonalDetails
     }
 
+    @Serializable
     data object PersonalDetails : FieldData() {
         override val title = "Personal Details"
         override val description = "Additional personal info"
@@ -74,6 +77,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = FieldTiming
     }
 
+    @Serializable
     data object FieldTiming : FieldData() {
         override val title = "Field Timing"
         override val description = "Important dates for crop planning"
@@ -102,6 +106,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = FieldArea
     }
 
+    @Serializable
     data object FieldArea : FieldData() {
         override val title = "Field Area"
         override val description = "Size of the field"
@@ -120,6 +125,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = FieldCondition
     }
 
+    @Serializable
     data object FieldCondition : FieldData() {
         override val title = "Field Condition"
         override val description = "Current state of the field"
@@ -143,6 +149,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = FieldLocation
     }
 
+    @Serializable
     data object FieldLocation : FieldData() {
         override val title = "Field Location"
         override val description = "Administrative info"
@@ -171,6 +178,7 @@ sealed class FieldData : WizardEntry() {
         override fun nextScreen(answers: Map<String, Any?>) = GpsCoordinates
     }
 
+    @Serializable
     data object GpsCoordinates : FieldData() {
         override val title = "GPS Coordinates"
         override val description = "Exact location of the field"
@@ -187,6 +195,7 @@ sealed class FieldData : WizardEntry() {
     }
 
     // todo: validation
+    @Serializable
     data object Images : FieldData() {
         override val title = "Field & Crop Images"
         override val description = "Document the field and rice crop from multiple angles"

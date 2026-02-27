@@ -2,7 +2,6 @@ package com.humayapp.scout.feature.form.impl.ui.components.camera
 
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut

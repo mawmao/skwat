@@ -13,8 +13,11 @@ import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.navigation.StackNavigator
 import com.humayapp.scout.core.sandbox
 import com.humayapp.scout.feature.auth.navigation.authSection
+import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.navigation.formSection
+import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanScreen
 import com.humayapp.scout.feature.main.navigation.mainSection
+import com.humayapp.scout.navigation.OverlayType
 import com.humayapp.scout.navigation.RootNavKey
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -61,7 +64,16 @@ fun ScoutApp(state: ScoutAppState) {
             formSection(metadata = NavTransition.anchoredRight())
 
             entry<RootNavKey.Detail>(metadata = NavTransition.anchoredRight()) { it.content() }
-            entry<RootNavKey.Overlay>(metadata = NavTransition.anchoredRight()) { it.content() }
+            entry<RootNavKey.Overlay>(metadata = NavTransition.anchoredRight()) {
+                when (val overlay = it.overlayType) {
+                    is OverlayType.Scan -> {
+                        val formType = remember(overlay.formTypeName) {
+                            FormType.valueOf(overlay.formTypeName)
+                        }
+                        FormScanScreen(formType = formType)
+                    }
+                }
+            }
 
             // development only
             sandbox()

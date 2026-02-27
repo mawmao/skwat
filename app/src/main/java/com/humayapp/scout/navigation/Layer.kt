@@ -26,8 +26,17 @@ sealed interface RootNavKey : NavKey {
     data class Detail(val content: @Composable () -> Unit) : RootNavKey
 
     @Serializable
-    data class Overlay(val content: @Composable () -> Unit) : RootNavKey
+    data class Overlay(val overlayType: OverlayType) : RootNavKey
 }
+
+@Serializable
+sealed class OverlayType {
+
+    @Serializable
+    data class Scan(val formTypeName: String) : OverlayType()
+}
+
+
 
 // auth and main are hardcoded `popAll` since this would be the only behavior they need
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
@@ -37,7 +46,7 @@ fun StackNavigator<NavKey>.navigateToForms(formType: FormType, mfid: String) = t
 fun StackNavigator<NavKey>.navigateToDetail(content: @Composable () -> Unit) = this.push(RootNavKey.Detail(content))
 
 
-fun StackNavigator<NavKey>.navigateToOverlay(content: @Composable () -> Unit) = this.push(RootNavKey.Overlay(content))
+//fun StackNavigator<NavKey>.navigateToOverlay(content: @Composable () -> Unit) = this.push(RootNavKey.Overlay(content))
 
 
 

@@ -9,20 +9,26 @@ import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.scoutClickable
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class ImageActionState {
+    @Serializable
     data object Idle : ImageActionState()
 
+    @Serializable
     data class SelectingSource(val fieldKey: String) : ImageActionState()
 
+    @Serializable
     data class Preview(
         val fieldKey: String,
-        val uri: Uri
+        val uri: String
     ) : ImageActionState()
 
+    @Serializable
     data class Cropping(
         val fieldKey: String,
-        val uri: Uri
+        val uri: String
     ) : ImageActionState()
 }
 

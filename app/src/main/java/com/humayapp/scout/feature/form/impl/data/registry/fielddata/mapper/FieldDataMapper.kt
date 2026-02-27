@@ -1,16 +1,18 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper
 
+import android.util.Log
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.getSingleId
 import com.humayapp.scout.core.network.util.upsert
-import com.humayapp.scout.core.network.util.upsertAndGet
+import com.humayapp.scout.core.network.util.upsertAndGetId
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlin.time.Instant
 
 // todo update form entry on farmer and field creation
 
@@ -18,9 +20,8 @@ object FieldDataMapper : FormMapper() {
     override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
         val payload = Json.decodeFromString<FieldDataPayload>(entry.payloadJson)
 
-        val farmer = client.upsertAndGet(
-            table = SupabaseDBTables.FARMERS,
-            item = Farmers(
+        val farmerId = client.upsertAndGetId(
+            table = SupabaseDBTables.FARMERS, item = Farmers(
                 firstName = payload.firstName,
                 lastName = payload.lastName,
                 gender = payload.gender,
@@ -29,37 +30,50 @@ object FieldDataMapper : FormMapper() {
             )
         )
 
-        val barangayId = client.getSingleId("barangays") {
-            filter { eq("name", payload.barangay) }
-        }
+        val barangayId = client.getSingleId("barangays") { filter { eq("name", payload.barangay) } }
 
-        val field = client.upsertAndGet(
-            table = SupabaseDBTables.FIELDS,
-            item = Fields(
-                farmerId = farmer.id,
-                barangayId = barangayId,
+        val mfidId = client.upsertAndGetId(
+            table = "mfids",
+            item = Mfids(
                 mfid = entry.mfid,
-                location = payload.location,
+                userAt = entry.syncedAt
             ),
             onConflict = "mfid"
         )
 
-        val parentId = upsertParent(entry, client)
-
-        client.upsert(
-            table = SupabaseDBTables.FIELD_PLANNINGS,
-            item = Json.encodeToJsonElement(
-                FieldPlannings(
-                    id = parentId,
-                    landPreparationStartDate = payload.landPreparationStartDate,
-                    estCropEstablishmentDate = payload.estCropEstablishmentDate,
-                    estMethodOfEstablishment = payload.estMethodOfEstablishment,
-                    totalFieldAreaHa = payload.totalFieldAreaHa,
-                    soilType = payload.soilType,
-                    currentFieldCondition = payload.currentFieldCondition,
-                )
+        val fieldId = client.upsertAndGetId(
+            table = SupabaseDBTables.FIELDS,
+            item = Fields(
+                farmerId = farmerId,
+                barangayId = barangayId,
+                mfidId = mfidId,
+                location = payload.location,
             ),
+            onConflict = "mfid_id"
         )
+
+        val parentId = upsertParent(fieldId = fieldId, entry = entry, client = client)
+
+        try {
+            client.upsert(
+                table = SupabaseDBTables.FIELD_PLANNINGS,
+                item = Json.encodeToJsonElement(
+                    FieldPlannings(
+                        id = parentId,
+                        landPreparationStartDate = payload.landPreparationStartDate,
+                        estCropEstablishmentDate = payload.estCropEstablishmentDate,
+                        estMethodOfEstablishment = payload.estMethodOfEstablishment,
+                        totalFieldAreaHa = payload.totalFieldAreaHa,
+                        soilType = payload.soilType,
+                        currentFieldCondition = payload.currentFieldCondition,
+                    )
+                ),
+            )
+            Log.d(LOG_TAG, "Field_plannings upsert succeeded for mfid=${entry.mfid}")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Field_plannings upsert failed for mfid=${entry.mfid}, parentId=$parentId", e)
+            throw e
+        }
     }
 }
 
@@ -96,10 +110,19 @@ private data class Farmers(
 @Serializable
 private data class Fields(
     val id: Int? = null, // used only for DB
+
     @SerialName("farmer_id") val farmerId: Int? = null,
     @SerialName("barangay_id") val barangayId: Int? = null,
-    val mfid: String,
+    @SerialName("mfid_id") val mfidId: Int? = null,
     val location: String,
+)
+
+@Serializable
+private data class Mfids(
+    val id: Int? = null, // used only for DB
+
+    val mfid: String,
+    @SerialName("used_at") val userAt: Instant? = null
 )
 
 @Serializable

@@ -19,16 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.theme.ScoutColors
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.api.FormType
-import com.humayapp.scout.feature.form.api.id
-import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanScreen
-import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanViewModel
-import com.humayapp.scout.navigation.navigateToForms
-import com.humayapp.scout.navigation.navigateToOverlay
+import com.humayapp.scout.feature.form.api.navigation.navigateToFormScanOverlay
 
 
 @Composable
@@ -47,10 +42,7 @@ fun HomeScreen(
     ) {
         TemporaryFormGrid(
             onFormClick = { formType ->
-                rootNavigator.navigateToOverlay {
-                    // find ways to abstract this
-                    FormScanScreen(formType = formType)
-                }
+                rootNavigator.navigateToFormScanOverlay(formType)
             }
         )
     }
