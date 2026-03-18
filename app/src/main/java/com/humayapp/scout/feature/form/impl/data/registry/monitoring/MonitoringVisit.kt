@@ -62,7 +62,7 @@ sealed class MonitoringVisit : WizardEntry() {
                         val cropStage = data[CROP_STAGE_KEY] as? String
                         cropStage != null && cropStage != "Not Yet Planted"
                     },
-                    validator = Validators.floatRange(min = 0.0f, unit = "cm") { min, _, unit ->
+                    validator = Validators.floatRange(min = 1f, unit = "cm") { min, _, unit ->
                         "Average plant height should be at least $min $unit"
                     }
                 )

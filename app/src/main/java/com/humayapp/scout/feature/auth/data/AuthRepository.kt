@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.auth.data
 
+import android.util.Log
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
@@ -32,6 +33,8 @@ class SupabaseAuthRepository @Inject constructor(
 
         AuthResult.Success // return
     } catch (e: Throwable) {
+        Log.d("Scout: AuthRepository", "Error =", e)
+
         when (e) {
             is AuthRestException -> AuthResult.InvalidCredentials()
             is HttpRequestTimeoutException -> AuthResult.Timeout()

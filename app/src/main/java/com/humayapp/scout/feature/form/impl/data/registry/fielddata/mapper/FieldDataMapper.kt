@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper
 
+
 import android.util.Log
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
@@ -18,6 +19,10 @@ import kotlin.time.Instant
 
 object FieldDataMapper : FormMapper() {
     override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
+
+        Log.d(
+            LOG_TAG, "[FieldDataMapper] Trying to upload entry = $entry"
+        )
         val payload = Json.decodeFromString<FieldDataPayload>(entry.payloadJson)
 
         val farmerId = client.upsertAndGetId(

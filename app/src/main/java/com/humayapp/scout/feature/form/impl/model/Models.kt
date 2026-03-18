@@ -143,16 +143,9 @@ object Validators {
                 when {
                     min != null && number < min ->
                         ValidationResult.Invalid(
-                            messageProvider?.invoke(min, max, unit)
-                                ?: "Value must be at least $min${unit?.let { " $it" } ?: ""}"
-                        )
-
+                            messageProvider?.invoke(min, max, unit) ?: "Value must be at least $min${unit?.let { " $it" } ?: ""}" )
                     max != null && number > max ->
-                        ValidationResult.Invalid(
-                            messageProvider?.invoke(min, max, unit)
-                                ?: "Value must be at most $max${unit?.let { " $it" } ?: ""}"
-                        )
-
+                        ValidationResult.Invalid( messageProvider?.invoke(min, max, unit) ?: "Value must be at most $max${unit?.let { " $it" } ?: ""}" )
                     else -> ValidationResult.Valid
                 }
             } catch (e: Exception) {

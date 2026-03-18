@@ -85,7 +85,7 @@ sealed class Production : WizardEntry() {
                 key = AVG_BAG_WEIGHT_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Average Bag Weight (kg)",
-                validator = Validators.floatRange(min = 0.0f, max = 30.0f, unit = "kg") { min, max, unit ->
+                validator = Validators.floatRange(min = 1.0f, max = 30.0f, unit = "kg") { min, max, unit ->
                     "Bags harvested must be between $min$unit and $max$unit"
                 }
             ),

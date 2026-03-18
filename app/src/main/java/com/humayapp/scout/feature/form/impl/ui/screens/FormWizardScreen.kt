@@ -33,11 +33,16 @@ fun FormWizardScreen() {
 
     val maxWidthModifier = Modifier.fillMaxWidth()
 
-    formState.dialogState?.let {
+    formState.dialogState?.let { dialog ->
         ScoutErrorDialog(
-            title = it.title,
-            message = it.message,
-            onDismissRequest = { formState.clearDialog() },
+            title = dialog.title,
+            message = dialog.message,
+            onDismissRequest = {
+                dialog.fieldKey?.let { key ->
+                    formState.acknowledgedWarnings.add(key)
+                }
+                formState.clearDialog()
+            }
         )
     }
 
@@ -72,13 +77,6 @@ fun FormWizardScreen() {
 }
 
 
-/**
- * The pager responsible to show each form's wizard entry.
- *
- * - Shows the current progress via [WizardProgressBar].
- * - Scrolls automatically to the current screen when [FormState.currentScreen] changes.
- * - Renders each screen using a custom override from [FormType.overrides] if available, or falls back to [DefaultWizardEntry].
- */
 @Composable
 fun WizardPager(modifier: Modifier = Modifier) {
     val formState = LocalFormState.current

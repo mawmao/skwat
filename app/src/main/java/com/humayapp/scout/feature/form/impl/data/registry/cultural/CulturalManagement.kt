@@ -49,13 +49,14 @@ sealed class CulturalManagement : WizardEntry() {
         override val title = "Actual Crop Establishment"
         override val description = "Provide the date and method used for establishing the crop."
         override val fields = listOf(
-            field(
-                key = ACTUAL_LAND_PREPARATION_METHOD,
+            /* field(
+               key = ACTUAL_LAND_PREPARATION_METHOD,
                 type = FieldType.CARD_RADIO,
                 label = "Actual Land Preparation Method",
                 options = listOf("Wet", "Dry"),
                 validator = Validators.nonEmpty
             ),
+             */
             field(
                 key = ACTUAL_CROP_ESTABLISHMENT_DATE_KEY,
                 type = FieldType.DATE,
@@ -324,7 +325,7 @@ sealed class CulturalManagement : WizardEntry() {
         const val MONITORING_FIELD_AREA_KEY = "monitoring_field_area_sqm"
         const val ECOSYSTEM_KEY = "ecosystem"
 
-        const val ACTUAL_LAND_PREPARATION_METHOD = "actual_land_preparation_method"
+        // const val ACTUAL_LAND_PREPARATION_METHOD = "actual_land_preparation_method"
         const val ACTUAL_CROP_ESTABLISHMENT_DATE_KEY = "actual_crop_establishment_date"
         const val ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY = "actual_crop_establishment_method"
 

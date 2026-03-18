@@ -100,7 +100,7 @@ sealed class NutrientManagement : WizardEntry() {
                 key = "${AMOUNT_APPLIED_KEY}_$index",
                 type = FieldType.NUM_DECIMAL,
                 label = "Amount Applied",
-                validator = Validators.intRange(min = 0) { min, _, _ ->
+                validator = Validators.intRange(min = 1) { min, _, _ ->
                     "Amount applied must be at least $min"
                 }
             ),

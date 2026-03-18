@@ -121,6 +121,23 @@ sealed class FieldData : WizardEntry() {
                 }
             ),
         )
+        override val nextRule: (FormState) -> Boolean = { state ->
+            val fieldArea = state.getFieldData(TOTAL_FIELD_AREA_KEY).toFloatOrNull()
+            val key = TOTAL_FIELD_AREA_KEY
+
+            if (fieldArea != null && fieldArea > 20f && !state.acknowledgedWarnings.contains(key)) {
+                state.setDialog(
+                    FormState.Dialog(
+                        title = "Warning",
+                        message = "Field area is over 20 hectares. Press OK to proceed.",
+                        fieldKey = key
+                    )
+                )
+                false
+            } else {
+                true
+            }
+        }
 
         override fun nextScreen(answers: Map<String, Any?>) = FieldCondition
     }
