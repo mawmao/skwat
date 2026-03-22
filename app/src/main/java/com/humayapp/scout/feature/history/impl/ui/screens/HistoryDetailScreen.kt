@@ -22,10 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.humayapp.scout.LocalScoutAppState
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutLabel
 import com.humayapp.scout.core.ui.theme.ScoutTheme
+import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.feature.form.impl.model.getOrEmpty
 import com.humayapp.scout.feature.form.impl.ui.components.FormFieldData
 import com.humayapp.scout.feature.history.impl.ui.components.HistoryDetailTopAppBar
@@ -36,22 +38,34 @@ fun HistoryDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+    val syncState by vm.syncState.collectAsStateWithLifecycle()
     val rootNavigator = LocalRootStackNavigator.current
+    val appState = LocalScoutAppState.current
+
+    ScoutUiEvents(vm.uiEvent) { event ->
+        when (event) {
+            is HistoryDetailUiEvent.SyncStarted -> {
+                appState.showSnackbar("Sync started for this entry")
+            }
+            is HistoryDetailUiEvent.SyncFailed -> {
+                appState.showSnackbar("Sync failed: ${event.message}")
+            }
+        }
+    }
 
     when (val uiState = uiState) {
         is HistoryDetailUiState.Loading -> {
             Box(modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(
-                    Modifier.align(Alignment.Center),
-                )
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         }
-
         is HistoryDetailUiState.Ready -> {
             HistoryDetailScreen(
                 modifier = modifier,
                 uiState = uiState,
-                onBack = rootNavigator::pop
+                onBack = rootNavigator::pop,
+                onSync = vm::syncEntry,
+                syncState = syncState
             )
         }
     }
@@ -59,25 +73,51 @@ fun HistoryDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryDetailScreen(
+private fun HistoryDetailScreen(
     modifier: Modifier = Modifier,
     uiState: HistoryDetailUiState.Ready,
     onBack: () -> Unit,
+    onSync: () -> Unit,
+    syncState: SyncState,
 ) {
+    val isSyncing = syncState is SyncState.Loading
+    val isSynced = uiState.syncedAt != null
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        topBar = { HistoryDetailTopAppBar(onBack = onBack) }
-    ) {
+        topBar = {
+            HistoryDetailTopAppBar(
+                onBack = onBack,
+                onSync = onSync,
+                isSyncing = isSyncing,
+                isSynced = isSynced
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(innerPadding)
                 .padding(horizontal = ScoutTheme.margin)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-
             HistoryDetailScreenHeader(title = uiState.formType.label)
+            if (uiState.syncedAt != null) {
+                Text(
+                    text = "Synced: ${uiState.syncedAt}",
+                    style = ScoutTheme.material.typography.bodySmall,
+                    color = ScoutTheme.material.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            } else {
+                Text(
+                    text = "Not synced",
+                    style = ScoutTheme.material.typography.bodySmall,
+                    color = ScoutTheme.extras.colors.danger,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
 
             uiState.formType.entries.fastForEach { entry ->
                 FormFieldData(
@@ -107,5 +147,5 @@ fun HistoryDetailScreenHeader(title: String) {
         fontWeight = FontWeight.Medium,
         color = ScoutTheme.material.colorScheme.onSurface,
     )
-    Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
+//    Spacer(Modifier.height(ScoutTheme.spacing.smallMedium))
 }

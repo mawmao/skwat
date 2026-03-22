@@ -81,19 +81,20 @@ fun MainSectionTopAppBar(
                 ) {
                     when (key) {
                         HomeNavKey -> {
-                            ScoutIconButton(
-                                onClick = onSyncClick,
-                                icon = ScoutIcons.Sync,
-                                contentDescription = "Sync Icon Button"
-                            )
                         }
 
                         HistoryNavKey -> {
-                            ScoutIconButton(
-                                onClick = {},
-                                icon = ScoutIcons.Sort,
-                                contentDescription = "Sort Icon Button"
-                            )
+
+//                            ScoutIconButton(
+//                                onClick = onSyncClick,
+//                                icon = ScoutIcons.Sync,
+//                                contentDescription = "Sync Icon Button"
+//                            )
+//                            ScoutIconButton(
+//                                onClick = {},
+//                                icon = ScoutIcons.Sort,
+//                                contentDescription = "Sort Icon Button"
+//                            )
                         }
                     }
                     ScoutIconButton(

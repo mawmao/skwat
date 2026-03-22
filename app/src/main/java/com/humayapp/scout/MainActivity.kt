@@ -11,19 +11,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.SANDBOX_ENABLE
+import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
+import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.util.onAvailability
+import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.jan.supabase.auth.status.SessionStatus
 import jakarta.inject.Inject
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.coroutineScope
 
 // should handle session
 
@@ -33,6 +38,15 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var formRepository: FormRepository
+
+    @Inject
+    lateinit var networkMonitor: NetworkMonitor
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -52,6 +66,7 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             val sessionStatus by authRepository.sessionStatus.collectAsState(initial = null)
+            val scope = rememberCoroutineScope()
 
             LaunchedEffect(sessionStatus) {
                 if (sessionStatus != null) keepSplash = false
@@ -72,14 +87,21 @@ class MainActivity : ComponentActivity() {
                     }
                 );
 
+                val state = rememberScoutAppState(
+                    rootNavigator = rootNavigator,
+                    snackbarHostState = snackbarHostState,
+                    settingsRepository = settingsRepository,
+                    formRepository = formRepository,
+                    coroutineScope = scope,
+                    networkMonitor = networkMonitor
+                )
+
                 ScoutTheme {
-                    CompositionLocalProvider(LocalRootStackNavigator provides rootNavigator) {
-                        ScoutApp(
-                            state = rememberScoutAppState(
-                                rootNavigator = rootNavigator,
-                                snackbarHostState = snackbarHostState
-                            )
-                        )
+                    CompositionLocalProvider(
+                        LocalRootStackNavigator provides rootNavigator,
+                        LocalScoutAppState provides state
+                    ) {
+                        ScoutApp(state = state)
                     }
                 }
             }

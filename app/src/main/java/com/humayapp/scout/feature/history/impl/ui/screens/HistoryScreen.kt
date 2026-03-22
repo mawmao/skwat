@@ -68,15 +68,6 @@ class HistoryViewModel @Inject constructor(
             initialValue = HistoryUiState.Loading
         )
 
-
-    private val _uiEvent = Channel<HistoryUiEvent>(Channel.BUFFERED)
-    val uiEvent = _uiEvent.receiveAsFlow()
-
-
-    fun onAction(action: HistoryUiAction) {
-
-    }
-
     companion object {
         private const val LOG_TAG = "Scout: HistoryViewModel"
     }
@@ -88,18 +79,6 @@ sealed interface HistoryUiState {
     data class Ready(val formEntries: List<FormEntryEntity>) : HistoryUiState
 }
 
-//data class HistoryUiState(
-//    val isLoading: Boolean = false,
-//    val formEntries: List<FormEntryEntity> = emptyList()
-//)
-
-sealed class HistoryUiEvent {
-
-}
-
-sealed class HistoryUiAction {
-    // sort click
-}
 
 @OptIn(ExperimentalUuidApi::class)
 @Composable

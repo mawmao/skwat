@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.common.unreachable
+import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -29,9 +30,10 @@ import kotlinx.coroutines.launch
 class FormReviewViewModel @AssistedInject constructor(
     private val formRepository: FormRepository,
     private val authRepository: AuthRepository,
+    private val settingsRepository: SettingsRepository,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FormReviewScreenState())
@@ -65,7 +67,12 @@ class FormReviewViewModel @AssistedInject constructor(
                     context = context,
                     serializerFn = { answers -> formType.serializeAnswers(answers).toString() }
                 )
-                context.enqueueSyncWork(entryId = id)
+
+                val autoSyncEnabled = settingsRepository.getAutoSync().first()
+                if (autoSyncEnabled) {
+                    context.enqueueSyncWork(entryId = id)
+                }
+
                 _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
                 Log.e(LOG_TAG, "Database insert failed", e)

@@ -12,13 +12,14 @@ import com.humayapp.scout.core.ui.common.image.ImageOptionsBottomSheet
 import com.humayapp.scout.core.ui.common.image.ImagePreviewDialog
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
 import com.humayapp.scout.feature.form.impl.ui.components.FormImagesLayout
 import com.humayapp.scout.feature.form.impl.ui.components.ImageActionState
 import com.humayapp.scout.feature.form.impl.ui.components.ImagePickerBox
 import com.humayapp.scout.feature.form.impl.ui.components.WizardEntry
 
 @Composable
-fun ImagesPage(page: FieldData.Images) {
+fun ImagesPage(page: MonitoringVisit.Images) {
 
     val formState = LocalFormState.current
     var actionState by remember { mutableStateOf<ImageActionState>(ImageActionState.Idle) }

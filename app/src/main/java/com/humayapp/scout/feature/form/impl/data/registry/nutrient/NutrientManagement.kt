@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.form.impl.data.registry.nutrient
 
 import androidx.compose.runtime.Composable
 import com.humayapp.scout.feature.form.impl.FormState
+import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement.Companion.APPLIED_AREA_KEY
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application.FertilizerApplicationPage
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.review.NutrientManagementReviewContent
@@ -23,6 +24,12 @@ sealed class NutrientManagement : WizardEntry() {
         override val title = "Fertilized Area"
         override val description = "Track fertilized area and related information"
         override val fields = listOf(
+            field(
+                key = APPLICATION_DATE_KEY,
+                type = FieldType.DATE,
+                label = "Application Date",
+                validator = Validators.nonEmpty
+            ),
             field(
                 key = APPLIED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
@@ -135,6 +142,7 @@ sealed class NutrientManagement : WizardEntry() {
 
         fun serialize(answers: Map<String, Any?>): JsonObject = serializeImpl(answers)
 
+        const val APPLICATION_DATE_KEY = "application_date"
         const val APPLIED_AREA_KEY = "applied_area_sqm"
         const val FERTILIZER_TYPE_KEY = "fertilizer_type"
         const val BRAND_KEY = "brand"
@@ -149,8 +157,7 @@ sealed class NutrientManagement : WizardEntry() {
 
 
 private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
-    val appliedArea = answers["applied_area_sqm"]
-
+    val appliedArea = answers[APPLIED_AREA_KEY]
     val indices = answers.keys
         .mapNotNull { "_(\\d+)$".toRegex().find(it)?.groupValues?.get(1)?.toInt() }
         .distinct()
@@ -173,7 +180,7 @@ private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
     }
 
     return buildJsonObject {
-        put("applied_area_sqm", appliedArea?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+        put(APPLIED_AREA_KEY, appliedArea?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
         put("fertilizer_application", JsonArray(fertilizerApplications))
     }
 }

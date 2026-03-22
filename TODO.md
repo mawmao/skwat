@@ -2,7 +2,6 @@
 
 # todo
 
-- confirm ui
 
 - settings
  

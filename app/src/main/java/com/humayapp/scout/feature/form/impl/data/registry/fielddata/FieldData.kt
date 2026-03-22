@@ -208,36 +208,34 @@ sealed class FieldData : WizardEntry() {
             )
         )
 
-        override fun nextScreen(answers: Map<String, Any?>) = Images
     }
 
-    // todo: validation
-    @Serializable
-    data object Images : FieldData() {
-        override val title = "Field & Crop Images"
-        override val description = "Document the field and rice crop from multiple angles"
-        override val fields = listOf(
-            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View", validator = Validators.image),
-            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View", validator = Validators.image),
-            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View", validator = Validators.image),
-            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view", validator = Validators.image),
-            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up", validator = Validators.optionalImage),
-        )
-
-        override val nextRule: (FormState) -> Boolean = { state ->
-            val allValid = state.validatePage(this)
-            Log.d("Scout: FieldData.Images", "allValid = $allValid")
-            if (!allValid) {
-                state.setDialog(
-                    FormState.Dialog(
-                        title = "Incomplete Images",
-                        message = "Front, right, left, and back view are required"
-                    )
-                )
-            }
-            allValid
-        }
-    }
+//    @Serializable
+//    data object Images : FieldData() {
+//        override val title = "Field & Crop Images"
+//        override val description = "Document the field and rice crop from multiple angles"
+//        override val fields = listOf(
+//            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View", validator = Validators.image),
+//            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View", validator = Validators.image),
+//            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View", validator = Validators.image),
+//            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view", validator = Validators.image),
+//            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up", validator = Validators.optionalImage),
+//        )
+//
+//        override val nextRule: (FormState) -> Boolean = { state ->
+//            val allValid = state.validatePage(this)
+//            Log.d("Scout: FieldData.Images", "allValid = $allValid")
+//            if (!allValid) {
+//                state.setDialog(
+//                    FormState.Dialog(
+//                        title = "Incomplete Images",
+//                        message = "Front, right, left, and back view are required"
+//                    )
+//                )
+//            }
+//            allValid
+//        }
+//    }
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
@@ -257,13 +255,13 @@ sealed class FieldData : WizardEntry() {
         val pageOverrides: WizardPageOverrides = mapOf(
             FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
             GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) },
-            Images to { page -> ImagesPage(page as Images) }
+//            Images to { page -> ImagesPage(page as Images) }
         )
 
         val startEntry = FarmerInformation
         val entries = listOf(
             FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
-            FieldCondition, FieldLocation, GpsCoordinates, Images,
+            FieldCondition, FieldLocation, GpsCoordinates
         )
 
         val mapper = FieldDataMapper
@@ -283,11 +281,6 @@ sealed class FieldData : WizardEntry() {
         const val MUNICIPALITY_OR_CITY_KEY = "municipality_or_city"
         const val BARANGAY_KEY = "barangay"
         const val COORDINATES_KEY = "location"
-        const val IMG1_KEY = "img_1"
-        const val IMG2_KEY = "img_2"
-        const val IMG3_KEY = "img_3"
-        const val IMG4_KEY = "img_4"
-        const val IMG5_KEY = "img_5"
     }
 }
 

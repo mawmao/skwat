@@ -1,23 +1,43 @@
 package com.humayapp.scout.feature.main
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.humayapp.scout.LocalScoutAppState
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.ui.component.NavigationItem
 import com.humayapp.scout.core.ui.theme.ScoutIcons
+import com.humayapp.scout.core.ui.theme.ScoutTypography
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.feature.history.api.navigation.HistoryNavKey
@@ -30,6 +50,7 @@ import com.humayapp.scout.feature.main.ui.MainSectionNavigationBar
 import com.humayapp.scout.feature.main.ui.MainSectionTopAppBar
 import com.humayapp.scout.feature.main.ui.SettingsDialog
 import com.humayapp.scout.navigation.navigateToAuth
+import kotlinx.coroutines.flow.merge
 
 
 // the top level routes in the main section
@@ -102,4 +123,5 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
         }
     }
 }
+
 

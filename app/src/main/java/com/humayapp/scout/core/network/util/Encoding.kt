@@ -65,38 +65,34 @@ fun Any?.asJson(
 
 
 fun String.asFieldData(): Map<String, Any?> {
-
     val jsonElement = try {
         Json.parseToJsonElement(this)
     } catch (e: Exception) {
         return emptyMap()
     }
-
-    fun JsonElement.toMap(): Map<String, Any?> {
-        if (this !is JsonObject) return emptyMap()
-        val map = mutableMapOf<String, Any?>()
-
-        this.forEach { (key, value) ->
-            map[key] = when (value) {
-                is JsonPrimitive -> {
-                    when {
-                        value.isString -> value.content
-                        value.booleanOrNull != null -> value.boolean
-                        value.longOrNull != null -> value.long
-                        value.doubleOrNull != null -> value.double
-                        else -> null
-                    }
-                }
-
-                is JsonObject -> value.toMap()
-                is JsonArray -> value.map { it.jsonPrimitive.contentOrNull }
-            }
-        }
-
-        return map
+    return when (jsonElement) {
+        is JsonObject -> jsonElement.toMap()
+        else -> emptyMap()
     }
+}
 
-    return jsonElement.toMap()
+private fun JsonElement.toAny(): Any? = when (this) {
+    is JsonPrimitive -> when {
+        isString -> content
+        booleanOrNull != null -> boolean
+        longOrNull != null -> long
+        doubleOrNull != null -> double
+        else -> null
+    }
+    is JsonObject -> toMap()
+    is JsonArray -> map { it.toAny() }
+    else -> null
+}
+
+private fun JsonObject.toMap(): Map<String, Any?> = buildMap {
+    for ((key, value) in this@toMap) {
+        put(key, value.toAny())
+    }
 }
 
 suspend fun Json.encodeFieldActivities(

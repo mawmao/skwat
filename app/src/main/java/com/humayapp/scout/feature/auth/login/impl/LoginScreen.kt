@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.humayapp.scout.LocalScoutAppState
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.ui.common.ConnectivityIndicator
@@ -52,6 +53,8 @@ fun LoginScreen(
     val rootNavigator = LocalRootStackNavigator.current
     val authNavigator = LocalStackNavigator.current
 
+    val isOffline by LocalScoutAppState.current.isOffline.collectAsStateWithLifecycle()
+
     ScoutErrorEvent(
         errorMessage = uiError,
         onDismiss = { vm.onAction(LoginUiAction.ClearUiError) }
@@ -69,7 +72,8 @@ fun LoginScreen(
         passwordState = vm.passwordState,
         uiState = uiState,
         onLogin = { vm.onAction(LoginUiAction.LoginRequest) },
-        onForgotPassword = authNavigator::navigateToRecoveryOtp
+        onForgotPassword = authNavigator::navigateToRecoveryOtp,
+        isOffline = isOffline
     )
 }
 
@@ -82,6 +86,7 @@ private fun LoginScreenContent(
     uiState: LoginUiState,
     onLogin: () -> Unit,
     onForgotPassword: () -> Unit,
+    isOffline: Boolean,
 ) {
     Column(
         modifier = modifier
@@ -105,7 +110,7 @@ private fun LoginScreenContent(
             onForgotPassword = onForgotPassword
         )
         ConnectivityIndicator(
-            isOffline = false,
+            isOffline = isOffline,
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
                 .padding(bottom = 32.dp)
@@ -164,22 +169,22 @@ private fun LoginForm(
                 }
             }
         )
-        Spacer(modifier = Modifier.height(ScoutTheme.spacing.large))
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-
-            // TODO: could also disable when logging in
-            ScoutTextButton(
-                text = "Forgot Password?",
-                style = ScoutTheme.material.typography.labelLarge.copy(
-                    fontSize = 14.sp,
-                    color = ScoutTheme.extras.colors.mutedOnBackground
-                ),
-                isLoading = uiState.isRecoveringPassword,
-                onClick = onForgotPassword
-            )
-        }
+//        Spacer(modifier = Modifier.height(ScoutTheme.spacing.large))
+//        Box(
+//            modifier = Modifier.fillMaxWidth(),
+//            contentAlignment = Alignment.Center
+//        ) {
+//
+//            // TODO: could also disable when logging in
+//            ScoutTextButton(
+//                text = "Forgot Password?",
+//                style = ScoutTheme.material.typography.labelLarge.copy(
+//                    fontSize = 14.sp,
+//                    color = ScoutTheme.extras.colors.mutedOnBackground
+//                ),
+//                isLoading = uiState.isRecoveringPassword,
+//                onClick = onForgotPassword
+//            )
+//        }
     }
 }

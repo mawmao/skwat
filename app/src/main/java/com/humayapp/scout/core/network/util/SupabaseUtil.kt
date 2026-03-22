@@ -3,10 +3,12 @@ package com.humayapp.scout.core.network.util
 import com.humayapp.scout.feature.form.impl.data.util.getInt
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.request.SelectRequestBuilder
 import io.github.jan.supabase.postgrest.result.PostgrestResult
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -99,4 +101,26 @@ suspend fun SupabaseClient.getLatestStartedSeasonId(): Int {
     }.decodeList<JsonObject>()
 
     return seasons.firstOrNull()?.getInt("id").throwOnNull("Season id not found")
+}
+
+suspend fun SupabaseClient.getSeasonIdByDate(date: String): Int? {
+    return try {
+        val result = from("seasons").select(Columns.list("id")) {
+            filter {
+                lte("start_date", date)
+                gte("end_date", date)
+            }
+        }.decodeSingleOrNull<JsonObject>()
+        result?.getInt("id")
+    } catch (e: Exception) {
+        null
+    }
+}
+suspend fun SupabaseClient.getPlantingSeasonIdForHarvest(fieldId: Int, harvestDate: String): Int? {
+    return try {
+        postgrest.rpc("get_planting_season_for_harvest", mapOf("p_field_id" to fieldId, "p_harvest_date" to harvestDate))
+            .decodeSingle<Int?>()
+    } catch (e: Exception) {
+        null
+    }
 }

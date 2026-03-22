@@ -20,14 +20,17 @@ import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewViewModel
-
+import androidx.activity.compose.BackHandler
 
 @Composable
 fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
-
     val formNavigator = LocalStackNavigator.current
     val formTransition = NavTransition.anchoredRight()
     val state = LocalFormState.current
+
+    BackHandler(enabled = true) {
+        onBack()
+    }
 
     Scaffold(
         modifier = modifier,
