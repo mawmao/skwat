@@ -67,7 +67,7 @@ sealed class MonitoringVisit : WizardEntry() {
             field(
                 key = AVG_PLANT_HEIGHT_KEY,
                 type = FieldType.NUM_DECIMAL_OR_NA,
-                label = "Average Plant Height",
+                label = "Average Plant Height (by centimeters)",
 
                 // check first if `crop-stage` != to "Not Yet Planted"
                 validator = validateIf(
@@ -75,8 +75,8 @@ sealed class MonitoringVisit : WizardEntry() {
                         val cropStage = data[CROP_STAGE_KEY] as? String
                         cropStage != null && cropStage != "Not Yet Planted"
                     },
-                    validator = Validators.floatRange(min = 1f, unit = "cm") { min, _, unit ->
-                        "Average plant height should be at least $min $unit"
+                    validator = Validators.floatRange(min = 1f, max = 200.0f, unit = "cm") { min, max, unit ->
+                        "Average plant height should be between $min to $max $unit"
                     }
                 )
 

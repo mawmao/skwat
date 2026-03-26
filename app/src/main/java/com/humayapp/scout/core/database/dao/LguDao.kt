@@ -32,6 +32,13 @@ interface CityMunicipalityDao {
     """
     )
     suspend fun getCitiesByProvince(provinceName: String): List<CityMunicipalityEntity>
+
+    @Query("""
+        SELECT *
+        FROM cities_municipalities 
+        WHERE code = :code
+    """)
+    suspend fun getCitiesByCode(code: String): CityMunicipalityEntity?
 }
 
 
@@ -50,4 +57,5 @@ interface BarangayDao {
     """
     )
     suspend fun getBarangaysByCity(cityName: String): List<BarangayEntity>
+
 }

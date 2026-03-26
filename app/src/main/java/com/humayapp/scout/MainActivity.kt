@@ -10,8 +10,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.SANDBOX_ENABLE
@@ -29,6 +31,9 @@ import io.github.jan.supabase.auth.status.SessionStatus
 import jakarta.inject.Inject
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 // should handle session
 
@@ -64,28 +69,46 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-
             val sessionStatus by authRepository.sessionStatus.collectAsState(initial = null)
-            val scope = rememberCoroutineScope()
+            val isOnline by networkMonitor.isOnline.collectAsState(initial = false)
 
-            LaunchedEffect(sessionStatus) {
-                if (sessionStatus != null) keepSplash = false
+            var targetKey by remember { mutableStateOf<RootNavKey?>(null) }
+
+            LaunchedEffect(Unit) {
+                val session = sessionStatus ?: return@LaunchedEffect
+                val networkReady = withTimeoutOrNull(3000L) {
+                    networkMonitor.isOnline
+                        .drop(1)
+                        .first { it }
+                    true
+                } ?: isOnline
+
+                targetKey = when {
+                    SANDBOX_ENABLE -> RootNavKey.Sandbox
+                    session is SessionStatus.Authenticated && networkReady -> RootNavKey.Main
+                    else -> RootNavKey.Auth
+                }
             }
 
-            sessionStatus.onAvailability {
+            LaunchedEffect(targetKey) {
+                if (targetKey == RootNavKey.Auth) {
+                    val currentSession = sessionStatus
+                    if (currentSession is SessionStatus.Authenticated) {
+                        authRepository.signOut()
+                    }
+                }
+            }
 
-                val snackbarHostState = remember { SnackbarHostState() }
+            keepSplash = targetKey == null
+
+            targetKey?.let { key ->
                 val rootNavigator = rememberStackNavigator<NavKey>(
                     id = "root",
+                    initialKey = key
+                )
 
-                    // development only
-                    initialKey = if (SANDBOX_ENABLE) RootNavKey.Sandbox else {
-                        when (sessionStatus) {
-                            is SessionStatus.Authenticated -> RootNavKey.Main
-                            else -> RootNavKey.Auth
-                        }
-                    }
-                );
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
 
                 val state = rememberScoutAppState(
                     rootNavigator = rootNavigator,

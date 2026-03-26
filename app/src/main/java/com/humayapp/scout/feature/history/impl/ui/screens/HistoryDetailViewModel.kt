@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.network.util.asFieldData
 import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.form.api.FormType
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -28,7 +30,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Instant
 
-// HistoryDetailViewModel.kt
 @HiltViewModel(assistedFactory = HistoryDetailViewModel.Factory::class)
 class HistoryDetailViewModel @AssistedInject constructor(
     private val formRepository: FormRepository,
@@ -37,26 +38,32 @@ class HistoryDetailViewModel @AssistedInject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<HistoryDetailUiState>(HistoryDetailUiState.Loading)
-    val uiState: StateFlow<HistoryDetailUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<HistoryDetailUiState> = combine(
+        formRepository.getEntryByIdFlow(entry.id),
+        formRepository.getImagesOfEntryByIdFlow(entry.id)
+    ) { entry, images ->
+        if (entry == null) {
+            HistoryDetailUiState.Loading
+        } else {
+            HistoryDetailUiState.Ready(
+                images = images,
+                formType = FormType.fromActivityType(entry.activityType),
+                fieldData = entry.payloadJson.asFieldData(),
+                syncedAt = entry.syncedAt,
+                syncStatus = entry.syncStatus
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HistoryDetailUiState.Loading
+    )
 
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
 
     private val _uiEvent = Channel<HistoryDetailUiEvent>(Channel.BUFFERED)
     val uiEvent = _uiEvent.receiveAsFlow()
-
-    init {
-        viewModelScope.launch {
-            val images = formRepository.getImagesOfEntryById(entry.id)
-            _uiState.value = HistoryDetailUiState.Ready(
-                images = images,
-                formType = FormType.fromActivityType(entry.activityType),
-                fieldData = entry.payloadJson.asFieldData(),
-                syncedAt = entry.syncedAt
-            )
-        }
-    }
 
     fun syncEntry() {
         viewModelScope.launch {
@@ -105,7 +112,8 @@ sealed interface HistoryDetailUiState {
         val images: List<FormImageEntity>,
         val formType: FormType,
         val fieldData: Map<String, Any?>,
-        val syncedAt: Instant? = null
+        val syncedAt: Instant? = null,
+        val syncStatus: SyncStatus = SyncStatus.PENDING
     ) : HistoryDetailUiState
 }
 

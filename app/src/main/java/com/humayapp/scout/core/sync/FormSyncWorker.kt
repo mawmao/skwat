@@ -10,19 +10,29 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkerParameters
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
+import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
-import com.humayapp.scout.core.network.util.getSingleId
+import com.humayapp.scout.core.database.model.SyncStatus
+import com.humayapp.scout.core.network.util.getFieldIdByMfid
+import com.humayapp.scout.core.network.util.getLatestStartedSeasonId
+import com.humayapp.scout.core.network.util.getPlantingSeasonIdForHarvest
+import com.humayapp.scout.core.network.util.getSeasonIdByDate
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.feature.form.impl.data.sync.uploadForm
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.storage.upload
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import kotlin.time.Clock
 
@@ -61,7 +71,6 @@ class FormSyncWorker @AssistedInject constructor(
             for (entry in pending) {
 
                 val formType = FormType.fromActivityType(entry.activityType)
-                val seasonId = supabase.getSingleId("seasons") { order("id", Order.DESCENDING) }
                 val activityType = entry.activityType
                 val mfid = entry.mfid
                 val timestamp = Clock.System.now()
@@ -70,31 +79,44 @@ class FormSyncWorker @AssistedInject constructor(
                 Log.d(LOG_TAG, "[Sync] Entry data = ${entry}.")
 
                 try {
-                    // todo:
-                    // should create a transaction to update image remote path then upload entry
-                    // delete from bucket on transaction error
+                    val fieldId = try {
+                        supabase.getFieldIdByMfid(entry.mfid)
+                    } catch (e: Exception) {
+                        Log.w(LOG_TAG, "[Sync] Failed to get field ID for MFID ${entry.mfid}, assuming no existing record.")
+                        null
+                    }
 
+                    Log.w(LOG_TAG, "[Sync] Field id found = $fieldId")
+                    val seasonId = computeSeasonIdForEntry(entry, fieldId)
+
+                    if (fieldId != null) {
+                        val existing = supabase.from("field_activities").select(Columns.list("verification_status")) {
+                            filter {
+                                eq("field_id", fieldId)
+                                eq("season_id", seasonId)
+                                eq("activity_type", activityType)
+                            }
+                        }.decodeSingleOrNull<JsonObject>()
+
+                        if (existing?.get("verification_status")?.jsonPrimitive?.content == "approved") {
+                            Log.i(LOG_TAG, "[Sync] Entry for MFID ${entry.mfid} already approved on server. Skipping upload.")
+                            formRepository.markAsSyncedWithStatus(entry.id, timestamp, SyncStatus.DUPLICATE)
+                            continue
+                        }
+                    }
                     val images = formRepository.getImagesOfEntryById(entry.id)
-
                     val updatedImages = images.map { image ->
                         val file = File(image.localPath)
                         val remotePath = "${seasonId}/${activityType}/${mfid}/${timestamp}/${file.name}"
-
                         imageBucket.upload(remotePath, file) { upsert = false }
-
-
                         formRepository.updateImageRemotePath(image.id, remotePath)
                         image.copy(remotePath = remotePath)
                     }
 
-                    Log.d(
-                        LOG_TAG, "[Sync] Trying to upload final entry copy = ${
-                            entry.copy(
-                                imageUrls = buildImagePathsArray(updatedImages),
-                                syncedAt = timestamp
-                            )
-                        }"
-                    )
+                    Log.d(LOG_TAG, "[Sync] Trying to upload final entry copy = ${entry.copy(
+                        imageUrls = buildImagePathsArray(updatedImages),
+                        syncedAt = timestamp
+                    )}")
 
                     supabase.uploadForm(
                         entry = entry.copy(
@@ -104,8 +126,8 @@ class FormSyncWorker @AssistedInject constructor(
                     )
 
                     Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
-
                     Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")
+
                 } catch (e: Exception) {
                     hasError = true
                     Log.e(LOG_TAG, "[Sync] Upload failed for MFID ${entry.mfid} - ${formType.label}: ${e.message}.")
@@ -113,15 +135,11 @@ class FormSyncWorker @AssistedInject constructor(
                 }
 
                 try {
-                    formRepository.markAsSynced(entry.id, timestamp)
-
+                    formRepository.markAsSyncedWithStatus(entry.id, timestamp, SyncStatus.SYNCED)
                     Log.i(LOG_TAG, "[Sync] Local sync mark successful for MFID ${entry.mfid} - ${formType.label}.")
                 } catch (e: Exception) {
                     hasError = true
-                    Log.e(
-                        LOG_TAG,
-                        "[Sync] Local sync mark FAILED for MFID ${entry.mfid} - ${formType.label}: ${e.message}"
-                    )
+                    Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for MFID ${entry.mfid} - ${formType.label}: ${e.message}")
                 }
             }
 
@@ -139,14 +157,41 @@ class FormSyncWorker @AssistedInject constructor(
         }
     }
 
-    companion object {
-
-        private const val LOG_TAG = "Scout: Sync"
-
-        private fun buildImagePathsArray(images: List<FormImageEntity>): List<String> {
-            return images.mapNotNull { it.remotePath }
+    private suspend fun computeSeasonIdForEntry(entry: FormEntryEntity, fieldId: Int?): Int {
+        return when (entry.activityType) {
+            "production" -> {
+                if (fieldId == null) {
+                    supabase.getLatestStartedSeasonId()
+                } else {
+                    val payload = Json.parseToJsonElement(entry.payloadJson)
+                    val harvestDate = payload.jsonObject["harvest_date"]?.jsonPrimitive?.content
+                    if (harvestDate != null) {
+                        supabase.getPlantingSeasonIdForHarvest(fieldId, harvestDate) ?: supabase.getLatestStartedSeasonId()
+                    } else {
+                        supabase.getLatestStartedSeasonId()
+                    }
+                }
+            }
+            "nutrient-management" -> {
+                if (fieldId == null) {
+                    supabase.getLatestStartedSeasonId()
+                } else {
+                    val payload = Json.parseToJsonElement(entry.payloadJson)
+                    val applicationDate = payload.jsonObject["application_date"]?.jsonPrimitive?.content
+                    if (applicationDate != null) {
+                        supabase.getSeasonIdByDate(applicationDate) ?: supabase.getLatestStartedSeasonId()
+                    } else {
+                        supabase.getLatestStartedSeasonId()
+                    }
+                }
+            }
+            else -> supabase.getLatestStartedSeasonId()   // field-data, etc. always use latest started season
         }
+    }
 
+    companion object {
+        private const val LOG_TAG = "Scout: Sync"
+        private fun buildImagePathsArray(images: List<FormImageEntity>): List<String> = images.mapNotNull { it.remotePath }
         fun startUpSyncWork() = OneTimeWorkRequestBuilder<FormSyncWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(SyncConstraints)

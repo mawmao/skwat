@@ -3,8 +3,6 @@
 # todo
 
 
-- settings
- 
 - settings on history detail to delete image cache
   
 - auth
@@ -13,8 +11,6 @@
       - the app should store existing user credentials so they can log-in even online
       - could check if first time login and show an onboarding
        
-  - otp feature
-
 - sync
   - improve error handling & rollbacks
   - manual

@@ -82,14 +82,7 @@ class FormReviewViewModel @AssistedInject constructor(
         }
     }
 
-
-    private suspend fun getAuthenticatedUserId(): String? {
-        return when (val status = authRepository.sessionStatus.first()) {
-            is SessionStatus.Authenticated -> status.session.user?.id
-            else -> throw IllegalStateException("User not authenticated")
-        }
-    }
-
+    private suspend fun getAuthenticatedUserId(): String? = authRepository.getCurrentUserId()
 
     @AssistedFactory
     interface Factory {

@@ -1,6 +1,6 @@
 [versions]
 
-agp = "9.0.1"
+agp = "9.1.0"
 datastorePreferences = "1.2.1"
 kotlin = "2.3.20"
 coreKtx = "1.18.0"

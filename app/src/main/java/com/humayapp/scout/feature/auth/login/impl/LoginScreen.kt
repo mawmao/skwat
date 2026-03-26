@@ -72,7 +72,6 @@ fun LoginScreen(
         passwordState = vm.passwordState,
         uiState = uiState,
         onLogin = { vm.onAction(LoginUiAction.LoginRequest) },
-        onForgotPassword = authNavigator::navigateToRecoveryOtp,
         isOffline = isOffline
     )
 }
@@ -85,7 +84,6 @@ private fun LoginScreenContent(
     passwordState: TextFieldState,
     uiState: LoginUiState,
     onLogin: () -> Unit,
-    onForgotPassword: () -> Unit,
     isOffline: Boolean,
 ) {
     Column(
@@ -107,7 +105,6 @@ private fun LoginScreenContent(
             passwordState = passwordState,
             uiState = uiState,
             onLogin = onLogin,
-            onForgotPassword = onForgotPassword
         )
         ConnectivityIndicator(
             isOffline = isOffline,
@@ -126,7 +123,6 @@ private fun LoginForm(
     passwordState: TextFieldState,
     uiState: LoginUiState,
     onLogin: () -> Unit,
-    onForgotPassword: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val emailFocusRequester = rememberFocusRequester()

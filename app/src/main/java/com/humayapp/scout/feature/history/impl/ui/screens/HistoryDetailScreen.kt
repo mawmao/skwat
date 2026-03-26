@@ -23,6 +23,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.LocalScoutAppState
+import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutLabel
@@ -81,7 +82,8 @@ private fun HistoryDetailScreen(
     syncState: SyncState,
 ) {
     val isSyncing = syncState is SyncState.Loading
-    val isSynced = uiState.syncedAt != null
+    val isSynced = uiState.syncStatus == SyncStatus.SYNCED
+
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -103,20 +105,31 @@ private fun HistoryDetailScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             HistoryDetailScreenHeader(title = uiState.formType.label)
-            if (uiState.syncedAt != null) {
-                Text(
-                    text = "Synced: ${uiState.syncedAt}",
-                    style = ScoutTheme.material.typography.bodySmall,
-                    color = ScoutTheme.material.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            } else {
-                Text(
-                    text = "Not synced",
-                    style = ScoutTheme.material.typography.bodySmall,
-                    color = ScoutTheme.extras.colors.danger,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            when (uiState.syncStatus) {
+                SyncStatus.PENDING -> {
+                    Text(
+                        text = "Not synced",
+                        style = ScoutTheme.material.typography.bodySmall,
+                        color = ScoutTheme.extras.colors.danger,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                SyncStatus.SYNCED -> {
+                    Text(
+                        text = "Synced: ${uiState.syncedAt}",
+                        style = ScoutTheme.material.typography.bodySmall,
+                        color = ScoutTheme.material.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                SyncStatus.DUPLICATE -> {
+                    Text(
+                        text = "Duplicate (already approved on server)",
+                        style = ScoutTheme.material.typography.bodySmall,
+                        color = ScoutTheme.extras.colors.warning,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
             }
 
             uiState.formType.entries.fastForEach { entry ->

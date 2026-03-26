@@ -13,6 +13,7 @@ import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
@@ -26,11 +27,8 @@ sealed class CulturalManagement : WizardEntry() {
                 key = MONITORING_FIELD_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Monitoring Field Area (by square meters)",
-
-                // todo: check max should be the total field area in `FieldData
-                // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.floatRange(min = 400.0f, unit = "sqm") { min, _, unit ->
-                    "Monitoring field area must be least $min $unit"
+                validator = Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
+                    "Monitoring field area must be between $min to $max $unit"
                 }
             ),
             field(
@@ -40,6 +38,12 @@ sealed class CulturalManagement : WizardEntry() {
                 options = listOf("Rainfed Lowland", "Irrigation"),
                 validator = Validators.nonEmpty
             ),
+        )
+
+        override val nextRule = fieldThresholdRule(
+            key = MONITORING_FIELD_AREA_KEY,
+            threshold = 10_000_000f,
+            message = { "Monitoring field area is $it sqm, which exceeds 10,000,000 ha. Press OK to proceed." }
         )
 
         override fun nextScreen(answers: Map<String, Any?>) = ActualCropEstablishment
@@ -97,7 +101,7 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = SEEDLING_AGE_AT_TRANSPLANTING_KEY,
                 type = FieldType.NUM_WHOLE,
-                label = "Seedling Age at Transplanting (days)",
+                label = "Seedling Age at Transplanting (by days)",
                 validator = Validators.intRange(min = 10, max = 60, unit = "days") { min, max, unit ->
                     "Seedling age must be between $min and $max $unit"
                 }
@@ -114,28 +118,28 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = D_BETWEEN_PLANT_ROW_1_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Between Plant Row (1)",
+                label = "Distance Between Plant Row #1 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance between rows must be between $min and $max"
+                    "Distance between rows must be between $min and $max $unit"
                 }
             ),
             field(
                 key = D_BETWEEN_PLANT_ROW_2_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Between Plant Row (2)",
+                label = "Distance Between Plant Row #2 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance between rows must be between $min and $max"
+                    "Distance between rows must be between $min and $max $unit"
                 }
             ),
             field(
                 key = D_BETWEEN_PLANT_ROW_3_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Between Plant Row (3)",
+                label = "Distance Between Plant Row #3 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance between rows must be between $min and $max"
+                    "Distance between rows must be between $min and $max $unit"
                 }
             ),
         )
@@ -150,28 +154,28 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = D_WITHIN_PLANT_ROW_1_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Within Plant Row (1)",
+                label = "Distance Within Plant Row #1 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance within rows must be between $min and $max"
+                    "Distance within rows must be between $min and $max $unit"
                 }
             ),
             field(
                 key = D_WITHIN_PLANT_ROW_2_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Within Plant Row (2)",
+                label = "Distance Within Plant Row #2 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance within rows must be between $min and $max"
+                    "Distance within rows must be between $min and $max $unit"
                 }
             ),
             field(
                 key = D_WITHIN_PLANT_ROW_3_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Distance Within Plant Row (3)",
+                label = "Distance Within Plant Row #3 (by centimeters)",
                 // check unit
                 validator = Validators.intRange(min = 10, max = 50, unit = "cm") { min, max, unit ->
-                    "Distance within rows must be between $min and $max"
+                    "Distance within rows must be between $min and $max $unit"
                 }
             ),
         )
@@ -186,8 +190,8 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = SEEDING_RATE_KG_HA_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Seeding Rate (kg/ha)",
-                validator = Validators.floatRange(min = 15.0f, max = 200.0f, unit = "kgs") { min, max, unit ->
+                label = "Seeding Rate (kg)",
+                validator = Validators.floatRange(min = 15.0f, max = 200.0f, unit = "kg") { min, max, unit ->
                     "Seeding rate must be between $min and $max $unit"
                 }
             ),
@@ -210,7 +214,7 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = NUM_PLANTS_1_KEY,
                 type = FieldType.NUM_WHOLE,
-                label = "Number of Plants (1)",
+                label = "Number of Plants #1",
                 validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
                     "Number of plants must be between $min and $max"
                 }
@@ -218,7 +222,7 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = NUM_PLANTS_2_KEY,
                 type = FieldType.NUM_WHOLE,
-                label = "Number of Plants (2)",
+                label = "Number of Plants #2",
                 validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
                     "Number of plants must be between $min and $max"
                 }
@@ -226,7 +230,7 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = NUM_PLANTS_3_KEY,
                 type = FieldType.NUM_WHOLE,
-                label = "Number of Plants (3)",
+                label = "Number of Plants #3",
                 validator = Validators.intRange(min = 5, max = 50) { min, max, _ ->
                     "Number of plants must be between $min and $max"
                 }
@@ -263,7 +267,7 @@ sealed class CulturalManagement : WizardEntry() {
             field(
                 key = RICE_VARIETY_MATURITY_DURATION_KEY,
                 type = FieldType.NUM_WHOLE,
-                label = "Rice Variety Maturity Duration",
+                label = "Rice Variety Maturity Duration (by days)",
 
                 // it is 90-150 in pdf, but reduced to 60 to be more flexible
                 validator = Validators.intRange(min = 60, max = 150, unit = "days") { min, max, unit ->

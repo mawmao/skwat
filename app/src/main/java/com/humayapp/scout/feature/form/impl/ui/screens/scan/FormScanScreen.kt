@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.system.ScoutPermissions
 import com.humayapp.scout.core.ui.common.PermissionRationale
@@ -65,6 +66,8 @@ fun FormScanScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var scannedBarcodeForSheet by remember { mutableStateOf<String?>(null) }
+    var scannedMunicity by remember { mutableStateOf("") }
+    var scannedProvince by remember { mutableStateOf("") }
 
     LaunchedEffect(lifecycleOwner) {
         vm.bindToCamera(lifecycleOwner)
@@ -92,6 +95,10 @@ fun FormScanScreen(
     LaunchedEffect(scanResult) {
         scanResult?.let { barcode ->
             scannedBarcodeForSheet = barcode
+            val result = vm.parseMfid(barcode) ?: unreachable("no reason for mfid to not know location")
+            val (province, city) = result
+            scannedProvince = province
+            scannedMunicity = city
             vm.resetScannedBarcode()
             sheetState.show()
         }
@@ -107,6 +114,8 @@ fun FormScanScreen(
             scannedBarcodeForSheet?.let { barcode ->
                 Text("Confirm")
                 Spacer(Modifier.height(8.dp))
+                Text(text = "${scannedMunicity}, $scannedProvince")
+                Spacer(Modifier.height(8.dp))
                 Text(barcode, style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(ScoutTheme.spacing.large))
 
@@ -115,7 +124,7 @@ fun FormScanScreen(
                     text = "Proceed",
                     onClick = {
                         scannedBarcodeForSheet = null
-                        rootNavigator.navigateToForms(formType, barcode)
+                        rootNavigator.navigateToForms(formType, barcode, scannedProvince, scannedMunicity)
                     }
                 )
             }

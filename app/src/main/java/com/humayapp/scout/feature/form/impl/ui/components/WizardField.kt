@@ -45,6 +45,7 @@ fun WizardField(
     value: () -> String,
     onValueChange: (String) -> Unit,
     dynamicOptions: List<String>? = null,
+    isReadOnly: Boolean = false,
     imeAction: ImeAction = ImeAction.Unspecified,
 ) {
     WizardFieldImpl(
@@ -53,6 +54,7 @@ fun WizardField(
         value = value,
         onValueChange = onValueChange,
         dynamicOptions = dynamicOptions,
+        isReadOnly = isReadOnly,
         imeAction = imeAction,
     )
 }
@@ -66,6 +68,7 @@ fun WizardField(
     onValueChange: (String) -> Unit,
     dynamicOptions: List<String>? = null,
     imeAction: ImeAction,
+    isReadOnly: Boolean = false,
     visible: Boolean = true
 ) {
     AnimatedVisibility(
@@ -79,6 +82,7 @@ fun WizardField(
             value = value,
             onValueChange = onValueChange,
             dynamicOptions = dynamicOptions,
+            isReadOnly = isReadOnly,
             imeAction = imeAction,
         )
     }
@@ -92,6 +96,7 @@ fun WizardFieldImpl(
     value: () -> String,
     onValueChange: (String) -> Unit,
     dynamicOptions: List<String>? = null,
+    isReadOnly: Boolean = false,
     imeAction: ImeAction,
 ) {
 
@@ -129,6 +134,7 @@ fun WizardFieldImpl(
                     keyboardType = field.type.keyboardType,
                     imeAction = imeAction
                 ),
+                readOnly = isReadOnly
             )
         }
 
@@ -136,8 +142,7 @@ fun WizardFieldImpl(
             ScoutCardRadioGroup(
                 modifier = focusModifier,
                 label = field.label,
-                options = dynamicOptions ?: field.options
-                ?: unreachable("options in this context should never be null"),
+                options = dynamicOptions ?: field.options ?: unreachable("options in this context should never be null"),
                 isError = error != null,
                 errorMessage = error,
                 selectedOption = currentValue,

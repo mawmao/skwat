@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.humayapp.scout.feature.form.api.FormType
+import com.humayapp.scout.feature.form.api.province
 import com.humayapp.scout.feature.form.impl.model.FieldStore
 import com.humayapp.scout.feature.form.impl.model.FieldValidator
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -26,13 +27,13 @@ fun rememberFormState(formType: FormType, mfid: String): FormState {
 
     val pagerState = rememberPagerState(pageCount = { formType.entries.size })
 
-    return remember(formType) {
+    return remember(formType, mfid) {
         FormState(
             initialWizardEntry = formType.startEntry,
             pagerEntries = formType.entries,
             formType = formType,
             pagerState = pagerState,
-            mfid = mfid
+            mfid = mfid,
         )
     }
 }

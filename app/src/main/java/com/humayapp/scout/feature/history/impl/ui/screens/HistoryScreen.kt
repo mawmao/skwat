@@ -32,6 +32,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.database.model.FormEntryEntity
+import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
@@ -168,9 +169,13 @@ fun HistoryCardDefault(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                val synced = if (entry.syncedAt != null) "Synced" else "Not synced"
+                val statusText = when (entry.syncStatus) {
+                    SyncStatus.PENDING -> "Not synced"
+                    SyncStatus.SYNCED -> "Synced"
+                    SyncStatus.DUPLICATE -> "Duplicate"
+                }
                 val collectedAt = "Collected ${entry.collectedAt.toRelativeString()}"
-                Text(text = synced, style = ScoutTheme.material.typography.bodyMedium)
+                Text(text = statusText, style = ScoutTheme.material.typography.bodyMedium)
                 Text(
                     text = collectedAt,
                     style = ScoutTheme.material.typography.bodySmall,

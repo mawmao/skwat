@@ -43,7 +43,7 @@ class MainSectionViewModel @Inject constructor(
     private fun onLogout() {
         viewModelScope.launch {
             when (val result = authRepository.signOut()) {
-                is AuthResult.Success -> _uiEvent.send(MainSectionEvent.LogoutSuccess)
+                is AuthResult.Success, is AuthResult.SuccessOffline -> _uiEvent.send(MainSectionEvent.LogoutSuccess)
                 else -> _uiError.update { result.message }
             }
         }

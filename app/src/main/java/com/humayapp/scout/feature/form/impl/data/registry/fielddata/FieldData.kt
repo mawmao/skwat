@@ -16,6 +16,7 @@ import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import java.time.Period
@@ -116,28 +117,17 @@ sealed class FieldData : WizardEntry() {
                 type = FieldType.NUM_DECIMAL,
                 label = "Total Field Area (by hectares)",
                 imeAction = ImeAction.Done,
-                validator = Validators.floatRange(min = 0.04f, unit = "ha") { min, _, unit ->
-                    "Field area must be at least $min $unit"
+                validator = Validators.floatRange(min = 0.04f, max = 999.0f, unit = "ha") { min, max, unit ->
+                    "Field area must be between $min to $max $unit"
                 }
             ),
         )
-        override val nextRule: (FormState) -> Boolean = { state ->
-            val fieldArea = state.getFieldData(TOTAL_FIELD_AREA_KEY).toFloatOrNull()
-            val key = TOTAL_FIELD_AREA_KEY
 
-            if (fieldArea != null && fieldArea > 20f && !state.acknowledgedWarnings.contains(key)) {
-                state.setDialog(
-                    FormState.Dialog(
-                        title = "Warning",
-                        message = "Field area is over 20 hectares. Press OK to proceed.",
-                        fieldKey = key
-                    )
-                )
-                false
-            } else {
-                true
-            }
-        }
+        override val nextRule = fieldThresholdRule(
+            key = TOTAL_FIELD_AREA_KEY,
+            threshold = 20f,
+            message = { "Field area is $it ha, which exceeds 20 ha. Press OK to proceed." }
+        )
 
         override fun nextScreen(answers: Map<String, Any?>) = FieldCondition
     }
@@ -173,14 +163,14 @@ sealed class FieldData : WizardEntry() {
         override val fields = listOf(
             field(
                 key = PROVINCE_KEY,
-                type = FieldType.DROPDOWN_SEARCHABLE,
+                type = FieldType.GPS,
                 label = "Province",
                 options = listOf("Aklan", "Antique", "Capiz", "Iloilo", "Negros Occidental", "Guimaras"),
                 validator = Validators.nonEmpty,
             ),
             field(
                 key = MUNICIPALITY_OR_CITY_KEY,
-                type = FieldType.DROPDOWN_SEARCHABLE,
+                type = FieldType.GPS,
                 label = "Municipality or City",
                 validator = Validators.nonEmpty,
             ),
@@ -209,33 +199,6 @@ sealed class FieldData : WizardEntry() {
         )
 
     }
-
-//    @Serializable
-//    data object Images : FieldData() {
-//        override val title = "Field & Crop Images"
-//        override val description = "Document the field and rice crop from multiple angles"
-//        override val fields = listOf(
-//            field(key = IMG1_KEY, type = FieldType.IMAGE, label = "Front View", validator = Validators.image),
-//            field(key = IMG2_KEY, type = FieldType.IMAGE, label = "Right View", validator = Validators.image),
-//            field(key = IMG3_KEY, type = FieldType.IMAGE, label = "Left View", validator = Validators.image),
-//            field(key = IMG4_KEY, type = FieldType.IMAGE, label = "Back view", validator = Validators.image),
-//            field(key = IMG5_KEY, type = FieldType.IMAGE, label = "Close-up", validator = Validators.optionalImage),
-//        )
-//
-//        override val nextRule: (FormState) -> Boolean = { state ->
-//            val allValid = state.validatePage(this)
-//            Log.d("Scout: FieldData.Images", "allValid = $allValid")
-//            if (!allValid) {
-//                state.setDialog(
-//                    FormState.Dialog(
-//                        title = "Incomplete Images",
-//                        message = "Front, right, left, and back view are required"
-//                    )
-//                )
-//            }
-//            allValid
-//        }
-//    }
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(

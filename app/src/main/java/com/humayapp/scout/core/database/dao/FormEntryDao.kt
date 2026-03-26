@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.database.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 
@@ -26,6 +27,9 @@ interface FormEntryDao {
     @Query("SELECT * FROM form_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): FormEntryEntity
 
+    @Query("SELECT * FROM form_entries WHERE id = :id")
+    fun getEntryByIdFlow(id: Long): Flow<FormEntryEntity>
+
     @Query("SELECT * FROM form_entries WHERE syncedAt IS NOT NULL")
     suspend fun getPendingSyncOnce(): List<FormEntryEntity>
 
@@ -37,6 +41,9 @@ interface FormEntryDao {
 
     @Query("UPDATE form_entries SET syncedAt = :timestamp WHERE id = :id")
     suspend fun markAsSynced(id: Long, timestamp: Instant)
+
+    @Query("UPDATE form_entries SET syncedAt = :timestamp, syncStatus = :status WHERE id = :id")
+    suspend fun updateSyncStatus(id: Long, timestamp: Instant, status: SyncStatus)
 
     // NOTE: development only
     @Query("DELETE FROM form_entries")

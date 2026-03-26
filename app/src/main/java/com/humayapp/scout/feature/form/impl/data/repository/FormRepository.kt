@@ -7,6 +7,7 @@ import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.database.dao.FormEntryDao
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.system.saveImagesToFolder
 import com.humayapp.scout.feature.form.impl.model.toFormImages
 import jakarta.inject.Inject
@@ -25,9 +26,12 @@ interface FormRepository {
     val syncEvents: SharedFlow<String>
 
     fun getAllEntries(): Flow<List<FormEntryEntity>>
+
     suspend fun getEntryById(id: Long): FormEntryEntity
+    fun getEntryByIdFlow(id: Long): Flow<FormEntryEntity>
+
     suspend fun getPendingSyncOnce(): List<FormEntryEntity>
-    suspend fun markAsSynced(id: Long, timestamp: Instant): Unit
+    suspend fun markAsSyncedWithStatus(id: Long, timestamp: Instant, status: SyncStatus)
 
     suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
     fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>>
@@ -58,6 +62,11 @@ class FormRepositoryImpl @Inject constructor(
     override suspend fun getEntryById(id: Long): FormEntryEntity {
         Log.d(TAG, "getEntryById(id = $id)")
         return formEntryDao.getEntryById(id)
+    }
+
+    override fun getEntryByIdFlow(id: Long): Flow<FormEntryEntity> {
+        Log.d(TAG, "getEntryByIdFlow(id = $id)")
+        return formEntryDao.getEntryByIdFlow(id)
     }
 
     override suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity> {
@@ -117,11 +126,8 @@ class FormRepositoryImpl @Inject constructor(
         return formEntryDao.getPendingSyncOnce()
     }
 
-    override suspend fun markAsSynced(id: Long, timestamp: Instant) {
-        Log.d(TAG, "markAsSynced(): id=$id")
-        formEntryDao.markAsSynced(id, timestamp)
-        _syncEvents.emit("Form synced successfully")
-        Log.d(TAG, "Sync event emitted for id=$id")
+    override suspend fun markAsSyncedWithStatus(id: Long, timestamp: Instant, status: SyncStatus) {
+        formEntryDao.updateSyncStatus(id, timestamp, status)
     }
 
     override suspend fun clearDatabase() {

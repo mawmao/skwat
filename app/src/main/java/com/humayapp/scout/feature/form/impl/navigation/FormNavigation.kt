@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,10 +17,12 @@ import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.ui.component.ScoutConfirmDialog
 import com.humayapp.scout.core.ui.component.ScoutConfirmationDialog
+import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
 import com.humayapp.scout.feature.form.api.navigation.FormReviewNavKey
 import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.rememberFormState
 import com.humayapp.scout.navigation.RootNavKey
 import com.humayapp.scout.navigation.navigateToMain
@@ -37,6 +40,13 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         var showExitDialog by remember { mutableStateOf(false) }
         var showReviewBackDialog by remember { mutableStateOf(false) }
         var pendingExitAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+        LaunchedEffect(Unit) {
+            if (formType == FormType.FIELD_DATA) {
+                formState.setFieldData(FieldData.PROVINCE_KEY, key.province)
+                formState.setFieldData(FieldData.MUNICIPALITY_OR_CITY_KEY, key.municity)
+            }
+        }
 
         CompositionLocalProvider(
             LocalStackNavigator provides formNavigator,

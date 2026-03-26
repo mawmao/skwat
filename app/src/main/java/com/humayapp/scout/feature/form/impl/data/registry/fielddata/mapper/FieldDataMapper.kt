@@ -32,7 +32,8 @@ object FieldDataMapper : FormMapper() {
                 gender = payload.gender,
                 dateOfBirth = payload.dateOfBirth,
                 cellPhoneNo = payload.cellPhoneNo
-            )
+            ),
+             onConflict = "first_name,last_name"
         )
 
         val barangayId = client.getSingleId("barangays") { filter { eq("name", payload.barangay) } }

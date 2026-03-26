@@ -1,6 +1,7 @@
 package com.humayapp.scout.core.database.converters
 
 import androidx.room.TypeConverter
+import com.humayapp.scout.core.database.model.SyncStatus
 import kotlin.time.Instant
 
 
@@ -23,4 +24,12 @@ class InstantConverter {
 
     @TypeConverter
     fun instantToLong(instant: Instant?): String? = instant?.toString()
+}
+
+class SyncStatusConverters {
+    @TypeConverter
+    fun fromSyncStatus(status: SyncStatus): String = status.name
+
+    @TypeConverter
+    fun toSyncStatus(name: String): SyncStatus = enumValueOf(name)
 }

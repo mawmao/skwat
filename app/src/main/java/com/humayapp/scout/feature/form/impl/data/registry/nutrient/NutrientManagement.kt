@@ -12,6 +12,7 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardField
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -30,15 +31,25 @@ sealed class NutrientManagement : WizardEntry() {
                 label = "Application Date",
                 validator = Validators.nonEmpty
             ),
+
             field(
                 key = APPLIED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
-                label = "Fertilized Area (sqm)",
+                label = "Fertilized Area (by square meters)",
 
                 // todo: check max should not exceed monitoring field area in `CulturalManagement`
                 // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.nonEmpty
+                validator = Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
+                    "Fertilized area must be between $min to $max $unit"
+                }
             ),
+
+        )
+
+        override val nextRule = fieldThresholdRule(
+            key = APPLIED_AREA_KEY,
+            threshold = 10_000_000f,
+            message = { "Fertilized area is $it sqm, which exceeds 10,000,000 ha. Press OK to proceed." }
         )
 
         override fun nextScreen(answers: Map<String, Any?>) = FertilizerApplication

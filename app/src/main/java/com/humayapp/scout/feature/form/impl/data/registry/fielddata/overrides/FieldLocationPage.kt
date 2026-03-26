@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
@@ -29,6 +30,10 @@ fun FieldLocationPage(
     val locationState by vm.locationState.collectAsStateWithLifecycle()
     val errors by vm.errors.collectAsStateWithLifecycle()
 
+    LaunchedEffect(Unit) {
+        vm.fetchBarangays(formState.getFieldData(MUNICIPALITY_OR_CITY_KEY))
+    }
+
     ScoutErrorEvent(
         errorMessage = errors.location,
         onDismiss = { vm.clearError() }
@@ -40,36 +45,32 @@ fun FieldLocationPage(
                 PROVINCE_KEY -> {
                     WizardField(
                         field = field,
-                        value = { formState.getFieldData(field.key) },
-                        onValueChange = {
-                            formState.setFieldData(field.key, it)
-                            formState.clearFieldData(MUNICIPALITY_OR_CITY_KEY)
-                            vm.fetchMunicipalities(it)
-                        },
+                        value = { formState.getFieldData(PROVINCE_KEY) },
+                        onValueChange = { formState.setFieldData(field.key, it) },
                         modifier = Modifier.fillMaxWidth(),
-                        imeAction = field.imeAction
+                        imeAction = field.imeAction,
+                        isReadOnly = true
                     )
                 }
 
                 MUNICIPALITY_OR_CITY_KEY -> {
                     WizardField(
                         field = field,
-                        visible = formState.hasFieldData(PROVINCE_KEY),
-                        value = { formState.getFieldData(field.key) },
-                        onValueChange = {
-                            formState.setFieldData(field.key, it)
-                            formState.clearFieldData(BARANGAY_KEY)
-                            vm.fetchBarangays(it)
-                        },
+                        visible = formState.hasFieldData(MUNICIPALITY_OR_CITY_KEY),
+                        value = { formState.getFieldData(MUNICIPALITY_OR_CITY_KEY) },
+                        onValueChange = { },
                         dynamicOptions = locationState.municipalities,
                         imeAction = field.imeAction,
+                        isReadOnly = true
                     )
                 }
 
                 BARANGAY_KEY -> {
                     WizardField(
                         field = field,
-                        visible = formState.hasFieldData(PROVINCE_KEY) && formState.hasFieldData(MUNICIPALITY_OR_CITY_KEY),
+                        visible = formState.hasFieldData(PROVINCE_KEY) && formState.hasFieldData(
+                            MUNICIPALITY_OR_CITY_KEY
+                        ),
                         value = { formState.getFieldData(field.key) },
                         onValueChange = { formState.setFieldData(field.key, it) },
                         dynamicOptions = locationState.barangays,

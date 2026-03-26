@@ -4,6 +4,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.system.CameraManager
+import com.humayapp.scout.feature.form.api.mfidPattern
+import com.humayapp.scout.feature.form.impl.data.repository.LocationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
@@ -17,13 +19,27 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class FormScanViewModel @Inject constructor(
-    private val cameraManager: CameraManager
+    private val cameraManager: CameraManager,
+    private val locationRepository: LocationRepository
 ) : ViewModel() {
 
     val isTorchOn = cameraManager.isTorchOn
     val surfaceRequest = cameraManager.surfaceRequest
     val scannedBarcode = cameraManager.scannedBarcode
     val isCameraReady = cameraManager.isCameraReady
+
+    suspend fun parseMfid(mfid: String): Pair<String, String>? {
+        val match = mfidPattern.matchEntire(mfid) ?: return null
+        val (regionCode, provinceCode, cityMunicipalityCode, barangayCode) = match.destructured
+
+        val city = locationRepository.getCityMunicipalityByCode(
+            "60$provinceCode$cityMunicipalityCode"
+        ) ?: return null
+
+        val province = locationRepository.getProvinceById(city.provinceId) ?: return null
+
+        return province.name to city.name
+    }
 
     fun resetScannedBarcode() {
         cameraManager.resetBarcode()

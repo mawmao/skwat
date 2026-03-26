@@ -4,8 +4,8 @@ package com.humayapp.scout.feature.form.api
 //  Province Code: (04|06|19|30|45|79)
 //  City, Municipality Code:  \\d{2}
 //  Barangay Code: \\d{3}
-const val region = "(60)"
-const val province = "(04|06|19|30|45|79)"
+const val region = "(60|61)"
+const val province = "(04|06|19|30|31|45|79)"
 const val cityMunicipality = "(\\d{2})"
 const val barangay = "(\\d{3})"
 val mfidPattern = Regex("$region$province$cityMunicipality$barangay$")

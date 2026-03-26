@@ -20,7 +20,7 @@ sealed interface RootNavKey : NavKey {
     data object Auth : RootNavKey
 
     @Serializable
-    data class Form(val formType: FormType, val mfid: String) : RootNavKey
+    data class Form(val formType: FormType, val mfid: String, val province: String, val municity: String) : RootNavKey
 
     @Serializable
     data class Detail(val content: @Composable () -> Unit) : RootNavKey
@@ -42,7 +42,7 @@ sealed class OverlayType {
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
 fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
 
-fun StackNavigator<NavKey>.navigateToForms(formType: FormType, mfid: String) = this.push(RootNavKey.Form(formType, mfid))
+fun StackNavigator<NavKey>.navigateToForms(formType: FormType, mfid: String, province: String, municity: String) = this.push(RootNavKey.Form(formType, mfid, province, municity))
 fun StackNavigator<NavKey>.navigateToDetail(content: @Composable () -> Unit) = this.push(RootNavKey.Detail(content))
 
 

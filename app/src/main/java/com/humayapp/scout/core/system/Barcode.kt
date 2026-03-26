@@ -2,6 +2,7 @@ package com.humayapp.scout.core.system
 
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -19,7 +20,7 @@ class BarcodeAnalyzer(
 ) : ImageAnalysis.Analyzer {
 
     private val options = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
         .build()
 
     private val scanner = BarcodeScanning.getClient(options)
@@ -50,7 +51,9 @@ class BarcodeAnalyzer(
 
         scanner.process(inputImage)
             .addOnSuccessListener { barcodes ->
+
                 val barcode = barcodes.firstOrNull()
+
                 if (barcode != null) {
                     val raw = barcode.rawValue
                     val now = SystemClock.elapsedRealtime()
@@ -77,4 +80,9 @@ class BarcodeAnalyzer(
         } catch (t: Throwable) { /* ignore */
         }
     }
+
+    companion object {
+        const val LOG_TAG = "Scout: BarcodeAnalyzer"
+    }
+
 }

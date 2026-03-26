@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.humayapp.scout.core.database.converters.InstantConverter
 import com.humayapp.scout.core.database.converters.ListConverters
+import com.humayapp.scout.core.database.converters.SyncStatusConverters
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
 import com.humayapp.scout.core.database.dao.FormEntryDao
@@ -26,7 +27,7 @@ import com.humayapp.scout.core.database.model.ProvinceEntity
     version = 1,
     exportSchema = true,
 )
-@TypeConverters(ListConverters::class, InstantConverter::class)
+@TypeConverters(ListConverters::class, InstantConverter::class, SyncStatusConverters::class)
 abstract class ScoutDatabase : RoomDatabase() {
     abstract fun formEntryDao(): FormEntryDao
     abstract fun provinceDao(): ProvinceDao

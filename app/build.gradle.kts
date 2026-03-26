@@ -121,6 +121,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.security:security-crypto:1.1.0")
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.accompanist.permissions)

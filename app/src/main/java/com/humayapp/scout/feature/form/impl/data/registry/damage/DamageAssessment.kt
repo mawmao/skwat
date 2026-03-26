@@ -41,16 +41,16 @@ sealed class DamageAssessment : WizardEntry() {
         override val description = "Identify the cause and observed pest or agent"
         override val fields = listOf(
             field(
-                key = OBSERVED_PEST_KEY,
-                type = FieldType.TEXT, // must be a dropdown - tbd
-                label = "Observed Pest",
-                validator = Validators.nonEmpty
-            ),
-            field(
                 key = CAUSE_OF_DAMAGE_KEY,
                 type = FieldType.DROPDOWN,
                 label = "Cause of Damage",
                 options = listOf("Pest", "Disease", "Flood", "Drought", "Wind", "Other"),
+                validator = Validators.nonEmpty
+            ),
+            field(
+                key = OBSERVED_PEST_KEY,
+                type = FieldType.TEXT, // must be a dropdown - tbd
+                label = "Observed Pest",
                 validator = Validators.nonEmpty
             ),
         )
@@ -76,8 +76,8 @@ sealed class DamageAssessment : WizardEntry() {
 
                 // todo: check max should be less than total field area in `FieldData`
                 // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.floatRange(min = 0.04f, unit = "ha") { min, _, unit ->
-                    "Affected area must be at least $min $unit"
+                validator = Validators.floatRange(min = 0.04f, max = 999.0f, unit = "ha") { min, max, unit ->
+                    "Affected area must be between $min to $max $unit"
                 }
             ),
         )

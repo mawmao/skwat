@@ -25,6 +25,8 @@ object ScoutColors {
     val ScoutGreen = Color.hsl(hue = 120f, saturation = 0.45f, lightness = 0.55f)
     val ScoutLogoGreenDark = Color(0xFF006633)
     val ScoutLogoGreenLight = Color(0xFF009A4D)
+
+    val Amber = Color(0XFFFF9966)
 }
 
 

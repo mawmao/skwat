@@ -3,11 +3,15 @@ package com.humayapp.scout.feature.form.impl.data.repository
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
 import com.humayapp.scout.core.database.dao.ProvinceDao
+import com.humayapp.scout.core.database.model.CityMunicipalityEntity
+import com.humayapp.scout.core.database.model.ProvinceEntity
 import jakarta.inject.Inject
 
 interface LocationRepository {
     suspend fun getMunicipalitiesByProvince(provinceName: String?): List<String>
     suspend fun getBarangaysByCityMunicipality(cityMunicipalityName: String?): List<String>
+    suspend fun getCityMunicipalityByCode(code: String): CityMunicipalityEntity?
+    suspend fun getProvinceById(id: Int): ProvinceEntity?
 }
 
 class LocationRepositoryImpl @Inject constructor(
@@ -28,5 +32,13 @@ class LocationRepositoryImpl @Inject constructor(
         val result = barangayDao.getBarangaysByCity(cityMunicipalityName)
             .map { it.name }
         return result
+    }
+
+    override suspend fun getCityMunicipalityByCode(code: String): CityMunicipalityEntity? {
+        return cityMunicipalityDao.getCitiesByCode(code)
+    }
+
+    override suspend fun getProvinceById(id: Int): ProvinceEntity? {
+        return provinceDao.getProvinceById(id)
     }
 }

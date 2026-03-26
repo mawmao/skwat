@@ -19,6 +19,7 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.lifecycle.LifecycleOwner
+import com.humayapp.scout.feature.form.api.mfidPattern
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Named
@@ -34,7 +35,7 @@ class CameraManager @Inject constructor(
 
     private var lastScannedBarcode: String? = null
     private var lastScanTime: Long = 0
-    private val scanCooldown = 2000L // 2 seconds between scans
+    private val scanCooldown = 2000L
 
     private val _isTorchOn = MutableStateFlow(false)
     val isTorchOn = _isTorchOn.asStateFlow()
@@ -76,28 +77,22 @@ class CameraManager @Inject constructor(
 
     private fun setupAnalyzer() {
 
-        //  Region Code: ^06 or ^60 [To be confirmed]
-        //  Province Code: (04|06|19|30|45|79)
-        //  City, Municipality Code:  \\d{2}
-        //  Barangay Code: \\d{3}
-        val region = "^60"
-        val province = "(04|06|19|30|45|79)"
-        val cityMunicipality = "\\d{2}"
-        val barangay = "\\d{3}"
-        val pattern = Regex("$region$province$cityMunicipality$barangay$")
-
         imageAnalysisUseCase.setAnalyzer(cameraExecutor, BarcodeAnalyzer { barcode ->
             val value = barcode.rawValue
             val currentTime = System.currentTimeMillis()
 
             value?.let { v ->
-                if (pattern.matches(v) &&
-                    (v != lastScannedBarcode || currentTime - lastScanTime > scanCooldown)
-                ) {
+                val isMatch = mfidPattern.matches(v)
+                val isDuplicate = v == lastScannedBarcode
+                val isCooldownActive = currentTime - lastScanTime <= scanCooldown
+
+                if (isMatch && (!isDuplicate || !isCooldownActive)) {
                     lastScannedBarcode = v
                     lastScanTime = currentTime
                     _scannedBarcode.value = v
                 }
+            } ?: run {
+                Log.d("Scout: BarcodeScan", "Null barcode detected")
             }
         })
     }

@@ -23,7 +23,8 @@ data class ScoutExtras(
         val logoLight: Color = ScoutColors.ScoutLogoGreenLight,
         val danger: Color = ScoutColors.Red500,
         val white: Color = ScoutColors.White,
-        val hoveredWhite: Color = ScoutColors.Gray150
+        val hoveredWhite: Color = ScoutColors.Gray150,
+        val warning: Color = ScoutColors.Amber
     )
 }
 

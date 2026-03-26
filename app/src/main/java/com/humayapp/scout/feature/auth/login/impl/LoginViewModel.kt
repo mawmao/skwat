@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.AuthResult
+import com.humayapp.scout.feature.auth.data.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     // separated email and password state since they are frequently changing
@@ -47,25 +49,19 @@ class LoginViewModel @Inject constructor(
     private fun onLogin() {
         viewModelScope.launch {
             updateLoggingIn(true)
-
             val email = emailState.text.toString()
             val password = passwordState.text.toString()
 
-//            emailState.clearText()
-//            passwordState.clearText()
-//            _uiEvent.send(LoginUiEvent.LoginSuccess)
-
             when (val result = authRepository.signIn(email, password)) {
-                is AuthResult.Success -> {
+                is AuthResult.Success, is AuthResult.SuccessOffline -> {
+                    userPreferencesRepository.saveLastUsedEmail(email)
                     emailState.clearText()
                     passwordState.clearText()
                     _uiEvent.send(LoginUiEvent.LoginSuccess)
                 }
                 else -> _uiError.update { result.message }
             }
-
             updateLoggingIn(false)
-
         }
     }
 }

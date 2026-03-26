@@ -10,7 +10,7 @@ import kotlin.time.Instant
 @Serializable
 @Entity(
     tableName = "form_entries",
-    indices = [Index(value = ["mfid", "activityType"], unique = true)]
+    indices = [Index(value = ["mfid", "activityType"])]
 )
 data class FormEntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -21,8 +21,14 @@ data class FormEntryEntity(
     val syncedAt: Instant? = null,
     val collectedBy: String,
     val collectedAt: Instant = Clock.System.now(),
+    val syncStatus: SyncStatus = SyncStatus.PENDING
 )
 
+enum class SyncStatus {
+    PENDING,
+    SYNCED,
+    DUPLICATE
+}
 
 @Entity(tableName = "form_images")
 data class FormImageEntity(
