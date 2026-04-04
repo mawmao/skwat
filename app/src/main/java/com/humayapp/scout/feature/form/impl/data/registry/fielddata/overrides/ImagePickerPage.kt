@@ -12,6 +12,7 @@ import com.humayapp.scout.core.ui.common.image.ImageOptionsBottomSheet
 import com.humayapp.scout.core.ui.common.image.ImagePreviewDialog
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
+import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.ui.components.FormImagesLayout
 import com.humayapp.scout.feature.form.impl.ui.components.ImageActionState
 import com.humayapp.scout.feature.form.impl.ui.components.ImagePickerBox
@@ -25,9 +26,10 @@ fun ImagesPage(page: MonitoringVisit.Images) {
 
     WizardEntry(page) {
         FormImagesLayout(items = page.fields) { field, aspectRatio, modifier ->
+            val data = formState.getFieldData(field.key)
             ImagePickerBox(
                 label = field.label,
-                uri = formState.getFieldData(field.key).toUri(),
+                uri = if (data.isNotBlank()) data.toUri() else null,
                 aspectRatio = aspectRatio,
                 modifier = modifier,
                 onClick = { actionState = ImageActionState.SelectingSource(field.key) }

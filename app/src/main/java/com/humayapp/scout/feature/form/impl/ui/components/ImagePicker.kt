@@ -40,6 +40,7 @@ fun ImagePickerBox(
     aspectRatio: Float? = null,
     onClick: () -> Unit
 ) {
+
     Column(modifier = modifier) {
         ScoutLabel(label = label, enableHorizontalPadding = false)
         ImageBox(
