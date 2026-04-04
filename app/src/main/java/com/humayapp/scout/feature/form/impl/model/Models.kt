@@ -70,6 +70,15 @@ fun validateIf(
 
 object Validators {
 
+    fun allOf(vararg validators: Validator): Validator = { value, answers ->
+        var result: ValidationResult = ValidationResult.Valid
+        for (validator in validators) {
+            result = validator(value, answers)
+            if (result is ValidationResult.Invalid) break
+        }
+        result
+    }
+
     val nonEmpty: Validator = { value, _ ->
         when {
             value.isBlank() -> ValidationResult.Invalid("Required")
@@ -97,6 +106,53 @@ object Validators {
             value.length != 11 -> ValidationResult.Invalid("Phone number must be 11 digits")
             !value.startsWith("09") -> ValidationResult.Invalid("Phone number must start with 09")
             else -> ValidationResult.Valid
+        }
+    }
+
+    fun notExceedMonitoringArea(monitoringAreaKey: String): Validator = { value, answers ->
+        when {
+            value.isBlank() -> ValidationResult.Invalid("Required")
+            else -> {
+                val maxSqm = answers[monitoringAreaKey] as? Double
+                if (maxSqm == null) {
+                    ValidationResult.Invalid("Monitoring field area not available")
+                } else {
+                    try {
+                        val sqm = value.toDouble()
+                        if (sqm > maxSqm) {
+                            ValidationResult.Invalid(
+                                "Value cannot exceed the monitoring field area ($maxSqm sqm)"
+                            )
+                        } else ValidationResult.Valid
+                    } catch (e: Exception) {
+                        ValidationResult.Invalid("Invalid number")
+                    }
+                }
+            }
+        }
+    }
+
+    fun notExceedTotalFieldArea(totalAreaHaKey: String): Validator = { value, answers ->
+        when {
+            value.isBlank() -> ValidationResult.Invalid("Required")
+            else -> {
+                val totalAreaHa = answers[totalAreaHaKey] as? Double
+                if (totalAreaHa == null) {
+                    ValidationResult.Invalid("Total field area not available")
+                } else {
+                    try {
+                        val sqm = value.toDouble()
+                        val maxSqm = totalAreaHa * 10000.0
+                        if (sqm > maxSqm) {
+                            ValidationResult.Invalid(
+                                "Monitoring area cannot exceed total field area (${totalAreaHa} ha = ${maxSqm.toInt()} sqm)"
+                            )
+                        } else ValidationResult.Valid
+                    } catch (e: Exception) {
+                        ValidationResult.Invalid("Invalid number")
+                    }
+                }
+            }
         }
     }
 
@@ -143,9 +199,14 @@ object Validators {
                 when {
                     min != null && number < min ->
                         ValidationResult.Invalid(
-                            messageProvider?.invoke(min, max, unit) ?: "Value must be at least $min${unit?.let { " $it" } ?: ""}" )
+                            messageProvider?.invoke(min, max, unit)
+                                ?: "Value must be at least $min${unit?.let { " $it" } ?: ""}")
+
                     max != null && number > max ->
-                        ValidationResult.Invalid( messageProvider?.invoke(min, max, unit) ?: "Value must be at most $max${unit?.let { " $it" } ?: ""}" )
+                        ValidationResult.Invalid(
+                            messageProvider?.invoke(min, max, unit)
+                                ?: "Value must be at most $max${unit?.let { " $it" } ?: ""}")
+
                     else -> ValidationResult.Valid
                 }
             } catch (e: Exception) {
@@ -449,8 +510,10 @@ class FieldStore(
         when (key) {
             DATE_OF_BIRTH_KEY ->
                 LocalDate.now().minusYears(16).toString()
+
             EST_CROP_ESTABLISHMENT_KEY ->
                 LocalDate.now().plusDays(1).toString()
+
             else ->
                 LocalDate.now().toString()
         }

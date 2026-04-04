@@ -2,7 +2,6 @@ package com.humayapp.scout.core.system
 
 import android.os.Looper
 import android.os.SystemClock
-import android.util.Log
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy

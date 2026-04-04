@@ -1,8 +1,10 @@
 package com.humayapp.scout.core.ui.component
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
@@ -10,16 +12,25 @@ import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 import com.humayapp.scout.core.ui.theme.InputFieldTokens
+import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.rememberTextFieldAdapter
 
@@ -161,9 +172,10 @@ fun ScoutSecureTextField(
     keyboardOptions: KeyboardOptions = ScoutTextFieldDefaults.KeyboardOptions,
     onKeyboardAction: KeyboardActionHandler? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
-    trailingIcon: @Composable (() -> Unit)? = null,
     shape: Shape = ScoutTextFieldDefaults.CornerShape
 ) {
+    var visible by remember { mutableStateOf(false )}
+
     OutlinedSecureTextField(
         modifier = modifier,
         state = state,
@@ -172,9 +184,19 @@ fun ScoutSecureTextField(
         keyboardOptions = keyboardOptions,
         onKeyboardAction = onKeyboardAction,
         leadingIcon = leadingIcon,
-        trailingIcon = trailingIcon,
+        textObfuscationMode = if (visible) TextObfuscationMode.Visible else TextObfuscationMode.Hidden,
+        trailingIcon = {
+            Icon(
+                painter = painterResource(if (visible) ScoutIcons.VisibilityOff else ScoutIcons.Visibility),
+                contentDescription = "Toggle password visibility",
+                tint = ScoutTheme.extras.colors.mutedOnSurfaceVariant,
+                modifier = Modifier
+                    .size(20.dp)
+                    .clickable { visible = !visible }
+            )
+        },
         shape = shape,
-        label = { Text(text = label, style = MaterialTheme.typography.bodyMedium) }
+        label = { Text(text = label, style = MaterialTheme.typography.bodyMedium) },
     )
 }
 

@@ -1,15 +1,15 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
 
-import android.util.Log
 import androidx.compose.ui.text.input.ImeAction
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.core.network.util.transformField
-import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper.FieldDataMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.data.repository.toGeometry
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
@@ -198,11 +198,12 @@ sealed class FieldData : WizardEntry() {
             )
         )
 
+        override fun nextScreen(answers: Map<String, Any?>) = MonitoringVisit.MonitoringDate
     }
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
-            includeKey = { !it.startsWith("img_") },
+            includeKey = { key -> !key.startsWith("img_") && key != "season_id" },
             rules = listOf(
                 transformField(GENDER_KEY) {
                     when (it) {
@@ -218,13 +219,18 @@ sealed class FieldData : WizardEntry() {
         val pageOverrides: WizardPageOverrides = mapOf(
             FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
             GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) },
-//            Images to { page -> ImagesPage(page as Images) }
+            MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
+            MonitoringVisit.Images to { page -> ImagesPage(page as MonitoringVisit.Images) }
         )
 
         val startEntry = FarmerInformation
         val entries = listOf(
             FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
             FieldCondition, FieldLocation, GpsCoordinates
+        ) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
         )
 
         val mapper = FieldDataMapper

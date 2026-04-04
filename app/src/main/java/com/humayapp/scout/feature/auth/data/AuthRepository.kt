@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.auth.data
 
 import android.util.Log
 import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.feature.auth.model.AuthResult
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
@@ -12,15 +13,50 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlin.time.Instant
+
+@Serializable
+data class User(
+    val id: String,
+    val email: String?,
+    @SerialName("first_name") val firstName: String? = null,
+    @SerialName("last_name") val lastName: String? = null,
+    val role: String? = null,
+    @SerialName("is_active") val isActive: Boolean? = null,
+    @SerialName("date_of_birth") val dateOfBirth: LocalDate? = null,
+    @SerialName("created_at") val createdAt: Instant? = null,
+    @SerialName("updated_at") val updatedAt: Instant? = null,
+    @SerialName("last_sign_in_at") val lastSignInAt: Instant? = null
+) {
+    val name: String? get() = listOfNotNull(firstName, lastName).joinToString(" ").ifEmpty { null }
+}
 
 interface AuthRepository {
     val sessionStatus: Flow<SessionStatus>
+    val currentUser: Flow<User?>
+
+    suspend fun getCurrentUser(): User?
+
+    suspend fun isOnline(): Boolean
+    suspend fun isOffline(): Boolean
+
+    suspend fun isAuthenticated(): Boolean
+    suspend fun getRequiresReauth(): Boolean
 
     suspend fun signIn(email: String, password: String): AuthResult
     suspend fun signOut(): AuthResult
-    suspend fun isOnline(): Boolean
+
     suspend fun getCurrentUserId(): String?
+
+    suspend fun clearSessionOnly()
 }
 
 class SupabaseAuthRepository @Inject constructor(
@@ -31,35 +67,72 @@ class SupabaseAuthRepository @Inject constructor(
 
     override val sessionStatus: StateFlow<SessionStatus> = supabaseClient.auth.sessionStatus
 
-    override suspend fun isOnline(): Boolean {
-        return networkMonitor.isOnline.first()
+    override val currentUser: Flow<User?> = flow {
+        val (storedEmail, _, storedUserId) = secureCredentialsRepo.getStoredCredentials()
+        if (storedUserId != null && storedEmail != null) {
+            emit(User(id = storedUserId, email = storedEmail))
+        }
+
+        sessionStatus.collect { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> {
+                    val userInfo = status.session.user
+                    val metadata = userInfo?.userMetadata
+                    val firstName = (metadata?.get("first_name") as? JsonPrimitive)?.content
+                    val lastName = (metadata?.get("last_name") as? JsonPrimitive)?.content
+                    val role = (metadata?.get("role") as? JsonPrimitive)?.content
+                    val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
+                    val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
+                    val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
+                    emit(
+                        User(
+                            id = userInfo?.id!!,
+                            email = userInfo.email,
+                            firstName = firstName,
+                            lastName = lastName,
+                            role = role,
+                            dateOfBirth = dateOfBirth,
+                            isActive = isActive
+                        )
+                    )
+                }
+
+                else -> {
+                    // If no authenticated session, check stored credentials again
+                    // else keep previous stored user (already emitted)
+
+                    val (_, _, storedIdAfter) = secureCredentialsRepo.getStoredCredentials()
+                    if (storedIdAfter == null) emit(null)
+                }
+            }
+        }
+    }.distinctUntilChanged()
+
+    override suspend fun getCurrentUser(): User? = currentUser.first()
+
+    override suspend fun isOnline() = networkMonitor.isOnline.first()
+    override suspend fun isOffline() = !networkMonitor.isOnline.first()
+
+    override suspend fun clearSessionOnly() {
+        supabaseClient.auth.clearSession()
+        Log.d(LOG_TAG, "Session cleared (offline mode)")
+    }
+
+    override suspend fun getRequiresReauth(): Boolean = secureCredentialsRepo.getRequiresReauth()
+
+    override suspend fun isAuthenticated(): Boolean {
+        val status = sessionStatus.first()
+        return status is SessionStatus.Authenticated
     }
 
     override suspend fun signIn(email: String, password: String): AuthResult = try {
-        if (!isOnline()) {
-            val (storedEmail, storedPassword) = secureCredentialsRepo.getStoredCredentials()
-            return if (email == storedEmail && password == storedPassword) {
-                AuthResult.SuccessOffline
-            } else {
-                AuthResult.InvalidCredentials(message = "No internet connection and stored credentials do not match.")
-            }
+        if (isOffline()) {
+            return handleOfflineSignIn(email, password)
         }
 
-        supabaseClient.auth.signInWith(Email) {
-            this.email = email
-            this.password = password
-        }
-
-        val userId = when (val status = sessionStatus.first()) {
-            is SessionStatus.Authenticated -> status.session.user?.id
-            else -> throw IllegalStateException("User not authenticated")
-        }
-
-        secureCredentialsRepo.saveCredentials(email, password, userId)
-        AuthResult.Success
+        handleOnlineSignIn(email, password)
     } catch (e: Throwable) {
-        Log.d("Scout: AuthRepository", "Error =", e)
-
+        Log.d(LOG_TAG, "[Auth] Sign in error =", e)
         when (e) {
             is AuthRestException -> AuthResult.InvalidCredentials()
             is HttpRequestTimeoutException -> AuthResult.Timeout()
@@ -67,6 +140,7 @@ class SupabaseAuthRepository @Inject constructor(
             else -> AuthResult.Unknown()
         }
     }
+
     override suspend fun getCurrentUserId(): String? {
         val status = sessionStatus.first()
         if (status is SessionStatus.Authenticated) {
@@ -81,13 +155,17 @@ class SupabaseAuthRepository @Inject constructor(
             try {
                 supabaseClient.auth.signOut()
             } catch (e: Exception) {
-                Log.w("Scout: AuthRepository", "Remote signOut failed", e)
+                Log.w(LOG_TAG, "[Auth] Remote signOut failed", e)
             }
         }
         supabaseClient.auth.clearSession()
-        secureCredentialsRepo.clearCredentials()
+        secureCredentialsRepo.setRequiresReauth(true)
+
+        Log.d(LOG_TAG, "[Auth] Sign out success.")
+
         AuthResult.Success
     } catch (e: Throwable) {
+        Log.d(LOG_TAG, "[Auth] Sign out error =", e)
         when (e) {
             is AuthRestException -> AuthResult.InvalidCredentials()
             is HttpRequestTimeoutException -> AuthResult.Timeout()
@@ -95,29 +173,42 @@ class SupabaseAuthRepository @Inject constructor(
             else -> AuthResult.Unknown()
         }
     }
-}
 
-sealed class AuthResult(open val message: String = "") {
 
-    object Success : AuthResult()
+    private suspend fun handleOfflineSignIn(email: String, password: String): AuthResult {
+        val (storedEmail, storedPassword) = secureCredentialsRepo.getStoredCredentials()
+        return if (email.equals(storedEmail, ignoreCase = true) && password == storedPassword) {
+            supabaseClient.auth.clearSession()
+            secureCredentialsRepo.setRequiresReauth(true)
+            AuthResult.SuccessOffline
+        } else {
+            AuthResult.InvalidCredentials(message = "No internet connection and stored credentials do not match.")
+        }
+    }
 
-    object SuccessOffline : AuthResult()
+    private suspend fun handleOnlineSignIn(email: String, password: String): AuthResult {
 
-    data class InvalidCredentials(
-        override val message: String = "Authentication failed. Please try again."
-    ) : AuthResult(message)
+        supabaseClient.auth.signInWith(Email) { this.email = email; this.password = password }
 
-    data class Timeout(
-        override val message: String = "Network timed out. Try again."
-    ) : AuthResult(message)
+        val session = supabaseClient.auth.currentSessionOrNull() ?: run {
+            Log.e(LOG_TAG, "[Auth] No session after sign-in.")
+            throw IllegalStateException("Session not established. Should not be possible unless there is a problem.")
+        }
 
-    data class NoConnection(
-        override val message: String = "Check your internet connection."
-    ) : AuthResult(message)
+        val userId = session.user?.id ?: run {
+            Log.e(LOG_TAG, "[Auth] User ID missing in session: ${session.user}")
+            throw IllegalStateException("User ID missing. Should not be possible unless there is a problem.")
+        }
 
-    data class Unknown(
-        override val message: String = "Something went wrong. Please try again."
-    ) : AuthResult(message)
+        secureCredentialsRepo.setRequiresReauth(false)
+        secureCredentialsRepo.saveCredentials(email, password, userId)
+
+        return AuthResult.Success
+    }
+
+    companion object {
+        private const val LOG_TAG = "Scout: AuthRepository"
+    }
 }
 
 

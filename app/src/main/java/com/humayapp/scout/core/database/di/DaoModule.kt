@@ -3,7 +3,9 @@ package com.humayapp.scout.core.database.di
 import com.humayapp.scout.core.database.ScoutDatabase
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
+import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.dao.FormEntryDao
+import com.humayapp.scout.core.database.dao.NotificationDao
 import com.humayapp.scout.core.database.dao.ProvinceDao
 import dagger.Module
 import dagger.Provides
@@ -15,22 +17,20 @@ import dagger.hilt.components.SingletonComponent
 object DaoModule {
 
     @Provides
-    fun providesFormEntryDao(
-        database: ScoutDatabase,
-    ): FormEntryDao = database.formEntryDao()
+    fun providesFormEntryDao(database: ScoutDatabase): FormEntryDao = database.formEntryDao()
 
     @Provides
-    fun providesProvinceDao(
-        database: ScoutDatabase,
-    ): ProvinceDao = database.provinceDao()
+    fun providesNotificationDao(database: ScoutDatabase): NotificationDao = database.notificationDao()
 
     @Provides
-    fun providesCityMunicipalityDao(
-        database: ScoutDatabase,
-    ): CityMunicipalityDao = database.cityMunicipalityDao()
+    fun providesProvinceDao(database: ScoutDatabase): ProvinceDao = database.provinceDao()
 
     @Provides
-    fun providesBarangayDao(
-        database: ScoutDatabase,
-    ): BarangayDao = database.barangayDao()
+    fun providesCityMunicipalityDao(database: ScoutDatabase): CityMunicipalityDao = database.cityMunicipalityDao()
+
+    @Provides
+    fun providesBarangayDao(database: ScoutDatabase): BarangayDao = database.barangayDao()
+
+    @Provides
+    fun providesCollectionTaskDao(database: ScoutDatabase): CollectionTaskDao = database.collectionTaskDao()
 }

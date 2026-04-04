@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.settings.SettingsRepository
+import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -17,22 +18,23 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 @HiltViewModel(assistedFactory = FormReviewViewModel.Factory::class)
 class FormReviewViewModel @AssistedInject constructor(
     private val formRepository: FormRepository,
     private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
+    private val collectionTaskDao: CollectionTaskDao,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
+    @Assisted("collection_task_id") private val collectionTaskId: Int,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -51,10 +53,20 @@ class FormReviewViewModel @AssistedInject constructor(
     private fun submitForm(answers: Map<String, Any?>) {
         _uiState.update { it.copy(isLoading = true) }
 
+        logAnswers(answers)
+
+        val serialized = formType.serializeAnswers(answers)
+        Log.d( LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serialized\n-----------------------------------------------" )
+
         viewModelScope.launch {
             try {
                 val userId = getAuthenticatedUserId() ?: unreachable("user id in this context can never be null")
                 Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
+
+                val imageKeys = answers.keys.filter { it.startsWith("img_") }
+                val imageSummary = imageKeys.joinToString { "$it -> ${answers[it]}" }
+
+                Log.d(LOG_TAG, "Submitting form by $userId. Images: $imageSummary")
 
                 val id = formRepository.saveFormWithImages(
                     answers = answers,
@@ -62,16 +74,23 @@ class FormReviewViewModel @AssistedInject constructor(
                         mfid = mfid,
                         activityType = formType.id,
                         collectedBy = userId,
+                        seasonId = answers["season_id"] as Int,
+                        collectionTaskId = collectionTaskId,
                         payloadJson = "",
                     ),
                     context = context,
                     serializerFn = { answers -> formType.serializeAnswers(answers).toString() }
                 )
 
-                val autoSyncEnabled = settingsRepository.getAutoSync().first()
-                if (autoSyncEnabled) {
-                    context.enqueueSyncWork(entryId = id)
-                }
+                // add mark completed version where form type is field data and the farmer need to change
+
+                collectionTaskDao.markTaskCompleted(
+                    taskId = collectionTaskId,
+                    collectorId = userId,
+                    collectedAt = Clock.System.now()
+                )
+
+                 context.enqueueSyncWork(entryId = id)
 
                 _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
@@ -82,13 +101,25 @@ class FormReviewViewModel @AssistedInject constructor(
         }
     }
 
+    private fun logAnswers(answers: Map<String, Any?>) {
+        val maxKeyLength = answers.keys.maxOfOrNull { it.length } ?: 0
+        Log.d(LOG_TAG, "---- Raw Form Answers ----")
+        answers.forEach { (key, value) ->
+            val paddedKey = key.padEnd(maxKeyLength)
+            Log.d(LOG_TAG, "$paddedKey : $value")
+        }
+        Log.d(LOG_TAG, "----------------------")
+    }
+
     private suspend fun getAuthenticatedUserId(): String? = authRepository.getCurrentUserId()
+
 
     @AssistedFactory
     interface Factory {
         fun create(
             @Assisted("formType") formType: FormType,
-            @Assisted("mfid") mfid: String
+            @Assisted("mfid") mfid: String,
+            @Assisted("collection_task_id") collectionTaskId: Int,
         ): FormReviewViewModel
     }
 
@@ -111,3 +142,5 @@ sealed class FormReviewEvent {
 sealed class FormReviewAction {
     data class FormSubmit(val answers: Map<String, Any?>) : FormReviewAction()
 }
+
+

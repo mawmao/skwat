@@ -2,6 +2,10 @@ package com.humayapp.scout.feature.form.impl.data.registry.nutrient
 
 import androidx.compose.runtime.Composable
 import com.humayapp.scout.feature.form.impl.FormState
+import com.humayapp.scout.feature.form.impl.data.registry.cultural.CulturalManagement
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement.Companion.APPLIED_AREA_KEY
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application.FertilizerApplicationPage
@@ -37,14 +41,15 @@ sealed class NutrientManagement : WizardEntry() {
                 type = FieldType.NUM_DECIMAL,
                 label = "Fertilized Area (by square meters)",
 
-                // todo: check max should not exceed monitoring field area in `CulturalManagement`
-                // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
-                    "Fertilized area must be between $min to $max $unit"
-                }
+                validator = Validators.allOf(
+                    Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
+                        "Fertilized area must be between $min to $max $unit"
+                    },
+                    Validators.notExceedMonitoringArea(CulturalManagement.MONITORING_FIELD_AREA_KEY)
+                )
             ),
 
-        )
+            )
 
         override val nextRule = fieldThresholdRule(
             key = APPLIED_AREA_KEY,
@@ -60,8 +65,10 @@ sealed class NutrientManagement : WizardEntry() {
         override val description = "Records fertilizer use"
         override val fields = emptyList<WizardField>()
 
+        override fun nextScreen(answers: Map<String, Any?>) = MonitoringVisit.MonitoringDate
+
+
         override val nextRule: (FormState) -> Boolean = { state ->
-            // only checked one since you can't even add a single key without the other keys
             val hasApplication = state.fieldData.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
             if (!hasApplication) {
                 state.setDialog(
@@ -74,7 +81,6 @@ sealed class NutrientManagement : WizardEntry() {
 
             hasApplication
         }
-
 
         fun indexedFields(index: Int): List<WizardField> = listOf(
             field(
@@ -142,11 +148,21 @@ sealed class NutrientManagement : WizardEntry() {
     companion object {
 
         val pageOverrides: WizardPageOverrides = mapOf(
-            FertilizerApplication to { page -> FertilizerApplicationPage(page as FertilizerApplication) }
+            FertilizerApplication to { page -> FertilizerApplicationPage(page as FertilizerApplication) },
+            MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
+            MonitoringVisit.Images to { page -> ImagesPage(page as MonitoringVisit.Images) }
         )
 
         val startEntry = FertilizedArea
-        val entries = listOf(FertilizedArea, FertilizerApplication)
+        val entries = listOf(
+            FertilizedArea,
+            FertilizerApplication
+        ) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
+        )
+
         val mapper = NutrientManagementMapper
 
         val reviewContent: @Composable ((FormState) -> Unit) = { state -> NutrientManagementReviewContent(state) }
@@ -176,7 +192,7 @@ private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
 
     val fertilizerApplications = indices.map { index ->
         val fields = answers
-            .filterKeys { it.endsWith("_$index") }
+            .filterKeys { it.endsWith("_$index") && !it.startsWith("img_") && it != "season_id" }
             .mapKeys { it.key.removeSuffix("_$index") }
             .mapValues { (_, value) ->
                 when (value) {

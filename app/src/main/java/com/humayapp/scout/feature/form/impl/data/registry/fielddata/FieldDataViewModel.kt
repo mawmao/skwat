@@ -11,10 +11,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -34,33 +38,48 @@ class FieldDataViewModel @Inject constructor(
     private val _locationState = MutableStateFlow<LocationState>(LocationState())
     val locationState = _locationState.asStateFlow()
 
-    val coordinatesState: StateFlow<CoordinatesState> =
-        locationMonitor.isEnabled
-            .flatMapLatest { enabled ->
-                if (!enabled) {
-                    flowOf(
+    private val _refreshCoordinates = MutableSharedFlow<Unit>()
+    fun refreshCoordinates() {
+        viewModelScope.launch {
+            _refreshCoordinates.emit(Unit)
+        }
+    }
+
+    val coordinatesState: StateFlow<CoordinatesState> = combine(
+        locationMonitor.isEnabled,
+        _refreshCoordinates.asSharedFlow().onStart { emit(Unit) }
+    ) { enabled, _ -> enabled }
+        .flatMapLatest { enabled ->
+            if (!enabled) {
+                flowOf(CoordinatesState(locationServicesDisabled = true))
+            } else {
+                coordinatesRepository.coordinates
+                    .map { coords ->
                         CoordinatesState(
-                            locationServicesDisabled = true,
-                            coordinatesLoading = false
+                            coordinates = coords,
+                            locationServicesDisabled = false,
+                            error = null
                         )
-                    )
-                } else {
-                    coordinatesRepository.coordinates
-                        .map { coords ->
+                    }
+                    .catch { e ->
+                        emit(
                             CoordinatesState(
-                                coordinates = coords,
-                                locationServicesDisabled = false
+                                coordinatesLoading = false,
+                                locationServicesDisabled = false,
+                                error = e.message ?: "Failed to get location"
                             )
-                        }
-                        .onStart {
-                            emit(CoordinatesState(coordinatesLoading = true))
-                        }
-                }
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = CoordinatesState()
-            )
+                        )
+                    }
+                    .onStart {
+                        emit(CoordinatesState(coordinatesLoading = true))
+                    }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = CoordinatesState()
+        )
 
     private val _errors = MutableStateFlow<Errors>(Errors())
     val errors = _errors.asStateFlow()
@@ -150,23 +169,6 @@ class FieldDataViewModel @Inject constructor(
         }
     }
 
-//    fun fetchCoordinates() {
-//        coordinatesJob?.cancel()
-//        coordinatesJob = viewModelScope.launch {
-//            _coordinatesState.update { it.copy(coordinatesLoading = true, locationServicesDisabled = false) }
-//            runCatching {
-//                coordinatesRepository.getCoordinates()
-//            }.onSuccess { coordinates ->
-//                _coordinatesState.update {
-//                    it.copy(coordinates = coordinates, coordinatesLoading = false)
-//                }
-//            }.onFailure { err ->
-//                _coordinatesState.update { it.copy(coordinatesLoading = false) }
-//                _errors.update { it.copy(coordinates = err.message) }
-//            }
-//        }
-//    }
-
     data class Errors(
         val location: String? = null,
         val coordinates: String? = null,
@@ -183,6 +185,7 @@ class FieldDataViewModel @Inject constructor(
     data class CoordinatesState(
         val coordinates: Coordinates = emptyCoordinates(),
         val coordinatesLoading: Boolean = false,
-        val locationServicesDisabled: Boolean = false
+        val locationServicesDisabled: Boolean = false,
+        val error: String? = null
     )
 }

@@ -4,6 +4,7 @@ import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -73,12 +74,12 @@ sealed class DamageAssessment : WizardEntry() {
                 key = AFFECTED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Affected Area (ha)",
-
-                // todo: check max should be less than total field area in `FieldData`
-                // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.floatRange(min = 0.04f, max = 999.0f, unit = "ha") { min, max, unit ->
-                    "Affected area must be between $min to $max $unit"
-                }
+                validator = Validators.allOf(
+                    Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "ha") { min, max, unit ->
+                        "Affected area must be between $min to $max $unit"
+                    },
+                    Validators.notExceedTotalFieldArea(FieldData.TOTAL_FIELD_AREA_KEY)
+                )
             ),
         )
     }

@@ -15,13 +15,15 @@ import kotlin.time.Instant
 data class FormEntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val mfid: String,
-    val activityType: String, // equivalent to [FormType.id]
+    val activityType: String,
     val payloadJson: String,
+    val seasonId: Int,
     val imageUrls: List<String> = emptyList(),
     val syncedAt: Instant? = null,
     val collectedBy: String,
     val collectedAt: Instant = Clock.System.now(),
-    val syncStatus: SyncStatus = SyncStatus.PENDING
+    val syncStatus: SyncStatus = SyncStatus.PENDING,
+    val collectionTaskId: Int
 )
 
 enum class SyncStatus {

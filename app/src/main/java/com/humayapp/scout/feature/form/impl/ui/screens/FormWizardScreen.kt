@@ -16,9 +16,7 @@ import com.humayapp.scout.core.ui.component.ScoutButton
 import com.humayapp.scout.core.ui.component.ScoutErrorDialog
 import com.humayapp.scout.core.ui.component.ScoutOutlinedButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.navigation.navigateToFormReview
-import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.ui.components.DefaultWizardEntry
 import com.humayapp.scout.feature.form.impl.ui.components.WizardProgressBar

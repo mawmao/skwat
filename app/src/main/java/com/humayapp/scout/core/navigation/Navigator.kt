@@ -86,13 +86,13 @@ open class StackNavigator<T: NavKey>(
     fun push(route: T) {
         if (!canNavigate()) return
         stack.add(route)
-        logStack(action = "Push(${route.toString().removeSuffix("NavKey")})")
+//        logStack(action = "Push(${route.toString().removeSuffix("NavKey")})")
     }
 
     fun pop(): T? {
         if (!canNavigate() || stack.isEmpty())  return null
         val removed = stack.removeAt(stack.lastIndex)
-        logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
+//        logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
         return removed
     }
 
@@ -100,6 +100,6 @@ open class StackNavigator<T: NavKey>(
         if (!canNavigate()) return
         stack.clear()
         stack.add(route)
-        logStack("popAll(${route.toString().removeSuffix("NavKey")})")
+//        logStack("popAll(${route.toString().removeSuffix("NavKey")})")
     }
 }

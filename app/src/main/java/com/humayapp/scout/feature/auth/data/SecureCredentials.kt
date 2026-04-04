@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.auth.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -9,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.content.edit
 
 @Singleton
 class SecureCredentialsRepository @Inject constructor(
@@ -45,4 +45,13 @@ class SecureCredentialsRepository @Inject constructor(
     suspend fun clearCredentials() = withContext(Dispatchers.IO) {
         sharedPreferences.edit { clear() }
     }
+
+    suspend fun setRequiresReauth(requires: Boolean) = withContext(Dispatchers.IO) {
+        sharedPreferences.edit { putBoolean("requires_reauth", requires) }
+    }
+
+    suspend fun getRequiresReauth(): Boolean = withContext(Dispatchers.IO) {
+        sharedPreferences.getBoolean("requires_reauth", false)
+    }
+
 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +26,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.humayapp.scout.core.system.ScoutPermissions
 import com.humayapp.scout.core.ui.common.PermissionRationale
+import com.humayapp.scout.core.ui.component.ScoutButton
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
@@ -82,6 +84,41 @@ fun GpsCoordinatesPage(
                 style = ScoutTheme.material.typography.bodyMedium,
                 color = ScoutTheme.extras.colors.mutedOnBackground
             )
+        }
+        return
+    }
+
+    // Handle error from GPS acquisition
+    if (coordinatesState.error != null) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(ScoutIcons.Error),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Unable to get location",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = coordinatesState.error ?: "",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(24.dp))
+            ScoutButton(
+                text = "Retry",
+                onClick = vm::refreshCoordinates
+            )
+            Spacer(Modifier.height(12.dp))
         }
         return
     }

@@ -135,6 +135,7 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.coil.compose)
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
 
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.compose)
@@ -159,7 +160,7 @@ dependencies {
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.postgrest.kt)
     implementation(libs.supabase.auth.kt)
-//    implementation(libs.supabase.realtime.kt)
+    implementation(libs.supabase.realtime.kt)
     implementation(libs.supabase.storage.kt)
 
     implementation(libs.androidx.core.splashscreen)

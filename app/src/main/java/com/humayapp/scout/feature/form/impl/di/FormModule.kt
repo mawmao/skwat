@@ -7,8 +7,12 @@ import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers.IO
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
+import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.dao.FormEntryDao
 import com.humayapp.scout.core.database.dao.ProvinceDao
+import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepositoryImpl
 import com.humayapp.scout.feature.form.impl.data.repository.CoordinatesRepository
 import com.humayapp.scout.feature.form.impl.data.repository.CoordinatesRepositoryImpl
 import com.humayapp.scout.feature.form.impl.data.repository.CoordinatesService
@@ -22,6 +26,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.jan.supabase.SupabaseClient
 import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -42,6 +47,16 @@ object FormModule {
         fusedLocationClient: FusedLocationProviderClient,
         @ApplicationContext context: Context
     ): CoordinatesService = CoordinatesServiceGms(fusedLocationClient, context)
+
+
+    @Provides
+    @Singleton
+    fun provideCollectionsRepository(
+        supabaseClient: SupabaseClient,
+        authRepository: AuthRepository,
+        collectionTaskDao: CollectionTaskDao
+    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao)
+
 
     @Provides
     @Singleton

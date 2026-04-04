@@ -26,4 +26,12 @@ object ScoutIcons {
     val Flashlight = R.drawable.flashlight_on_24px
     val Barcode = R.drawable.barcode_24px
     val QrCodeScanner = R.drawable.qr_code_scanner_24px
+    val ListAlt = R.drawable.list_alt_24px
+    val ListAltCheck = R.drawable.list_alt_check_24px
+    val Approved = R.drawable.domain_verification_24px
+    val Rejected = R.drawable.disabled_by_default_24px
+    val Visibility = R.drawable.visibility_24px
+    val VisibilityOff = R.drawable.visibility_off_24px
+    val Notification = R.drawable.notifications_24px
+    val AccountCircle = R.drawable.account_circle_24px
 }

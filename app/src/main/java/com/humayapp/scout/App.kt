@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarData
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -28,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -42,6 +40,7 @@ import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTypography
 import com.humayapp.scout.feature.auth.navigation.authSection
 import com.humayapp.scout.feature.form.api.FormType
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.feature.form.impl.navigation.formSection
 import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanScreen
@@ -49,7 +48,6 @@ import com.humayapp.scout.feature.main.navigation.mainSection
 import com.humayapp.scout.navigation.OverlayType
 import com.humayapp.scout.navigation.RootNavKey
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,15 +67,17 @@ fun rememberScoutAppState(
     formRepository: FormRepository,
     coroutineScope: CoroutineScope,
     networkMonitor: NetworkMonitor,
+    collectionRepository: CollectionRepository
 ): ScoutAppState {
-    return remember(rootNavigator, snackbarHostState, settingsRepository, formRepository, coroutineScope, networkMonitor) {
+    return remember(rootNavigator, snackbarHostState, settingsRepository, formRepository, coroutineScope, networkMonitor, collectionRepository) {
         ScoutAppState(
             rootNavigator = rootNavigator,
             snackbarHostState = snackbarHostState,
             settingsRepository = settingsRepository,
             formRepository = formRepository,
             coroutineScope = coroutineScope,
-            networkMonitor = networkMonitor
+            networkMonitor = networkMonitor,
+            collectionRepository = collectionRepository
         )
     }
 }
@@ -90,6 +90,7 @@ class ScoutAppState(
     val settingsRepository: SettingsRepository,
     val coroutineScope: CoroutineScope,
     val networkMonitor: NetworkMonitor,
+    val collectionRepository: CollectionRepository
 ) {
 
     private val _snackbarMessages = MutableSharedFlow<String>(

@@ -1,97 +1,120 @@
 package com.humayapp.scout.feature.main
 
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarData
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.humayapp.scout.LocalScoutAppState
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.ui.component.NavigationItem
 import com.humayapp.scout.core.ui.theme.ScoutIcons
-import com.humayapp.scout.core.ui.theme.ScoutTypography
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
-import com.humayapp.scout.feature.history.api.navigation.HistoryNavKey
-import com.humayapp.scout.feature.history.api.navigation.navigateToHistory
-import com.humayapp.scout.feature.history.impl.navigation.historyEntryProvider
-import com.humayapp.scout.feature.main.home.api.navigation.HomeNavKey
-import com.humayapp.scout.feature.main.home.api.navigation.navigateToHome
-import com.humayapp.scout.feature.main.home.impl.navigation.homeEntryProvider
+import com.humayapp.scout.feature.main.approved.api.navigation.ApprovedNavKey
+import com.humayapp.scout.feature.main.approved.api.navigation.navigateToApproved
+import com.humayapp.scout.feature.main.approved.impl.navigation.approvedEntryProvider
+import com.humayapp.scout.feature.main.collected.api.navigation.CollectedNavKey
+import com.humayapp.scout.feature.main.collected.api.navigation.navigateToCollected
+import com.humayapp.scout.feature.main.collected.impl.navigation.collectedEntryProvider
+import com.humayapp.scout.feature.main.notification.impl.NotificationsScreen
+import com.humayapp.scout.feature.main.notification.impl.NotificationsViewModel
+import com.humayapp.scout.feature.main.pending.api.navigation.PendingNavKey
+import com.humayapp.scout.feature.main.pending.api.navigation.navigateToPending
+import com.humayapp.scout.feature.main.pending.impl.navigation.pendingEntryProvider
+import com.humayapp.scout.feature.main.rejected.api.navigation.RejectedNavKey
+import com.humayapp.scout.feature.main.rejected.api.navigation.navigateToRejected
+import com.humayapp.scout.feature.main.rejected.impl.navigation.rejectedEntryProvider
 import com.humayapp.scout.feature.main.ui.MainSectionNavigationBar
 import com.humayapp.scout.feature.main.ui.MainSectionTopAppBar
-import com.humayapp.scout.feature.main.ui.SettingsDialog
+import com.humayapp.scout.feature.main.ui.UserProfileDialog
 import com.humayapp.scout.navigation.navigateToAuth
-import kotlinx.coroutines.flow.merge
-
-
-// the top level routes in the main section
-val NavigationItems = listOf(
-    NavigationItem(
-        key = HomeNavKey,
-        label = "Home",
-        icon = ScoutIcons.Home,
-        navigationFunction = ::navigateToHome
-    ),
-    NavigationItem(
-        key = HistoryNavKey,
-        label = "History",
-        icon = ScoutIcons.History,
-        navigationFunction = ::navigateToHistory
-    ),
-)
+import com.humayapp.scout.navigation.navigateToDetail
 
 
 @Composable
-fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
+fun MainSection(
+    vm: MainSectionViewModel = hiltViewModel(),
+    notificationsViewModel: NotificationsViewModel = hiltViewModel()
+) {
 
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val uiError by vm.uiError.collectAsStateWithLifecycle()
 
     val rootNavigator = LocalRootStackNavigator.current
-    val mainNavigator = rememberStackNavigator<NavKey>("main", initialKey = HomeNavKey)
+    val mainNavigator = rememberStackNavigator<NavKey>("main", initialKey = PendingNavKey)
+
+    val currentUser by vm.currentUser.collectAsStateWithLifecycle()
+    val isOnline by vm.isOnline.collectAsStateWithLifecycle()
+
+    val notifications by notificationsViewModel.notifications.collectAsStateWithLifecycle()
+    val unreadCount = notifications.count { !it.isRead }
+
+    val pendingCount = uiState.tasks.count { it.status == "pending" }
+    val collectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "pending" }
+    val approvedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "approved" }
+    val rejectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "rejected" }
+
+    val navItems = listOf(
+        NavigationItem(
+            key = PendingNavKey,
+            label = "Pending",
+            icon = ScoutIcons.ListAlt,
+            navigationFunction = ::navigateToPending,
+            badgeCount = pendingCount
+        ),
+        NavigationItem(
+            key = CollectedNavKey,
+            label = "Collected",
+            icon = ScoutIcons.ListAltCheck,
+            navigationFunction = ::navigateToCollected,
+            badgeCount = collectedCount
+        ),
+        NavigationItem(
+            key = ApprovedNavKey,
+            label = "Approved",
+            icon = ScoutIcons.Approved,
+            navigationFunction = ::navigateToApproved,
+            badgeCount = approvedCount
+        ),
+        NavigationItem(
+            key = RejectedNavKey,
+            label = "Rejected",
+            icon = ScoutIcons.Rejected,
+            navigationFunction = ::navigateToRejected,
+            badgeCount = rejectedCount
+        ),
+    )
+
+    LaunchedEffect(currentUser, isOnline) {
+        Log.i("Scout", "[INFO] User: ${currentUser?.email ?: "null"}, Online: $isOnline")
+    }
 
     ScoutErrorEvent(errorMessage = uiError, onDismiss = { vm.onAction(MainSectionAction.ClearUiError) })
     ScoutUiEvents(vm.uiEvent) { event ->
         when (event) {
             MainSectionEvent.LogoutSuccess -> {
-                vm.onAction(MainSectionAction.ToggleSettings(false))
+                vm.onAction(MainSectionAction.ToggleProfile(false))
                 rootNavigator.navigateToAuth()
             }
         }
     }
 
-    SettingsDialog(
-        isVisible = uiState.isSettingsShown,
-        onDismissRequest = { vm.onAction(MainSectionAction.ToggleSettings(false)) },
+    UserProfileDialog(
+        isVisible = uiState.isProfileShown,
+        user = currentUser,
+        onDismissRequest = { vm.onAction(MainSectionAction.ToggleProfile(false)) },
         onSignOut = { vm.onAction(MainSectionAction.LogoutRequest) }
     )
 
@@ -101,14 +124,19 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
             topBar = {
                 MainSectionTopAppBar(
                     currentKey = mainNavigator.current,
-                    onSettingsClick = { vm.onAction(MainSectionAction.ToggleSettings(true)) },
-                    onSyncClick = {
-                        // TODO: after sync is implemented
-                    }
+                    onProfileClick = { vm.onAction(MainSectionAction.ToggleProfile(true)) },
+                    onRefreshClick = vm::refreshTasks,
+                    isRefreshing = uiState.isLoading || uiState.isRefreshing,
+                    onNotificationsClick = {
+                        rootNavigator.navigateToDetail {
+                            NotificationsScreen(viewModel = notificationsViewModel)
+                        }
+                    },
+                    unreadCount = unreadCount
                 )
             },
             bottomBar = {
-                MainSectionNavigationBar(navigator = mainNavigator, items = NavigationItems)
+                MainSectionNavigationBar(navigator = mainNavigator, items = navItems)
             }
         ) { innerPadding ->
             NavDisplay(
@@ -116,8 +144,10 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
                 backStack = mainNavigator.asBackStack(),
                 onBack = mainNavigator::pop,
                 entryProvider = entryProvider {
-                    homeEntryProvider(metadata = NavTransition.fade())
-                    historyEntryProvider()
+                    pendingEntryProvider(metadata = NavTransition.fade(), vm = vm)
+                    collectedEntryProvider(metadata = NavTransition.fade(), vm = vm)
+                    approvedEntryProvider(metadata = NavTransition.fade(), vm = vm)
+                    rejectedEntryProvider(metadata = NavTransition.fade(), vm = vm)
                 },
             )
         }

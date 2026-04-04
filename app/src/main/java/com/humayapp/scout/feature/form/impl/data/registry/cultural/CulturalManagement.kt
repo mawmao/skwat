@@ -8,6 +8,10 @@ import com.humayapp.scout.feature.form.impl.FormState
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.overrides.RiceVarietyInformationPage
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.review.CulturalManagementDetailsContent
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -27,9 +31,12 @@ sealed class CulturalManagement : WizardEntry() {
                 key = MONITORING_FIELD_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Monitoring Field Area (by square meters)",
-                validator = Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
-                    "Monitoring field area must be between $min to $max $unit"
-                }
+                validator = Validators.allOf(
+                    Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
+                        "Monitoring field area must be between $min to $max $unit"
+                    },
+                    Validators.notExceedTotalFieldArea(FieldData.TOTAL_FIELD_AREA_KEY)
+                )
             ),
             field(
                 key = ECOSYSTEM_KEY,
@@ -53,22 +60,11 @@ sealed class CulturalManagement : WizardEntry() {
         override val title = "Actual Crop Establishment"
         override val description = "Provide the date and method used for establishing the crop."
         override val fields = listOf(
-            /* field(
-               key = ACTUAL_LAND_PREPARATION_METHOD,
-                type = FieldType.CARD_RADIO,
-                label = "Actual Land Preparation Method",
-                options = listOf("Wet", "Dry"),
-                validator = Validators.nonEmpty
-            ),
-             */
             field(
                 key = ACTUAL_CROP_ESTABLISHMENT_DATE_KEY,
                 type = FieldType.DATE,
                 label = "Actual Crop Establishment Date",
-
-                // todo: check max should be greater the estimated crop establishment in  in `FieldData
-                // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.nonEmpty
+                validator = Validators.isAfterBy(FieldData.EST_CROP_ESTABLISHMENT_KEY)
             ),
             field(
                 key = ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY,
@@ -291,15 +287,22 @@ sealed class CulturalManagement : WizardEntry() {
                 validator = Validators.nonEmpty
             )
         )
+
+
+        override fun nextScreen(answers: Map<String, Any?>) = MonitoringVisit.MonitoringDate
     }
 
     companion object {
-        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
+            includeKey = { key -> !key.startsWith("img_") && key != "season_id" && key != FieldData.TOTAL_FIELD_AREA_KEY && key != FieldData.EST_CROP_ESTABLISHMENT_KEY },
+        )
 
         val reviewContent: @Composable ((FormState) -> Unit) = { state -> CulturalManagementDetailsContent(state) }
 
         val pageOverrides: WizardPageOverrides = mapOf(
-            RiceVarietyInformation to { page -> RiceVarietyInformationPage(page as RiceVarietyInformation) }
+            RiceVarietyInformation to { page -> RiceVarietyInformationPage(page as RiceVarietyInformation) },
+            MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
+            MonitoringVisit.Images to { page -> ImagesPage(page as MonitoringVisit.Images) }
         )
 
         val startEntry = FieldArea
@@ -313,6 +316,10 @@ sealed class CulturalManagement : WizardEntry() {
             DirectSeededPlantCount,
             RiceVarietyInformation,
             SeedClass
+        ) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
         )
 
 
@@ -329,7 +336,6 @@ sealed class CulturalManagement : WizardEntry() {
         const val MONITORING_FIELD_AREA_KEY = "monitoring_field_area_sqm"
         const val ECOSYSTEM_KEY = "ecosystem"
 
-        // const val ACTUAL_LAND_PREPARATION_METHOD = "actual_land_preparation_method"
         const val ACTUAL_CROP_ESTABLISHMENT_DATE_KEY = "actual_crop_establishment_date"
         const val ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY = "actual_crop_establishment_method"
 

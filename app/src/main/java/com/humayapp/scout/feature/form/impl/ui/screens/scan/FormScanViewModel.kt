@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  * but is actually in the Root stack since this uses the `Root.Overlay` nav key and
  * is passed as the `content` parameter
  *
- * @see com.humayapp.scout.feature.main.home.impl.HomeScreen
+ * @see com.humayapp.scout.feature.main.pending.impl.PendingScreen
  */
 @HiltViewModel
 class FormScanViewModel @Inject constructor(

@@ -11,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.humayapp.scout.feature.form.api.FormType
-import com.humayapp.scout.feature.form.api.province
 import com.humayapp.scout.feature.form.impl.model.FieldStore
 import com.humayapp.scout.feature.form.impl.model.FieldValidator
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
@@ -23,17 +22,18 @@ val LocalFormState = staticCompositionLocalOf<FormState> {
 }
 
 @Composable
-fun rememberFormState(formType: FormType, mfid: String): FormState {
+fun rememberFormState(formType: FormType, mfid: String, collectionTaskId: Int): FormState {
 
     val pagerState = rememberPagerState(pageCount = { formType.entries.size })
 
-    return remember(formType, mfid) {
+    return remember(formType, mfid, collectionTaskId) {
         FormState(
             initialWizardEntry = formType.startEntry,
             pagerEntries = formType.entries,
             formType = formType,
             pagerState = pagerState,
             mfid = mfid,
+            collectionTaskId = collectionTaskId
         )
     }
 }
@@ -47,6 +47,7 @@ class FormState(
     val formType: FormType,
     val pagerState: PagerState,
     val mfid: String,
+    val collectionTaskId: Int,
 ) {
     val allFields = pagerEntries.flatMap { it.fields }
 

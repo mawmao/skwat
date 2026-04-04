@@ -23,19 +23,16 @@ import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.auth.data.util.onAvailability
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.jan.supabase.auth.status.SessionStatus
 import jakarta.inject.Inject
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
-
-// should handle session
 
 @OptIn(DelicateCoroutinesApi::class)
 @AndroidEntryPoint
@@ -53,12 +50,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var networkMonitor: NetworkMonitor
 
+    @Inject
+    lateinit var collectionRepository: CollectionRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         var keepSplash = true
+
         splashScreen.setKeepOnScreenCondition { keepSplash }
 
         enableEdgeToEdge(
@@ -69,17 +70,22 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
+
             val sessionStatus by authRepository.sessionStatus.collectAsState(initial = null)
             val isOnline by networkMonitor.isOnline.collectAsState(initial = false)
-
             var targetKey by remember { mutableStateOf<RootNavKey?>(null) }
 
             LaunchedEffect(Unit) {
+                val requiresReauth = authRepository.getRequiresReauth()
+                if (requiresReauth) {
+                    authRepository.clearSessionOnly()
+                    targetKey = RootNavKey.Auth
+                    return@LaunchedEffect
+                }
+
                 val session = sessionStatus ?: return@LaunchedEffect
                 val networkReady = withTimeoutOrNull(3000L) {
-                    networkMonitor.isOnline
-                        .drop(1)
-                        .first { it }
+                    networkMonitor.isOnline.drop(1).first { it }
                     true
                 } ?: isOnline
 
@@ -91,11 +97,16 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(targetKey) {
-                if (targetKey == RootNavKey.Auth) {
-                    val currentSession = sessionStatus
-                    if (currentSession is SessionStatus.Authenticated) {
-                        authRepository.signOut()
+                when {
+                    targetKey is RootNavKey.Auth -> {
+                        val currentSession = sessionStatus
+                        if (currentSession is SessionStatus.Authenticated) {
+                            authRepository.signOut()
+                        }
                     }
+                    // targetKey is RootNavKey.Main -> {
+                    //     TaskPullWorker.start(context = this@MainActivity)
+                    // }
                 }
             }
 
@@ -116,7 +127,8 @@ class MainActivity : ComponentActivity() {
                     settingsRepository = settingsRepository,
                     formRepository = formRepository,
                     coroutineScope = scope,
-                    networkMonitor = networkMonitor
+                    networkMonitor = networkMonitor,
+                    collectionRepository = collectionRepository
                 )
 
                 ScoutTheme {

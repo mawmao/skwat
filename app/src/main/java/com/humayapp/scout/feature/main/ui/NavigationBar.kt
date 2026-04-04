@@ -32,7 +32,8 @@ fun MainSectionNavigationBar(
                             contentDescription = item.label,
                         )
                     },
-                    label = item.label
+                    label = item.label,
+                    badgeCount = item.badgeCount
                 )
             }
         }

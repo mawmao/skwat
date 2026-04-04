@@ -15,10 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -208,54 +204,52 @@ fun ScoutConfirmDialog(
     )
 }
 
+
 @Composable
-fun ScoutConfirmationDialog(
+fun ScoutAlertDialog(
     modifier: Modifier = Modifier,
-    title: String,
+    isVisible: Boolean,
+    title: String = "Alert",
     message: String,
-    confirmText: String = "Yes, Cancel",
-    cancelText: String = "Keep Editing",
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
+    onDismissRequest: () -> Unit,
+    confirmButtonText: String = "OK",
+    onConfirm: () -> Unit
 ) {
     ScoutDialog(
         modifier = modifier,
-        onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier.padding(ScoutTheme.spacing.large)
-        ) {
+        isVisible = isVisible,
+        onDismiss = onDismissRequest,
+        content = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.medium)
+                modifier = Modifier.padding(top = ScoutTheme.spacing.large, bottom = ScoutTheme.spacing.small),
             ) {
-                Text(
-                    text = title,
-                    style = ScoutTheme.material.typography.headlineSmall,
-                    color = ScoutTheme.extras.colors.mutedOnBackground
-                )
+                Column(
+                    modifier = Modifier.padding(horizontal = ScoutTheme.spacing.large),
+                ) {
+                    Text(
+                        text = title,
+                        style = ScoutTypography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(ScoutTheme.spacing.mediumLarge))
+                    Text(
+                        text = message,
+                        style = ScoutTypography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(modifier = Modifier.height(ScoutTheme.spacing.small))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ScoutDialogButton(
+                        text = confirmButtonText,
+                        onClick = onConfirm,
+                        modifier = Modifier.padding(horizontal = ScoutTheme.spacing.large)
+                    )
+                }
             }
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(ScoutTheme.spacing.medium),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ScoutTextButton(text = confirmText, onClick = onConfirm)
-                ScoutTextButton(text = cancelText, onClick = onDismiss)
-            }
-        }
-
-    }
+        },
+    )
 }

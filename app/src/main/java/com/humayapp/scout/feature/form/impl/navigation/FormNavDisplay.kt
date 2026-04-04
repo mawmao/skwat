@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -20,7 +21,6 @@ import com.humayapp.scout.feature.form.impl.ui.screens.FormConfirmScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.FormWizardScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.review.FormReviewViewModel
-import androidx.activity.compose.BackHandler
 
 @Composable
 fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
@@ -50,7 +50,7 @@ fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
                 entry<FormReviewNavKey>(metadata = formTransition) {
                     val vm = hiltViewModel<FormReviewViewModel, FormReviewViewModel.Factory>(
                         key = "${state.formType}-${state.mfid}"
-                    ) { it.create(formType = state.formType, mfid = state.mfid) }
+                    ) { it.create(formType = state.formType, mfid = state.mfid, collectionTaskId = state.collectionTaskId) }
                     FormReviewScreen(vm = vm)
                 }
             }

@@ -1,13 +1,13 @@
 package com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper
 
 
-import android.util.Log
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.getSingleId
 import com.humayapp.scout.core.network.util.upsert
 import com.humayapp.scout.core.network.util.upsertAndGetId
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisitPayload
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,21 +19,18 @@ import kotlin.time.Instant
 
 object FieldDataMapper : FormMapper() {
     override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
-
-        Log.d(
-            LOG_TAG, "[FieldDataMapper] Trying to upload entry = $entry"
-        )
         val payload = Json.decodeFromString<FieldDataPayload>(entry.payloadJson)
 
         val farmerId = client.upsertAndGetId(
-            table = SupabaseDBTables.FARMERS, item = Farmers(
+            table = SupabaseDBTables.FARMERS,
+            item = Farmers(
                 firstName = payload.firstName,
                 lastName = payload.lastName,
                 gender = payload.gender,
                 dateOfBirth = payload.dateOfBirth,
                 cellPhoneNo = payload.cellPhoneNo
             ),
-             onConflict = "first_name,last_name"
+            onConflict = "first_name,last_name"
         )
 
         val barangayId = client.getSingleId("barangays") { filter { eq("name", payload.barangay) } }
@@ -58,33 +55,52 @@ object FieldDataMapper : FormMapper() {
             onConflict = "mfid_id"
         )
 
-        val parentId = upsertParent(fieldId = fieldId, entry = entry, client = client)
+        val parentId = upsertParent(
+            fieldId = fieldId,
+            entry = entry,
+            client = client
+        )
 
-        try {
-            client.upsert(
-                table = SupabaseDBTables.FIELD_PLANNINGS,
-                item = Json.encodeToJsonElement(
-                    FieldPlannings(
-                        id = parentId,
-                        landPreparationStartDate = payload.landPreparationStartDate,
-                        estCropEstablishmentDate = payload.estCropEstablishmentDate,
-                        estMethodOfEstablishment = payload.estMethodOfEstablishment,
-                        totalFieldAreaHa = payload.totalFieldAreaHa,
-                        soilType = payload.soilType,
-                        currentFieldCondition = payload.currentFieldCondition,
-                    )
-                ),
+        client.upsert(
+            table = SupabaseDBTables.FIELD_PLANNINGS,
+            item = Json.encodeToJsonElement(
+                FieldPlannings(
+                    id = parentId,
+                    landPreparationStartDate = payload.landPreparationStartDate,
+                    estCropEstablishmentDate = payload.estCropEstablishmentDate,
+                    estMethodOfEstablishment = payload.estMethodOfEstablishment,
+                    totalFieldAreaHa = payload.totalFieldAreaHa,
+                    soilType = payload.soilType,
+                    currentFieldCondition = payload.currentFieldCondition,
+                )
             )
-            Log.d(LOG_TAG, "Field_plannings upsert succeeded for mfid=${entry.mfid}")
-        } catch (e: Exception) {
-            Log.e(LOG_TAG, "Field_plannings upsert failed for mfid=${entry.mfid}, parentId=$parentId", e)
-            throw e
-        }
+        )
+
+//        val monitoringVisitId = client.upsertAndGetId(
+//            table = SupabaseDBTables.MONITORING_VISITS,
+//            item = MonitoringVisits(
+//                id = parentId,
+//                dateMonitored = payload.dateMonitored,
+//                cropStage = payload.cropStage,
+//                soilMoistureStatus = payload.soilMoistureStatus,
+//                avgPlantHeight = payload.avgPlantHeight
+//            ),
+//        )
+
+        client.upsert(
+            table = SupabaseDBTables.FIELD_ACTIVITIES,
+            item = Json.encodeToJsonElement(
+                mapOf(
+                    "id" to parentId,
+                    "monitoring_visit_id" to -1
+                )
+            ),
+        )
     }
 }
 
 @Serializable
-private data class FieldDataPayload(
+data class FieldDataPayload(
     @SerialName("first_name") val firstName: String,
     @SerialName("last_name") val lastName: String,
     val gender: String,
@@ -100,6 +116,16 @@ private data class FieldDataPayload(
     @SerialName("municipality_or_city") val municipalityOrCity: String,
     val barangay: String,
     val location: String,
+
+    /**
+     * Hardcoded for now
+     *
+     * See [MonitoringVisitPayload]
+     */
+//    @SerialName("date_monitored") val dateMonitored: String,
+//    @SerialName("crop_stage") val cropStage: String,
+//    @SerialName("soil_moisture_status") val soilMoistureStatus: String,
+//    @SerialName("avg_plant_height") val avgPlantHeight: String = "N/A"
 )
 
 @Serializable

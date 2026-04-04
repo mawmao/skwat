@@ -2,8 +2,17 @@ package com.humayapp.scout.core.database.converters
 
 import androidx.room.TypeConverter
 import com.humayapp.scout.core.database.model.SyncStatus
+import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
+
+class LocalDateConverter {
+    @TypeConverter
+    fun fromLocalDate(date: LocalDate?): String? = date?.toString()
+
+    @TypeConverter
+    fun toLocalDate(value: String?): LocalDate? = value?.let { LocalDate.parse(it) }
+}
 
 class ListConverters {
     @TypeConverter

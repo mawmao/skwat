@@ -18,13 +18,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 
-typealias Coordinates = Pair<Double, Double> // longitude, latitude
+typealias Coordinates = Pair<Double, Double> // latitude, longitude
 
 fun emptyCoordinates(): Coordinates = Coordinates(0.0, 0.0)
 fun defaultGeom(): String = "POINT(0 0)"
 fun Coordinates.toDisplay(): String = "${this.first}, ${this.second}"
 
-// should only be called on strings that is transformed to `toDisplay`
 fun String.toGeometry(): String {
     val parts = this.split(",").map { it.trim() }
     val x = parts[0].toDouble()
@@ -74,7 +73,7 @@ class CoordinatesServiceGms @Inject constructor(
                 }
             }
 
-            if (location != null) return Coordinates(location.longitude, location.latitude)
+            if (location != null) return Coordinates(location.latitude, location.longitude)
 
             if (attempt < retries) {
                 delay(delayMillis)

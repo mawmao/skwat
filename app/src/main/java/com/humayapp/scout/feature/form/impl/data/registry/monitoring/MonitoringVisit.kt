@@ -166,7 +166,7 @@ sealed class MonitoringVisit : WizardEntry() {
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonIgnoreUnknownKeys
-private data class MonitoringVisitPayload(
+data class MonitoringVisitPayload(
     @SerialName("date_monitored") val dateMonitored: String,
     @SerialName("crop_stage") val cropStage: String,
     @SerialName("soil_moisture_status") val soilMoistureStatus: String,
@@ -175,7 +175,7 @@ private data class MonitoringVisitPayload(
 
 
 @Serializable
-private data class MonitoringVisits(
+data class MonitoringVisits(
     val id: Int? = null, // used only for DB
     @SerialName("date_monitored") val dateMonitored: String,
     @SerialName("crop_stage") val cropStage: String,

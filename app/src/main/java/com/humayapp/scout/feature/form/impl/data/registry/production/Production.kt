@@ -4,14 +4,16 @@ import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
-import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData.Companion.TOTAL_FIELD_AREA_KEY
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
+import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.data.registry.production.overrides.HarvestYieldPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
-import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
@@ -26,7 +28,8 @@ sealed class Production : WizardEntry() {
                 type = FieldType.DATE,
                 label = "Harvest Date",
 
-                // todo: check max should be 90 - 130 days after the actual establishment date in `CulturalManagement`
+                // to be determined
+                // TO DO: check max should be 90 - 130 days after the actual establishment date in `CulturalManagement`
                 // create a custom page to check only on validation of past forms feature are done
                 validator = Validators.nonEmpty
             ),
@@ -52,11 +55,12 @@ sealed class Production : WizardEntry() {
                 type = FieldType.NUM_DECIMAL,
                 label = "Area Harvested (by hectares)",
 
-                // todo: check max should be less than total field area in `FieldData`
-                // create a custom page to check only on validation of past forms feature are done
-                validator = Validators.floatRange(min = 0.04f, max = 999.0f, unit = "ha") { min, max, unit ->
-                    "Area harvested must be between $min to $max $unit"
-                }
+                validator = Validators.allOf(
+                    Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "ha") { min, max, unit ->
+                        "Area harvested must be between $min to $max $unit"
+                    },
+                    Validators.notExceedTotalFieldArea(FieldData.TOTAL_FIELD_AREA_KEY)
+                )
             ),
             field(
                 key = IRRIGATION_SUPPLY,
@@ -93,17 +97,26 @@ sealed class Production : WizardEntry() {
             ),
         )
 
+        override fun nextScreen(answers: Map<String, Any?>) = MonitoringVisit.MonitoringDate
     }
 
     companion object {
-        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
+        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
+            includeKey = { key -> !key.startsWith("img_") && key != "season_id" && key != FieldData.TOTAL_FIELD_AREA_KEY },
+        )
 
         val pageOverrides: WizardPageOverrides = mapOf(
-            HarvestYield to { page -> HarvestYieldPage(page as HarvestYield) }
+            HarvestYield to { page -> HarvestYieldPage(page as HarvestYield) },
+            MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
+            MonitoringVisit.Images to { page -> ImagesPage(page as MonitoringVisit.Images) }
         )
 
         val startEntry = HarvestDetails
-        val entries = listOf(HarvestDetails, HarvestedAreaAndIrrigation, HarvestYield)
+        val entries = listOf(HarvestDetails, HarvestedAreaAndIrrigation, HarvestYield) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
+        )
 
         val mapper: FormMapper = object : FormMapper() {
             override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {

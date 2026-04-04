@@ -26,9 +26,42 @@ fun FormDetailsContent(state: FormState) {
         .filter { state.getFieldData(it.key).isNotBlank() }
         .sortedBy { it.key }
 
+    val monitoringKeys = listOf(
+        "date_monitored",
+        "crop_stage",
+        "soil_moisture_status",
+        "avg_plant_height"
+    )
+
+    val monitoringFields = state.allFields.filter { it.key in monitoringKeys }
     val otherFields = state.allFields.filter {
-        !it.key.startsWith("img_")
+        it.key !in monitoringKeys && !it.key.startsWith("img_")
     }
+
+    otherFields.fastForEach { field ->
+        val rawValue = state.getFieldData(field.key)
+        FormReviewItem(label = field.label, value = rawValue.ifBlank { "N/A" })
+        Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+    }
+
+    if (monitoringFields.isNotEmpty()) {
+        Column {
+            Text(
+                "Monitoring Visit",
+                style = ScoutTheme.material.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = ScoutTheme.material.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(8.dp))
+            monitoringFields.fastForEach { field ->
+                val rawValue = state.getFieldData(field.key)
+                FormReviewItem(label = field.label, value = rawValue.ifBlank { "N/A" })
+                Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+
 
     if (imageFields.isNotEmpty()) {
         FormImagesLayout(
@@ -43,7 +76,6 @@ fun FormDetailsContent(state: FormState) {
             }
         ) { field, aspectRatio, modifier ->
             val path = state.getFieldData(field.key)
-
             Column(modifier = modifier) {
                 ScoutLabel(label = field.label, enableHorizontalPadding = false)
                 ImageBox(
@@ -55,13 +87,6 @@ fun FormDetailsContent(state: FormState) {
         }
     }
 
-    otherFields.fastForEach { field ->
-        val rawValue = state.getFieldData(field.key)
-
-        FormReviewItem(label = field.label, value = rawValue.ifBlank { "N/A" })
-
-        Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
-    }
 }
 
 
@@ -92,32 +117,3 @@ fun FormReviewItem(
     }
 }
 
-//@Composable
-//fun FormReviewItem(
-//    label: String,
-//    isRow: Boolean = false,
-//    valueContent: @Composable () -> Unit,
-//) {
-//    if (isRow) {
-//        Row(
-//            horizontalArrangement = Arrangement.spacedBy(8.dp),
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Text(
-//                text = "$label:",
-//                style = ScoutTheme.material.typography.bodyMedium,
-//                color = ScoutTheme.material.colorScheme.onSurfaceVariant
-//            )
-//            valueContent()
-//        }
-//    } else {
-//        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-//            Text(
-//                text = "$label:",
-//                style = ScoutTheme.material.typography.bodyMedium,
-//                color = ScoutTheme.material.colorScheme.onSurfaceVariant
-//            )
-//            valueContent()
-//        }
-//    }
-//}

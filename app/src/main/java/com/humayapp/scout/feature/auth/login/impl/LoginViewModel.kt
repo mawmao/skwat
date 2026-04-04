@@ -1,13 +1,15 @@
 package com.humayapp.scout.feature.auth.login.impl
 
+import android.content.Context
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.auth.data.AuthResult
 import com.humayapp.scout.feature.auth.data.UserPreferencesRepository
+import com.humayapp.scout.feature.auth.model.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +23,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     // separated email and password state since they are frequently changing

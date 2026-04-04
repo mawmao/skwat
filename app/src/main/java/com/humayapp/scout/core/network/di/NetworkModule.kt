@@ -6,6 +6,7 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import com.humayapp.scout.BuildConfig
+import com.humayapp.scout.feature.form.impl.model.formDataJson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,6 +17,8 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.logging.LogLevel
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import jakarta.inject.Singleton
 
@@ -28,13 +31,15 @@ object SupabaseModule {
     fun providesSupabaseClient(): SupabaseClient {
         return createSupabaseClient(
             supabaseUrl = BuildConfig.SUPABASE_URL,
-            supabaseKey = BuildConfig.SUPABASE_KEY
+            supabaseKey = BuildConfig.SUPABASE_KEY,
         ) {
             defaultLogLevel = LogLevel.DEBUG
+            defaultSerializer = KotlinXSerializer(formDataJson)
 
             install(Postgrest)
             install(Auth)
             install(Storage)
+            install(Realtime)
         }
     }
 

@@ -1,7 +1,6 @@
 package com.humayapp.scout.feature.auth.login.impl
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
@@ -16,11 +15,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.LocalScoutAppState
@@ -31,13 +34,11 @@ import com.humayapp.scout.core.ui.common.ScoutRegion
 import com.humayapp.scout.core.ui.component.ScoutLoadingButton
 import com.humayapp.scout.core.ui.component.ScoutLogo
 import com.humayapp.scout.core.ui.component.ScoutSecureTextField
-import com.humayapp.scout.core.ui.component.ScoutTextButton
 import com.humayapp.scout.core.ui.component.ScoutTextField
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.core.ui.util.rememberFocusRequester
-import com.humayapp.scout.feature.auth.recovery.api.navigation.navigateToRecoveryOtp
 import com.humayapp.scout.navigation.navigateToMain
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -127,20 +128,26 @@ private fun LoginForm(
     val focusManager = LocalFocusManager.current
     val emailFocusRequester = rememberFocusRequester()
     val passwordFocusRequester = rememberFocusRequester()
+    val autofillManager = LocalAutofillManager.current
 
     Column {
         ScoutTextField(
             modifier = Modifier
+                .semantics { contentType = ContentType.EmailAddress }
                 .fillMaxWidth()
                 .focusRequester(emailFocusRequester),
             state = emailState,
             label = "Email",
             enabled = !uiState.isLoggingIn,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Email
+            ),
         )
         Spacer(modifier = Modifier.height(ScoutTheme.spacing.small))
         ScoutSecureTextField(
             modifier = Modifier
+                .semantics { contentType = ContentType.Password }
                 .fillMaxWidth()
                 .focusRequester(passwordFocusRequester),
             state = passwordState,
@@ -160,27 +167,11 @@ private fun LoginForm(
                     passwordState.text.isEmpty() -> passwordFocusRequester.requestFocus()
                     else -> {
                         focusManager.clearFocus()
+                        autofillManager?.commit()
                         onLogin()
                     }
                 }
             }
         )
-//        Spacer(modifier = Modifier.height(ScoutTheme.spacing.large))
-//        Box(
-//            modifier = Modifier.fillMaxWidth(),
-//            contentAlignment = Alignment.Center
-//        ) {
-//
-//            // TODO: could also disable when logging in
-//            ScoutTextButton(
-//                text = "Forgot Password?",
-//                style = ScoutTheme.material.typography.labelLarge.copy(
-//                    fontSize = 14.sp,
-//                    color = ScoutTheme.extras.colors.mutedOnBackground
-//                ),
-//                isLoading = uiState.isRecoveringPassword,
-//                onClick = onForgotPassword
-//            )
-//        }
     }
 }

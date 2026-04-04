@@ -5,4 +5,4 @@ import com.humayapp.scout.core.navigation.StackNavigator
 
 // did not use extension function since this will be used in a navigation bar
 
-fun navigateToHistory(navigator: StackNavigator<NavKey>) = navigator.push(HistoryNavKey)
+fun StackNavigator<NavKey>.navigateToHistory() = this.push(HistoryNavKey)

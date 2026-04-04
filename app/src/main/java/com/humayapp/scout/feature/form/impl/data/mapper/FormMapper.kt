@@ -22,6 +22,8 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+
+
 @Serializable
 abstract class FormMapper {
 
@@ -55,7 +57,6 @@ abstract class FormMapper {
             val id = client.upsertAndGetId(
                 table = SupabaseDBTables.FIELD_ACTIVITIES,
                 item = parentData,
-                onConflict = "field_id, season_id, activity_type"
             )
             id
         } catch (e: Exception) {

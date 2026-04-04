@@ -42,7 +42,6 @@ import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.ui.components.camera.CameraScanner
-import com.humayapp.scout.navigation.navigateToForms
 
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
@@ -124,7 +123,7 @@ fun FormScanScreen(
                     text = "Proceed",
                     onClick = {
                         scannedBarcodeForSheet = null
-                        rootNavigator.navigateToForms(formType, barcode, scannedProvince, scannedMunicity)
+//                        rootNavigator.navigateToForms(formType, barcode, scannedProvince, scannedMunicity)
                     }
                 )
             }

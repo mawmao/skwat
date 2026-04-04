@@ -24,14 +24,20 @@ interface FormEntryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(activity: FormEntryEntity): Long
 
+    @Query("SELECT * FROM form_entries WHERE collectionTaskId = :collectionTaskId LIMIT 1")
+    suspend fun getEntryByCollectionTaskId(collectionTaskId: Int): FormEntryEntity?
+
     @Query("SELECT * FROM form_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): FormEntryEntity
 
     @Query("SELECT * FROM form_entries WHERE id = :id")
     fun getEntryByIdFlow(id: Long): Flow<FormEntryEntity>
 
-    @Query("SELECT * FROM form_entries WHERE syncedAt IS NOT NULL")
+    @Query("SELECT * FROM form_entries WHERE syncStatus = 'PENDING' ORDER BY id ASC")
     suspend fun getPendingSyncOnce(): List<FormEntryEntity>
+
+    @Query("SELECT * FROM form_entries WHERE syncStatus = :status AND collectedBy = :userId ORDER BY id ASC LIMIT 1")
+    suspend fun getPendingSyncForUser(userId: String, status: SyncStatus = SyncStatus.PENDING): List<FormEntryEntity>
 
     @Query("SELECT * FROM form_entries WHERE syncedAt IS NOT NULL")
     fun getPendingSync(): Flow<List<FormEntryEntity>>

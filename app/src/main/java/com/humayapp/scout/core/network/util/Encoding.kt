@@ -11,14 +11,23 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
 import kotlin.time.Instant
+
+fun JsonObject.getDouble(key: String): Double? =
+    this[key]?.jsonPrimitive?.doubleOrNull
+
+fun JsonObject.getString(key: String): String? =
+    this[key]?.jsonPrimitive?.content
+
+fun JsonObject.getInt(key: String): Int? =
+    this[key]?.jsonPrimitive?.intOrNull
 
 typealias JsonTransformRule = (key: String, value: String) -> String
 
@@ -84,6 +93,7 @@ private fun JsonElement.toAny(): Any? = when (this) {
         doubleOrNull != null -> double
         else -> null
     }
+
     is JsonObject -> toMap()
     is JsonArray -> map { it.toAny() }
     else -> null

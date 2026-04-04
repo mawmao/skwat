@@ -11,7 +11,6 @@ import com.humayapp.scout.core.ui.common.image.ImageCropDialog
 import com.humayapp.scout.core.ui.common.image.ImageOptionsBottomSheet
 import com.humayapp.scout.core.ui.common.image.ImagePreviewDialog
 import com.humayapp.scout.feature.form.impl.LocalFormState
-import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
 import com.humayapp.scout.feature.form.impl.ui.components.FormImagesLayout
 import com.humayapp.scout.feature.form.impl.ui.components.ImageActionState

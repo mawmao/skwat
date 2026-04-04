@@ -27,10 +27,13 @@ interface FormRepository {
 
     fun getAllEntries(): Flow<List<FormEntryEntity>>
 
+    suspend fun getEntryByCollectionTaskId(collectionTaskId: Int): FormEntryEntity?
+
     suspend fun getEntryById(id: Long): FormEntryEntity
     fun getEntryByIdFlow(id: Long): Flow<FormEntryEntity>
 
     suspend fun getPendingSyncOnce(): List<FormEntryEntity>
+    suspend fun getPendingSyncOnceForUser(userId: String): List<FormEntryEntity>
     suspend fun markAsSyncedWithStatus(id: Long, timestamp: Instant, status: SyncStatus)
 
     suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
@@ -58,6 +61,9 @@ class FormRepositoryImpl @Inject constructor(
     private val _syncEvents = MutableSharedFlow<String>()
     override val syncEvents = _syncEvents.asSharedFlow()
 
+    override suspend fun getEntryByCollectionTaskId(collectionTaskId: Int): FormEntryEntity? {
+        return formEntryDao.getEntryByCollectionTaskId(collectionTaskId)
+    }
 
     override suspend fun getEntryById(id: Long): FormEntryEntity {
         Log.d(TAG, "getEntryById(id = $id)")
@@ -78,7 +84,6 @@ class FormRepositoryImpl @Inject constructor(
         Log.d(TAG, "getImagesOfEntryByIdFlow(formId = $formId)")
         return formEntryDao.getImagesOfEntryByIdFlow(formId)
     }
-
 
     override suspend fun updateImageRemotePath(id: Long, remotePath: String) {
         return formEntryDao.updateImageRemotePath(id, remotePath)
@@ -111,9 +116,6 @@ class FormRepositoryImpl @Inject constructor(
                 images = localAnswers.toFormImages()
             )
 
-
-
-
             insertedId
         } catch (e: Exception) {
             folder.deleteRecursively()
@@ -124,6 +126,10 @@ class FormRepositoryImpl @Inject constructor(
     override suspend fun getPendingSyncOnce(): List<FormEntryEntity> {
         Log.d(TAG, "getPendingSyncOnce()")
         return formEntryDao.getPendingSyncOnce()
+    }
+
+    override suspend fun getPendingSyncOnceForUser(userId: String): List<FormEntryEntity> {
+        return formEntryDao.getPendingSyncForUser(userId)
     }
 
     override suspend fun markAsSyncedWithStatus(id: Long, timestamp: Instant, status: SyncStatus) {
