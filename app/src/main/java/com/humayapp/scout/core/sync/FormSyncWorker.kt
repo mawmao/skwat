@@ -4,9 +4,11 @@ import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
@@ -179,5 +181,18 @@ class FormSyncWorker @AssistedInject constructor(
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(SyncConstraints)
             .build()
+
+        fun start(context: Context) {
+            val request = OneTimeWorkRequestBuilder<FormSyncWorker>()
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .setConstraints(SyncConstraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                "FormSyncWork",
+                ExistingWorkPolicy.KEEP,
+                request
+            )
+        }
     }
 }

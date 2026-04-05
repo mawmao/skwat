@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.UserPreferencesRepository
 import com.humayapp.scout.feature.auth.model.AuthResult
@@ -56,7 +57,14 @@ class LoginViewModel @Inject constructor(
             val password = passwordState.text.toString()
 
             when (val result = authRepository.signIn(email, password)) {
-                is AuthResult.Success, is AuthResult.SuccessOffline -> {
+                is AuthResult.Success -> {
+                    userPreferencesRepository.saveLastUsedEmail(email)
+                    emailState.clearText()
+                    passwordState.clearText()
+                    FormSyncWorker.start(appContext)
+                    _uiEvent.send(LoginUiEvent.LoginSuccess)
+                }
+                is AuthResult.SuccessOffline -> {
                     userPreferencesRepository.saveLastUsedEmail(email)
                     emailState.clearText()
                     passwordState.clearText()

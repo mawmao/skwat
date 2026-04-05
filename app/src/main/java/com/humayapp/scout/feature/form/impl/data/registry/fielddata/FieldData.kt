@@ -209,6 +209,7 @@ sealed class FieldData : WizardEntry() {
                     when (it) {
                         "Male" -> "male"
                         "Female" -> "female"
+                        "Other" -> "other"
                         else -> it
                     }
                 },

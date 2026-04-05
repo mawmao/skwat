@@ -20,6 +20,7 @@ import com.humayapp.scout.core.SANDBOX_ENABLE
 import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
+import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -104,9 +105,10 @@ class MainActivity : ComponentActivity() {
                             authRepository.signOut()
                         }
                     }
-                    // targetKey is RootNavKey.Main -> {
-                    //     TaskPullWorker.start(context = this@MainActivity)
-                    // }
+                     targetKey is RootNavKey.Main -> {
+                         // TaskPullWorker.start(context = this@MainActivity)
+                         FormSyncWorker.startUpSyncWork()
+                     }
                 }
             }
 

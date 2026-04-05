@@ -37,6 +37,8 @@ fun ImagesPage(page: MonitoringVisit.Images) {
         }
     }
 
+
+
     if (actionState is ImageActionState.SelectingSource) {
         val state = actionState as ImageActionState.SelectingSource
 
