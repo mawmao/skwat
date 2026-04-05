@@ -1,5 +1,6 @@
 package com.humayapp.scout.core.database.di
 
+import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import com.humayapp.scout.core.database.ScoutDatabase
 import com.humayapp.scout.core.database.dao.BarangayDao
 import com.humayapp.scout.core.database.dao.CityMunicipalityDao
@@ -21,6 +22,9 @@ object DaoModule {
 
     @Provides
     fun providesNotificationDao(database: ScoutDatabase): NotificationDao = database.notificationDao()
+
+    @Provides
+    fun providesCacheFormDetailsDao(database: ScoutDatabase): CachedFormDetailsDao = database.cacheDao()
 
     @Provides
     fun providesProvinceDao(database: ScoutDatabase): ProvinceDao = database.provinceDao()

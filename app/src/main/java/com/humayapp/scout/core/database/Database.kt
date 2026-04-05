@@ -1,5 +1,6 @@
 package com.humayapp.scout.core.database
 
+import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -14,6 +15,7 @@ import com.humayapp.scout.core.database.dao.FormEntryDao
 import com.humayapp.scout.core.database.dao.NotificationDao
 import com.humayapp.scout.core.database.dao.ProvinceDao
 import com.humayapp.scout.core.database.model.BarangayEntity
+import com.humayapp.scout.core.database.model.CachedFormDetailsEntity
 import com.humayapp.scout.core.database.model.CityMunicipalityEntity
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
 import com.humayapp.scout.core.database.model.FormEntryEntity
@@ -29,7 +31,8 @@ import com.humayapp.scout.core.database.model.ProvinceEntity
         CityMunicipalityEntity::class,
         BarangayEntity::class,
         CollectionTaskEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        CachedFormDetailsEntity::class
     ],
     version = 1,
     exportSchema = true,
@@ -42,4 +45,5 @@ abstract class ScoutDatabase : RoomDatabase() {
     abstract fun barangayDao(): BarangayDao
     abstract fun collectionTaskDao(): CollectionTaskDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun cacheDao(): CachedFormDetailsDao
 }

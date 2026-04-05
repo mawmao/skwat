@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b36ad02f6374d555c9726978a3ea0702",
+    "identityHash": "dbfa905efc0d97f6caf3ca6f8ab66bdb",
     "entities": [
       {
         "tableName": "form_entries",
@@ -524,11 +524,53 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "cached_form_details",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`activityId` INTEGER NOT NULL, `rawDetailsJson` TEXT NOT NULL, `formDataJson` TEXT NOT NULL, `activityType` TEXT NOT NULL, `syncedAt` TEXT NOT NULL, PRIMARY KEY(`activityId`))",
+        "fields": [
+          {
+            "fieldPath": "activityId",
+            "columnName": "activityId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawDetailsJson",
+            "columnName": "rawDetailsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "formDataJson",
+            "columnName": "formDataJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activityType",
+            "columnName": "activityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncedAt",
+            "columnName": "syncedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "activityId"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b36ad02f6374d555c9726978a3ea0702')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dbfa905efc0d97f6caf3ca6f8ab66bdb')"
     ]
   }
 }

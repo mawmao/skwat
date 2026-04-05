@@ -12,6 +12,7 @@ import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -32,6 +33,7 @@ class FormReviewViewModel @AssistedInject constructor(
     private val authRepository: AuthRepository,
     private val settingsRepository: SettingsRepository,
     private val collectionTaskDao: CollectionTaskDao,
+    private val collectionRepository: CollectionRepository,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
     @Assisted("collection_task_id") private val collectionTaskId: Int,

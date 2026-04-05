@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.di
 
+import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import android.content.Context
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -54,8 +55,9 @@ object FormModule {
     fun provideCollectionsRepository(
         supabaseClient: SupabaseClient,
         authRepository: AuthRepository,
-        collectionTaskDao: CollectionTaskDao
-    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao)
+        collectionTaskDao: CollectionTaskDao,
+        cacheDao: CachedFormDetailsDao
+    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao, cacheDao)
 
 
     @Provides

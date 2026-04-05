@@ -61,7 +61,8 @@ class FormDetailsViewModel @AssistedInject constructor(
         viewModelScope.launch {
             _uiState.value = FormDetailsUiState.Loading
             try {
-                val pair = if (activityId != null) {
+                val isOnline = authRepository.isOnline()
+                val pair = if (activityId != null && isOnline) {
                     fetchRemoteFormData(activityId)
                 } else {
                     fetchLocalFormData(collectionTaskId)
@@ -139,19 +140,33 @@ class FormDetailsViewModel @AssistedInject constructor(
         originalTask ?: collectionRepository.getCollectionTaskById(collectionTaskId)
 
     private suspend fun fetchLocalFormData(collectionTaskId: Int): Pair<FieldActivityDetails, FormData>? {
-        val entry = formRepository.getEntryByCollectionTaskId(collectionTaskId)
-        val task = collectionRepository.getCollectionTaskById(collectionTaskId)
+        val task = collectionRepository.getCollectionTaskById(collectionTaskId) ?: return null
         originalTask = task
-        if (entry == null || task == null) {
-            Log.d(LOG_TAG, "Missing data for collectionTaskId=$collectionTaskId: entry=$entry, task=$task")
+
+        if (task.activityId != null) {
+            val cached = collectionRepository.getCachedFormDetails(task.activityId)   // now available
+            if (cached != null) {
+                val rawDetails = Json.decodeFromString<FieldActivityDetails>(cached.rawDetailsJson)
+                val formData = Json.decodeFromString<FormData>(cached.formDataJson)
+                return rawDetails to formData
+            }
+        }
+
+        val entry = formRepository.getEntryByCollectionTaskId(collectionTaskId)
+        if (entry == null) {
+            Log.d(LOG_TAG, "No cached or local data for collectionTaskId=$collectionTaskId")
             return null
         }
+
         val rawDetails = buildLocalFieldActivityDetails(entry, task)
         val typedFormData = parseFormData(rawDetails.activityType, rawDetails.formData)
         return rawDetails to typedFormData
     }
 
-    private suspend fun buildLocalFieldActivityDetails(entry: FormEntryEntity, task: CollectionTask): FieldActivityDetails {
+    private suspend fun buildLocalFieldActivityDetails(
+        entry: FormEntryEntity,
+        task: CollectionTask
+    ): FieldActivityDetails {
         val formDataElement = Json.parseToJsonElement(entry.payloadJson)
 
         val currentUser = authRepository.getCurrentUser()
