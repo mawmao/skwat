@@ -17,10 +17,14 @@ import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
+import com.humayapp.scout.feature.form.impl.model.FieldActivityDetails
+import com.humayapp.scout.feature.form.impl.ui.screens.review.FormDataCacheHelper.parseFormData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.storage.storage
@@ -72,6 +76,7 @@ class FormSyncWorker @AssistedInject constructor(
     private val supabase: SupabaseClient,
     private val authRepository: AuthRepository,
     private val networkMonitor: NetworkMonitor,
+    private val collectionRepository: CollectionRepository,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
 
     override suspend fun getForegroundInfo(): ForegroundInfo = appContext.syncForegroundInfo()
@@ -142,7 +147,19 @@ class FormSyncWorker @AssistedInject constructor(
         return try {
             val imageUrls = uploadImages(entry, timestamp)
             val request = UploadDataRequest.fromEntry(entry, imageUrls)
-            supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
+            val result = supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
+            val activityId = result.decodeAs<Int>()
+            if (activityId > 0) {
+                val rawDetails = supabase.from("field_activity_details")
+                    .select() {
+                        filter {
+                            eq("id", activityId)
+                        }
+                    }
+                    .decodeSingle<FieldActivityDetails>()
+                val typedFormData = parseFormData(rawDetails.activityType, rawDetails.formData)
+                collectionRepository.cacheFormDetails(activityId, rawDetails, typedFormData)
+            }
             Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
             Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")
             markSynced(entry.id, timestamp)

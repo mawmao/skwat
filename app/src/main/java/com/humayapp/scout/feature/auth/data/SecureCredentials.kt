@@ -8,6 +8,7 @@ import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -54,4 +55,18 @@ class SecureCredentialsRepository @Inject constructor(
         sharedPreferences.getBoolean("requires_reauth", false)
     }
 
+    suspend fun saveUser(user: User) = withContext(Dispatchers.IO) {
+        sharedPreferences.edit {
+            putString("user_json", Json.encodeToString(user))
+        }
+    }
+
+    suspend fun getUser(): User? = withContext(Dispatchers.IO) {
+        val json = sharedPreferences.getString("user_json", null)
+        json?.let { Json.decodeFromString<User>(it) }
+    }
+
+    suspend fun clearUser() = withContext(Dispatchers.IO) {
+        sharedPreferences.edit { remove("user_json") }
+    }
 }

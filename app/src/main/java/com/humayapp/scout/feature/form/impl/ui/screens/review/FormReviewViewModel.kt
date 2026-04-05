@@ -73,16 +73,13 @@ class FormReviewViewModel @AssistedInject constructor(
         logAnswers(answers)
 
         val serialized = formType.serializeAnswers(answers)
+        val serializedString = serialized.toString()
+        Log.d(LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
 
         viewModelScope.launch {
             try {
                 val userId = getAuthenticatedUserId() ?: unreachable("user id in this context can never be null")
                 Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
-
-                val imageKeys = answers.keys.filter { it.startsWith("img_") }
-                val imageSummary = imageKeys.joinToString { "$it -> ${answers[it]}" }
-
-                Log.d(LOG_TAG, "Submitting form by $userId. Images: $imageSummary")
 
                 val id = formRepository.saveFormWithImages(
                     answers = answers,
@@ -103,21 +100,6 @@ class FormReviewViewModel @AssistedInject constructor(
                     collectorId = userId,
                     collectedAt = Clock.System.now()
                 )
-
-                val task = collectionRepository.getCollectionTaskById(collectionTaskId)
-                if (task != null) {
-                    val tempEntry = FormEntryEntity(
-                        mfid = mfid,
-                        activityType = formType.id,
-                        collectedBy = userId,
-                        seasonId = answers["season_id"] as Int,
-                        collectionTaskId = collectionTaskId,
-                        payloadJson = serialized.toString()
-                    )
-                    val rawDetails = FormDataCacheHelper.buildLocalFieldActivityDetails(tempEntry, task, authRepository)
-                    val typedFormData = FormDataCacheHelper.parseFormData(rawDetails.activityType, rawDetails.formData)
-                    collectionRepository.cacheFormDetailsByTaskId(collectionTaskId, rawDetails, typedFormData)
-                }
 
                 context.enqueueSyncWork(entryId = id)
                 _uiEvent.send(FormReviewEvent.SubmitSuccess)

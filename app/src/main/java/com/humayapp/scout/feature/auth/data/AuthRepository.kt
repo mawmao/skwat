@@ -68,9 +68,14 @@ class SupabaseAuthRepository @Inject constructor(
     override val sessionStatus: StateFlow<SessionStatus> = supabaseClient.auth.sessionStatus
 
     override val currentUser: Flow<User?> = flow {
-        val (storedEmail, _, storedUserId) = secureCredentialsRepo.getStoredCredentials()
-        if (storedUserId != null && storedEmail != null) {
-            emit(User(id = storedUserId, email = storedEmail))
+        val storedUser = secureCredentialsRepo.getUser()
+        if (storedUser != null) {
+            emit(storedUser)
+        } else {
+            val (storedEmail, _, storedUserId) = secureCredentialsRepo.getStoredCredentials()
+            if (storedUserId != null && storedEmail != null) {
+                emit(User(id = storedUserId, email = storedEmail))
+            }
         }
 
         sessionStatus.collect { status ->
@@ -84,25 +89,20 @@ class SupabaseAuthRepository @Inject constructor(
                     val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
                     val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
                     val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
-                    emit(
-                        User(
-                            id = userInfo?.id!!,
-                            email = userInfo.email,
-                            firstName = firstName,
-                            lastName = lastName,
-                            role = role,
-                            dateOfBirth = dateOfBirth,
-                            isActive = isActive
-                        )
+                    val user = User(
+                        id = userInfo?.id!!,
+                        email = userInfo.email,
+                        firstName = firstName,
+                        lastName = lastName,
+                        role = role,
+                        dateOfBirth = dateOfBirth,
+                        isActive = isActive
                     )
+                    secureCredentialsRepo.saveUser(user)
+                    emit(user)
                 }
-
                 else -> {
-                    // If no authenticated session, check stored credentials again
-                    // else keep previous stored user (already emitted)
-
-                    val (_, _, storedIdAfter) = secureCredentialsRepo.getStoredCredentials()
-                    if (storedIdAfter == null) emit(null)
+                    // No session – keep previously emitted stored user
                 }
             }
         }
@@ -187,22 +187,28 @@ class SupabaseAuthRepository @Inject constructor(
     }
 
     private suspend fun handleOnlineSignIn(email: String, password: String): AuthResult {
-
         supabaseClient.auth.signInWith(Email) { this.email = email; this.password = password }
-
-        val session = supabaseClient.auth.currentSessionOrNull() ?: run {
-            Log.e(LOG_TAG, "[Auth] No session after sign-in.")
-            throw IllegalStateException("Session not established. Should not be possible unless there is a problem.")
-        }
-
-        val userId = session.user?.id ?: run {
-            Log.e(LOG_TAG, "[Auth] User ID missing in session: ${session.user}")
-            throw IllegalStateException("User ID missing. Should not be possible unless there is a problem.")
-        }
-
-        secureCredentialsRepo.setRequiresReauth(false)
+        val session = supabaseClient.auth.currentSessionOrNull() ?: throw IllegalStateException("Session not established")
+        val userId = session.user?.id ?: throw IllegalStateException("User ID missing")
+        val metadata = session.user?.userMetadata
+        val firstName = (metadata?.get("first_name") as? JsonPrimitive)?.content
+        val lastName = (metadata?.get("last_name") as? JsonPrimitive)?.content
+        val role = (metadata?.get("role") as? JsonPrimitive)?.content
+        val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
+        val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
+        val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
+        val user = User(
+            id = userId,
+            email = email,
+            firstName = firstName,
+            lastName = lastName,
+            role = role,
+            dateOfBirth = dateOfBirth,
+            isActive = isActive
+        )
         secureCredentialsRepo.saveCredentials(email, password, userId)
-
+        secureCredentialsRepo.saveUser(user)
+        secureCredentialsRepo.setRequiresReauth(false)
         return AuthResult.Success
     }
 
