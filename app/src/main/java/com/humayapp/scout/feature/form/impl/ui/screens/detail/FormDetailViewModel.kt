@@ -143,8 +143,9 @@ class FormDetailsViewModel @AssistedInject constructor(
         val task = collectionRepository.getCollectionTaskById(collectionTaskId) ?: return null
         originalTask = task
 
+        // 1. Try cache by activityId (for synced forms)
         if (task.activityId != null) {
-            val cached = collectionRepository.getCachedFormDetails(task.activityId)   // now available
+            val cached = collectionRepository.getCachedFormDetails(task.activityId)
             if (cached != null) {
                 val rawDetails = Json.decodeFromString<FieldActivityDetails>(cached.rawDetailsJson)
                 val formData = Json.decodeFromString<FormData>(cached.formDataJson)
@@ -152,6 +153,15 @@ class FormDetailsViewModel @AssistedInject constructor(
             }
         }
 
+        // 2. Try cache by collectionTaskId (for immediately after submission)
+        val cachedByTask = collectionRepository.getCachedFormDetailsByTaskId(collectionTaskId)
+        if (cachedByTask != null) {
+            val rawDetails = Json.decodeFromString<FieldActivityDetails>(cachedByTask.rawDetailsJson)
+            val formData = Json.decodeFromString<FormData>(cachedByTask.formDataJson)
+            return rawDetails to formData
+        }
+
+        // 3. Fallback to form_entries (for pending sync forms not yet cached)
         val entry = formRepository.getEntryByCollectionTaskId(collectionTaskId)
         if (entry == null) {
             Log.d(LOG_TAG, "No cached or local data for collectionTaskId=$collectionTaskId")

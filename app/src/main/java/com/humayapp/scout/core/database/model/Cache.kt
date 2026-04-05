@@ -7,11 +7,11 @@ import kotlin.time.Instant
 
 @Entity(tableName = "cached_form_details")
 data class CachedFormDetailsEntity(
-    @PrimaryKey val activityId: Int,
+    @PrimaryKey val id: Int = 0,
+    val activityId: Int? = null,
+    val collectionTaskId: Int? = null,
     val rawDetailsJson: String,
     val formDataJson: String,
     val activityType: String,
     val syncedAt: Instant = Clock.System.now()
 )
-
-

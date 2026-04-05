@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "dbfa905efc0d97f6caf3ca6f8ab66bdb",
+    "identityHash": "e340fd0b912e9c025fc3ade1bd5ca176",
     "entities": [
       {
         "tableName": "form_entries",
@@ -527,13 +527,23 @@
       },
       {
         "tableName": "cached_form_details",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`activityId` INTEGER NOT NULL, `rawDetailsJson` TEXT NOT NULL, `formDataJson` TEXT NOT NULL, `activityType` TEXT NOT NULL, `syncedAt` TEXT NOT NULL, PRIMARY KEY(`activityId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `activityId` INTEGER, `collectionTaskId` INTEGER, `rawDetailsJson` TEXT NOT NULL, `formDataJson` TEXT NOT NULL, `activityType` TEXT NOT NULL, `syncedAt` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
           {
             "fieldPath": "activityId",
             "columnName": "activityId",
-            "affinity": "INTEGER",
-            "notNull": true
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "collectionTaskId",
+            "columnName": "collectionTaskId",
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "rawDetailsJson",
@@ -563,14 +573,14 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "activityId"
+            "id"
           ]
         }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dbfa905efc0d97f6caf3ca6f8ab66bdb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e340fd0b912e9c025fc3ade1bd5ca176')"
     ]
   }
 }

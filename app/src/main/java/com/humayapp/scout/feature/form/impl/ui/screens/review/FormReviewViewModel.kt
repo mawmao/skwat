@@ -8,12 +8,24 @@ import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.model.FormEntryEntity
+import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.sync.enqueueSyncWork
 import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.auth.data.User
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
+import com.humayapp.scout.feature.form.impl.model.CulturalManagementForm
+import com.humayapp.scout.feature.form.impl.model.DamageAssessmentForm
+import com.humayapp.scout.feature.form.impl.model.FieldActivityDetails
+import com.humayapp.scout.feature.form.impl.model.FieldDataForm
+import com.humayapp.scout.feature.form.impl.model.FormData
+import com.humayapp.scout.feature.form.impl.model.NutrientManagementForm
+import com.humayapp.scout.feature.form.impl.model.ProductionForm
+import com.humayapp.scout.feature.form.impl.model.formDataJson
+import com.humayapp.scout.feature.form.impl.ui.screens.review.FormDataCacheHelper.buildLocalFieldActivityDetails
+import com.humayapp.scout.feature.form.impl.ui.screens.review.FormDataCacheHelper.parseFormData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -25,6 +37,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.time.Clock
 
 @HiltViewModel(assistedFactory = FormReviewViewModel.Factory::class)
@@ -58,7 +73,6 @@ class FormReviewViewModel @AssistedInject constructor(
         logAnswers(answers)
 
         val serialized = formType.serializeAnswers(answers)
-        Log.d( LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serialized\n-----------------------------------------------" )
 
         viewModelScope.launch {
             try {
@@ -84,16 +98,28 @@ class FormReviewViewModel @AssistedInject constructor(
                     serializerFn = { answers -> formType.serializeAnswers(answers).toString() }
                 )
 
-                // add mark completed version where form type is field data and the farmer need to change
-
                 collectionTaskDao.markTaskCompleted(
                     taskId = collectionTaskId,
                     collectorId = userId,
                     collectedAt = Clock.System.now()
                 )
 
-                 context.enqueueSyncWork(entryId = id)
+                val task = collectionRepository.getCollectionTaskById(collectionTaskId)
+                if (task != null) {
+                    val tempEntry = FormEntryEntity(
+                        mfid = mfid,
+                        activityType = formType.id,
+                        collectedBy = userId,
+                        seasonId = answers["season_id"] as Int,
+                        collectionTaskId = collectionTaskId,
+                        payloadJson = serialized.toString()
+                    )
+                    val rawDetails = FormDataCacheHelper.buildLocalFieldActivityDetails(tempEntry, task, authRepository)
+                    val typedFormData = FormDataCacheHelper.parseFormData(rawDetails.activityType, rawDetails.formData)
+                    collectionRepository.cacheFormDetailsByTaskId(collectionTaskId, rawDetails, typedFormData)
+                }
 
+                context.enqueueSyncWork(entryId = id)
                 _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
                 Log.e(LOG_TAG, "Database insert failed", e)
@@ -146,3 +172,62 @@ sealed class FormReviewAction {
 }
 
 
+
+
+object FormDataCacheHelper {
+    suspend fun buildLocalFieldActivityDetails(
+        entry: FormEntryEntity,
+        task: CollectionTask,
+        authRepository: AuthRepository
+    ): FieldActivityDetails {
+        val formDataElement = Json.parseToJsonElement(entry.payloadJson)
+        val currentUser = authRepository.getCurrentUser()
+        val collectedBy = User(
+            id = entry.collectedBy,
+            email = currentUser?.email,
+            firstName = currentUser?.firstName,
+            lastName = currentUser?.lastName,
+            role = currentUser?.role,
+            dateOfBirth = currentUser?.dateOfBirth,
+            isActive = currentUser?.isActive,
+            createdAt = currentUser?.createdAt,
+            updatedAt = currentUser?.updatedAt,
+            lastSignInAt = currentUser?.lastSignInAt
+        )
+        return FieldActivityDetails(
+            id = 0,
+            mfid = entry.mfid,
+            seasonYear = "",
+            semester = "",
+            fieldId = 0,
+            seasonId = entry.seasonId,
+            activityType = entry.activityType,
+            collectedBy = collectedBy,
+            verifiedBy = null,
+            remarks = task.remarks,
+            verificationStatus = task.verificationStatus ?: "pending",
+            collectedAt = entry.collectedAt,
+            verifiedAt = task.verifiedAt,
+            syncedAt = entry.syncedAt,
+            imageUrls = entry.imageUrls,
+            farmerName = task.farmerName ?: "",
+            barangay = task.barangay ?: "",
+            municipality = task.cityMunicipality,
+            province = task.province,
+            isRetake = task.retakeOf != null,
+            originalActivityId = null,
+            formData = formDataElement,
+        )
+    }
+
+    fun parseFormData(activityType: String, formDataElement: JsonElement): FormData {
+        return when (activityType) {
+            "field-data" -> formDataJson.decodeFromJsonElement<FieldDataForm>(formDataElement)
+            "cultural-management" -> formDataJson.decodeFromJsonElement<CulturalManagementForm>(formDataElement)
+            "nutrient-management" -> formDataJson.decodeFromJsonElement<NutrientManagementForm>(formDataElement)
+            "production" -> formDataJson.decodeFromJsonElement<ProductionForm>(formDataElement)
+            "damage-assessment" -> formDataJson.decodeFromJsonElement<DamageAssessmentForm>(formDataElement)
+            else -> throw IllegalArgumentException("Unknown activity type: $activityType")
+        }
+    }
+}

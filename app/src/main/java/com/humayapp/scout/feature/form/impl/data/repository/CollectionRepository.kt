@@ -39,6 +39,8 @@ interface CollectionRepository {
 
     suspend fun cacheFormDetails(activityId: Int, rawDetails: FieldActivityDetails, formData: FormData)
     suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity?
+    suspend fun cacheFormDetailsByTaskId(collectionTaskId: Int, rawDetails: FieldActivityDetails, formData: FormData)
+    suspend fun getCachedFormDetailsByTaskId(collectionTaskId: Int): CachedFormDetailsEntity?
 }
 
 class CollectionRepositoryImpl @Inject constructor(
@@ -57,10 +59,6 @@ class CollectionRepositoryImpl @Inject constructor(
         return entity?.toDomain()
     }
 
-    override suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity? {
-        return cacheDao.getByActivityId(activityId)
-    }
-
     override suspend fun cacheFormDetails(activityId: Int, rawDetails: FieldActivityDetails, formData: FormData) {
         val entity = CachedFormDetailsEntity(
             activityId = activityId,
@@ -69,6 +67,24 @@ class CollectionRepositoryImpl @Inject constructor(
             activityType = rawDetails.activityType
         )
         cacheDao.insert(entity)
+    }
+
+    override suspend fun cacheFormDetailsByTaskId(collectionTaskId: Int, rawDetails: FieldActivityDetails, formData: FormData) {
+        val entity = CachedFormDetailsEntity(
+            collectionTaskId = collectionTaskId,
+            rawDetailsJson = Json.encodeToString(rawDetails),
+            formDataJson = Json.encodeToString(formData),
+            activityType = rawDetails.activityType
+        )
+        cacheDao.insert(entity)
+    }
+
+    override suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity? {
+        return cacheDao.getByActivityId(activityId)
+    }
+
+    override suspend fun getCachedFormDetailsByTaskId(collectionTaskId: Int): CachedFormDetailsEntity? {
+        return cacheDao.getByCollectionTaskId(collectionTaskId)
     }
 
     @OptIn(ExperimentalUuidApi::class)

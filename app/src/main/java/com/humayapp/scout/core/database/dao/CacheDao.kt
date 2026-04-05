@@ -15,6 +15,6 @@ interface CachedFormDetailsDao {
     @Query("SELECT * FROM cached_form_details WHERE activityId = :activityId")
     suspend fun getByActivityId(activityId: Int): CachedFormDetailsEntity?
 
-    @Query("DELETE FROM cached_form_details WHERE syncedAt < :olderThan")
-    suspend fun deleteOldEntries(olderThan: Instant)
+    @Query("SELECT * FROM cached_form_details WHERE collectionTaskId = :collectionTaskId")
+    suspend fun getByCollectionTaskId(collectionTaskId: Int): CachedFormDetailsEntity?
 }
