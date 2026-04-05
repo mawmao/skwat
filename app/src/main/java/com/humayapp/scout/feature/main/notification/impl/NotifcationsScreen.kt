@@ -41,9 +41,8 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationsScreen(
-    viewModel: NotificationsViewModel
-) {
+fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
+
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val rootNavigator = LocalRootStackNavigator.current
 

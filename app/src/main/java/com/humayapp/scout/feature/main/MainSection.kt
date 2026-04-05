@@ -22,14 +22,14 @@ import com.humayapp.scout.core.ui.component.NavigationItem
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
+import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.main.approved.api.navigation.ApprovedNavKey
 import com.humayapp.scout.feature.main.approved.api.navigation.navigateToApproved
 import com.humayapp.scout.feature.main.approved.impl.navigation.approvedEntryProvider
 import com.humayapp.scout.feature.main.collected.api.navigation.CollectedNavKey
 import com.humayapp.scout.feature.main.collected.api.navigation.navigateToCollected
 import com.humayapp.scout.feature.main.collected.impl.navigation.collectedEntryProvider
-import com.humayapp.scout.feature.main.notification.impl.NotificationsScreen
-import com.humayapp.scout.feature.main.notification.impl.NotificationsViewModel
+import com.humayapp.scout.feature.main.notification.impl.navigation.notificationsEntryProvider
 import com.humayapp.scout.feature.main.pending.api.navigation.PendingNavKey
 import com.humayapp.scout.feature.main.pending.api.navigation.navigateToPending
 import com.humayapp.scout.feature.main.pending.impl.navigation.pendingEntryProvider
@@ -39,15 +39,13 @@ import com.humayapp.scout.feature.main.rejected.impl.navigation.rejectedEntryPro
 import com.humayapp.scout.feature.main.ui.MainSectionNavigationBar
 import com.humayapp.scout.feature.main.ui.MainSectionTopAppBar
 import com.humayapp.scout.feature.main.ui.UserProfileDialog
+import com.humayapp.scout.navigation.RootNavKey
 import com.humayapp.scout.navigation.navigateToAuth
-import com.humayapp.scout.navigation.navigateToDetail
+import com.humayapp.scout.navigation.navigateToNotifications
 
 
 @Composable
-fun MainSection(
-    vm: MainSectionViewModel = hiltViewModel(),
-    notificationsViewModel: NotificationsViewModel = hiltViewModel()
-) {
+fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
 
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val uiError by vm.uiError.collectAsStateWithLifecycle()
@@ -58,7 +56,7 @@ fun MainSection(
     val currentUser by vm.currentUser.collectAsStateWithLifecycle()
     val isOnline by vm.isOnline.collectAsStateWithLifecycle()
 
-    val notifications by notificationsViewModel.notifications.collectAsStateWithLifecycle()
+    val notifications by vm.notifications.collectAsStateWithLifecycle()
     val unreadCount = notifications.count { !it.isRead }
 
     val pendingCount = uiState.tasks.count { it.status == "pending" }
@@ -127,11 +125,7 @@ fun MainSection(
                     onProfileClick = { vm.onAction(MainSectionAction.ToggleProfile(true)) },
                     onRefreshClick = vm::refreshTasks,
                     isRefreshing = uiState.isLoading || uiState.isRefreshing,
-                    onNotificationsClick = {
-                        rootNavigator.navigateToDetail {
-                            NotificationsScreen(viewModel = notificationsViewModel)
-                        }
-                    },
+                    onNotificationsClick = rootNavigator::navigateToNotifications,
                     unreadCount = unreadCount
                 )
             },

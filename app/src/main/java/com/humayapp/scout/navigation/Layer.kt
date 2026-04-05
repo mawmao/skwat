@@ -23,7 +23,13 @@ sealed interface RootNavKey : NavKey {
     data class Form(val collectionTask: CollectionTask) : RootNavKey
 
     @Serializable
-    data class Detail(val content: @Composable () -> Unit) : RootNavKey
+    data object Notification : RootNavKey
+
+    @Serializable
+    data class Detail(
+        val collectionTaskId: Int,
+        val activityId: Int?,
+    ) : RootNavKey
 
     @Serializable
     data class Overlay(val overlayType: OverlayType) : RootNavKey
@@ -37,13 +43,16 @@ sealed class OverlayType {
 }
 
 
-
 // auth and main are hardcoded `popAll` since this would be the only behavior they need
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
 fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
 
 fun StackNavigator<NavKey>.navigateToForms(task: CollectionTask) = this.push(RootNavKey.Form(task))
-fun StackNavigator<NavKey>.navigateToDetail(content: @Composable () -> Unit) = this.push(RootNavKey.Detail(content))
+
+fun StackNavigator<NavKey>.navigateToNotifications() = this.push(RootNavKey.Notification)
+
+fun StackNavigator<NavKey>.navigateToDetail(collectionTaskId: Int, activityId: Int?) =
+    this.push(RootNavKey.Detail(collectionTaskId, activityId))
 
 
 //fun StackNavigator<NavKey>.navigateToOverlay(content: @Composable () -> Unit) = this.push(RootNavKey.Overlay(content))

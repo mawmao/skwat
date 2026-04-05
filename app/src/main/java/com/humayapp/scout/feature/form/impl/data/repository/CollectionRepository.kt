@@ -8,6 +8,7 @@ import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.model.CachedFormDetailsEntity
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
 import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.impl.model.CulturalManagementForm
 import com.humayapp.scout.feature.form.impl.model.DamageAssessmentForm
@@ -37,9 +38,14 @@ interface CollectionRepository {
         verificationStatus: String? = null
     ): CollectionTask?
 
-    suspend fun cacheFormDetails(activityId: Int, rawDetails: FieldActivityDetails, formData: FormData)
+    suspend fun cacheFormDetails(activityId: Int, rawDetails: FieldActivityDetails, formDataElement: JsonElement)
+    suspend fun cacheFormDetailsByTaskId(
+        collectionTaskId: Int,
+        rawDetails: FieldActivityDetails,
+        formDataElement: JsonElement
+    )
+
     suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity?
-    suspend fun cacheFormDetailsByTaskId(collectionTaskId: Int, rawDetails: FieldActivityDetails, formData: FormData)
     suspend fun getCachedFormDetailsByTaskId(collectionTaskId: Int): CachedFormDetailsEntity?
 }
 
@@ -59,21 +65,29 @@ class CollectionRepositoryImpl @Inject constructor(
         return entity?.toDomain()
     }
 
-    override suspend fun cacheFormDetails(activityId: Int, rawDetails: FieldActivityDetails, formData: FormData) {
+    override suspend fun cacheFormDetails(
+        activityId: Int,
+        rawDetails: FieldActivityDetails,
+        formDataElement: JsonElement
+    ) {
         val entity = CachedFormDetailsEntity(
             activityId = activityId,
             rawDetailsJson = Json.encodeToString(rawDetails),
-            formDataJson = Json.encodeToString(formData),
+            formDataJson = formDataElement.toString(),
             activityType = rawDetails.activityType
         )
         cacheDao.insert(entity)
     }
 
-    override suspend fun cacheFormDetailsByTaskId(collectionTaskId: Int, rawDetails: FieldActivityDetails, formData: FormData) {
+    override suspend fun cacheFormDetailsByTaskId(
+        collectionTaskId: Int,
+        rawDetails: FieldActivityDetails,
+        formDataElement: JsonElement
+    ) {
         val entity = CachedFormDetailsEntity(
             collectionTaskId = collectionTaskId,
             rawDetailsJson = Json.encodeToString(rawDetails),
-            formDataJson = Json.encodeToString(formData),
+            formDataJson = formDataElement.toString(),
             activityType = rawDetails.activityType
         )
         cacheDao.insert(entity)
@@ -121,10 +135,14 @@ class CollectionRepositoryImpl @Inject constructor(
                                 eq("id", task.activityId)
                             }
                         }.decodeSingle<FieldActivityDetails>()
-                    val formData = parseFormData(details.activityType, details.formData)
-                    cacheFormDetails(task.activityId, details, formData)
+
+                    val signedUrls = SupabaseImageHelper.generateSignedUrls(supabaseClient, details.imageUrls)
+                    val detailsWithSignedUrls = details.copy(imageUrls = signedUrls)
+
+                    // Store the raw JsonElement, not parsed FormData
+                    cacheFormDetails(task.activityId, detailsWithSignedUrls, detailsWithSignedUrls.formData)
                 } catch (e: Exception) {
-                    Log.e("CollectionRepo", "Failed to cache form details for activityId ${task.activityId}", e)
+                    Log.e("CollectionRepo", "Failed to cache form details", e)
                 }
             }
         }

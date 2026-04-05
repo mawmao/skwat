@@ -47,13 +47,7 @@ fun RejectedScreen(
             ) {
                 items(rejectedTasks) { task ->
                     TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail {
-                            FormDetailsScreen(
-                                collectionTaskId = task.id,
-                                activityId = task.activityId,
-                                onBack = rootNavigator::pop
-                            )
-                        }
+                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
                     })
                 }
             }

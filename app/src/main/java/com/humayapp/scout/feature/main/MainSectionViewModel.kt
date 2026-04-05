@@ -3,6 +3,8 @@ package com.humayapp.scout.feature.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.data.notification.Notification
+import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
@@ -31,6 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 class MainSectionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val collectionRepository: CollectionRepository,
+    private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
 
@@ -52,18 +55,28 @@ class MainSectionViewModel @Inject constructor(
     private val _isOnline = MutableStateFlow(false)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
+    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
+    val notifications = _notifications.asStateFlow()
+
     init {
         observeNetworkState()
         observeAuthState()
         observeTasks()
         startPolling()
+
+        viewModelScope.launch {
+            val userId = authRepository.getCurrentUserId() ?: return@launch
+            notificationRepository.startPolling()
+            notificationRepository.getLocalNotifications(userId).collect { local ->
+                _notifications.value = local
+            }
+        }
     }
 
     private fun observeAuthState() {
         viewModelScope.launch {
             authRepository.currentUser.collect { user ->
                 _currentUser.value = user
-                Log.d("MainSectionVM", "Authenticated user: ${user?.email ?: "none"}")
             }
         }
     }

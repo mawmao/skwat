@@ -103,7 +103,7 @@ fun FormReviewItem(
                 style = ScoutTheme.material.typography.bodyMedium,
                 color = ScoutTheme.material.colorScheme.onSurfaceVariant,
             )
-            Text(text = value)
+            Text(text = value ?: "No Data")
         }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -112,7 +112,7 @@ fun FormReviewItem(
                 style = ScoutTheme.material.typography.bodyMedium,
                 color = ScoutTheme.material.colorScheme.onSurfaceVariant,
             )
-            Text(text = value)
+            Text(text = value ?: "No Data")
         }
     }
 }

@@ -26,7 +26,7 @@ fun CollectedScreen(
     vm: MainSectionViewModel,
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
-    val collectedTasks = uiState.tasks.filter { it.status == "completed" && it.verificationStatus == "pending"  }
+    val collectedTasks = uiState.tasks.filter { it.status == "completed" && it.verificationStatus == "pending" }
     val rootNavigator = LocalRootStackNavigator.current
 
     Box(
@@ -41,19 +41,14 @@ fun CollectedScreen(
                     CircularProgressIndicator()
                 }
             }
+
             collectedTasks.isEmpty() -> EmptyState(message = "No tasks awaiting verification")
             else -> LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
             ) {
                 items(collectedTasks) { task ->
                     TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail {
-                            FormDetailsScreen(
-                                collectionTaskId = task.id,
-                                activityId = task.activityId,
-                                onBack = rootNavigator::pop
-                            )
-                        }
+                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
                     })
                 }
             }

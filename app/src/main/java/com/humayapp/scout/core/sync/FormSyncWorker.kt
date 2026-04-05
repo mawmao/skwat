@@ -14,6 +14,7 @@ import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.SyncStatus
+import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
@@ -157,8 +158,12 @@ class FormSyncWorker @AssistedInject constructor(
                         }
                     }
                     .decodeSingle<FieldActivityDetails>()
-                val typedFormData = parseFormData(rawDetails.activityType, rawDetails.formData)
-                collectionRepository.cacheFormDetails(activityId, rawDetails, typedFormData)
+
+                val signedUrls = SupabaseImageHelper.generateSignedUrls(supabase, rawDetails.imageUrls)
+                val rawWithSignedUrls = rawDetails.copy(imageUrls = signedUrls)
+
+                // Store the raw JsonElement (formData) directly – no parsing
+                collectionRepository.cacheFormDetails(activityId, rawWithSignedUrls, rawWithSignedUrls.formData)
             }
             Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
             Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")

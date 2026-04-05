@@ -33,6 +33,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.humayapp.scout.core.data.settings.SettingsRepository
+import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
 import com.humayapp.scout.core.navigation.StackNavigator
 import com.humayapp.scout.core.sandbox
@@ -43,8 +44,10 @@ import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.feature.form.impl.navigation.formSection
+import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.form.impl.ui.screens.scan.FormScanScreen
 import com.humayapp.scout.feature.main.navigation.mainSection
+import com.humayapp.scout.feature.main.notification.impl.navigation.notificationsEntryProvider
 import com.humayapp.scout.navigation.OverlayType
 import com.humayapp.scout.navigation.RootNavKey
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +72,15 @@ fun rememberScoutAppState(
     networkMonitor: NetworkMonitor,
     collectionRepository: CollectionRepository
 ): ScoutAppState {
-    return remember(rootNavigator, snackbarHostState, settingsRepository, formRepository, coroutineScope, networkMonitor, collectionRepository) {
+    return remember(
+        rootNavigator,
+        snackbarHostState,
+        settingsRepository,
+        formRepository,
+        coroutineScope,
+        networkMonitor,
+        collectionRepository
+    ) {
         ScoutAppState(
             rootNavigator = rootNavigator,
             snackbarHostState = snackbarHostState,
@@ -116,7 +127,7 @@ fun ScoutApp(state: ScoutAppState) {
 
     LaunchedEffect(Unit) {
         merge(state.formRepository.syncEvents, state.snackbarMessages).collect { message ->
-            state.snackbarHostState.showSnackbar(message = message )
+            state.snackbarHostState.showSnackbar(message = message)
         }
     }
 
@@ -133,7 +144,16 @@ fun ScoutApp(state: ScoutAppState) {
                 mainSection(metadata = NavTransition.anchoredBottom())
                 formSection(metadata = NavTransition.anchoredRight())
 
-                entry<RootNavKey.Detail>(metadata = NavTransition.anchoredRight()) { it.content() }
+                notificationsEntryProvider(metadata = NavTransition.anchoredRight())
+
+                entry<RootNavKey.Detail>(metadata = NavTransition.anchoredRight()) { key ->
+                    val rootNavigator = LocalRootStackNavigator.current
+                    FormDetailsScreen(
+                        collectionTaskId = key.collectionTaskId,
+                        activityId = key.activityId,
+                        onBack = rootNavigator::pop
+                    )
+                }
                 entry<RootNavKey.Overlay>(metadata = NavTransition.anchoredRight()) {
                     when (val overlay = it.overlayType) {
                         is OverlayType.Scan -> {

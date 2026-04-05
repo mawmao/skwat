@@ -39,7 +39,6 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.util.toRelativeString
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
-import com.humayapp.scout.navigation.navigateToDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -114,9 +113,9 @@ internal fun HistoryScreen(
                         entry = entry,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            rootNavigator.navigateToDetail {
-                                HistoryDetailScreen(vm)
-                            }
+//                            rootNavigator.navigateToDetail {
+//                                HistoryDetailScreen(vm)
+//                            }
                         }
                     )
                 }

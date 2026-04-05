@@ -135,13 +135,7 @@ fun PendingScreen(
                             showRetakeDialog = false
                             selectedTask = null
                             if (originalTask != null) {
-                                rootNavigator.navigateToDetail {
-                                    FormDetailsScreen(
-                                        collectionTaskId = originalTask.id,
-                                        activityId = originalTask.activityId,
-                                        onBack = rootNavigator::pop
-                                    )
-                                }
+                                rootNavigator.navigateToDetail(collectionTaskId = originalTask.id, activityId = originalTask.activityId)
                             }
                         }
                     )

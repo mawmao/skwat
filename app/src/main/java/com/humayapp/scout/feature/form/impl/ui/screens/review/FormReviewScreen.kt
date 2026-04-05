@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -23,15 +24,26 @@ import com.humayapp.scout.navigation.navigateToMain
 
 @Composable
 fun FormReviewScreen(vm: FormReviewViewModel) {
-
     val rootNavigator = LocalRootStackNavigator.current
     val state = LocalFormState.current
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
     ScoutUiEvents(vm.uiEvent) { event ->
         when (event) {
-            FormReviewEvent.SubmitSuccess -> rootNavigator.navigateToMain()
+            is FormReviewEvent.SubmitSuccessAndNavigate -> {
+                // Navigate to main screen (or directly to details)
+                rootNavigator.navigateToMain()
+                // Optionally, you could navigate directly to the details screen:
+                // rootNavigator.navigateToFormDetails(collectionTaskId, event.activityId)
+            }
+            FormReviewEvent.SubmitSuccess -> {
+                rootNavigator.navigateToMain()
+            }
         }
+    }
+
+    if (uiState.isLoading) {
+        Text(text = "Submitting form...")
     }
 
     Column(
@@ -41,9 +53,7 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-
         state.formType.reviewContent(state)
-
         Spacer(Modifier.weight(1f))
         ScoutLoadingButton(
             modifier = Modifier.fillMaxWidth(),

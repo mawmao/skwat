@@ -42,19 +42,14 @@ fun ApprovedScreen(
                     CircularProgressIndicator()
                 }
             }
+
             approvedTasks.isEmpty() -> EmptyState(message = "No approved tasks")
             else -> LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
             ) {
                 items(approvedTasks) { task ->
                     TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail {
-                            FormDetailsScreen(
-                                collectionTaskId = task.id,
-                                activityId = task.activityId,
-                                onBack = rootNavigator::pop
-                            )
-                        }
+                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
                     })
                 }
             }
