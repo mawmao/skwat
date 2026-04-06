@@ -11,10 +11,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
+import com.humayapp.scout.core.ui.component.ScoutErrorDialog
 import com.humayapp.scout.core.ui.component.ScoutLoadingButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
@@ -28,16 +32,16 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
     val state = LocalFormState.current
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     ScoutUiEvents(vm.uiEvent) { event ->
         when (event) {
-            is FormReviewEvent.SubmitSuccessAndNavigate -> {
-                // Navigate to main screen (or directly to details)
+            is FormReviewEvent.SubmitSuccessAndNavigate,
+            is FormReviewEvent.SubmitSuccess -> {
                 rootNavigator.navigateToMain()
-                // Optionally, you could navigate directly to the details screen:
-                // rootNavigator.navigateToFormDetails(collectionTaskId, event.activityId)
             }
-            FormReviewEvent.SubmitSuccess -> {
-                rootNavigator.navigateToMain()
+            is FormReviewEvent.SubmitError -> {
+                errorMessage = event.message ?: "An unknown error occurred"
             }
         }
     }
@@ -60,6 +64,14 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
             text = "Finish",
             isLoading = uiState.isLoading,
             onClick = { vm.onAction(FormReviewAction.FormSubmit(state.fieldData)) }
+        )
+    }
+
+    if (errorMessage != null) {
+        ScoutErrorDialog(
+            title = "Submission Failed",
+            message = errorMessage!!,
+            onDismissRequest = { errorMessage = null }
         )
     }
 }

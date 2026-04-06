@@ -45,6 +45,7 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
+import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.ui.component.ImageBox
 import com.humayapp.scout.core.ui.component.ScoutAlertDialog
 import com.humayapp.scout.core.ui.component.ScoutIconButton
@@ -106,6 +107,7 @@ fun FormDetailsScreen(
 
         is FormDetailsUiState.Success -> {
             FormDetailsContent(
+                task = state.task,
                 rawDetails = state.rawDetails,
                 formData = state.formData,
                 onBack = onBack,
@@ -146,6 +148,7 @@ fun FormDetailsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FormDetailsContent(
+    task: CollectionTask,
     rawDetails: FieldActivityDetails,
     formData: JsonElement,
     onRefresh: () -> Unit,
@@ -185,31 +188,31 @@ private fun FormDetailsContent(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                actions = {
-                    if (isRefreshing) {
-                        val infiniteTransition = rememberInfiniteTransition()
-                        val rotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(400, easing = LinearEasing)
-                            )
-                        )
-                        ScoutIconButton(
-                            onClick = { },
-                            icon = ScoutIcons.Sync,
-                            contentDescription = "Refreshing",
-                            enabled = false,
-                            modifier = Modifier.rotate(rotation)
-                        )
-                    } else {
-                        ScoutIconButton(
-                            onClick = onRefresh,
-                            icon = ScoutIcons.Sync,
-                            contentDescription = "Refresh Icon Button"
-                        )
-                    }
-                }
+//                actions = {
+//                    if (isRefreshing) {
+//                        val infiniteTransition = rememberInfiniteTransition()
+//                        val rotation by infiniteTransition.animateFloat(
+//                            initialValue = 0f,
+//                            targetValue = 360f,
+//                            animationSpec = infiniteRepeatable(
+//                                animation = tween(400, easing = LinearEasing)
+//                            )
+//                        )
+//                        ScoutIconButton(
+//                            onClick = { },
+//                            icon = ScoutIcons.Sync,
+//                            contentDescription = "Refreshing",
+//                            enabled = false,
+//                            modifier = Modifier.rotate(rotation)
+//                        )
+//                    } else {
+//                        ScoutIconButton(
+//                            onClick = onRefresh,
+//                            icon = ScoutIcons.Sync,
+//                            contentDescription = "Refresh Icon Button"
+//                        )
+//                    }
+//                }
             )
         },
         floatingActionButton = {
@@ -234,26 +237,26 @@ private fun FormDetailsContent(
         ) {
             rawDetails.collectedBy?.let { user ->
                 item {
-                    FormReviewItem(label = "Collected by", value = user.name ?: user.id)
+                    FormReviewItem(label = "Collected By", value = user.name ?: user.id)
                 }
             }
             rawDetails.collectedAt?.let { time ->
                 item {
-                    FormReviewItem(label = "Collected at", value = time.toString())
+                    FormReviewItem(label = "Collected At", value = time.toString())
                 }
             }
             if (rawDetails.verificationStatus != "pending") {
                 item {
-                    FormReviewItem(label = "Verification status", value = rawDetails.verificationStatus ?: "null")
+                    FormReviewItem(label = "Verification Status", value = task.verificationStatus ?: "-")
                 }
                 rawDetails.verifiedBy?.let { user ->
                     item {
-                        FormReviewItem(label = "Verified by", value = user.name ?: user.id)
+                        FormReviewItem(label = "Verified By", value = user.name ?: user.id)
                     }
                 }
                 rawDetails.verifiedAt?.let { time ->
                     item {
-                        FormReviewItem(label = "Verified at", value = time.toString())
+                        FormReviewItem(label = "Verified At", value = time.toString())
                     }
                 }
             }
@@ -380,6 +383,7 @@ fun getReadableLabel(key: String): String {
         "crop_stage" -> "Crop Stage"
         "severity" -> "Severity"
         "affected_area_ha" -> "Affected Area (ha)"
+        "verification_status" -> "Verification Status"
         "observed_pest" -> "Observed Pest"
         else -> key.replace('_', ' ').split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
     }

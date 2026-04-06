@@ -177,7 +177,7 @@ class FormSyncWorker @AssistedInject constructor(
         return images.map { image ->
             val file = File(image.localPath)
             val remotePath = "${entry.seasonId}/${entry.activityType}/${entry.mfid}/$timestamp/${file.name}"
-            imageBucket.upload(remotePath, file) { upsert = false }
+            imageBucket.upload(remotePath, file) { upsert = true }
             formRepository.updateImageRemotePath(image.id, remotePath)
             remotePath
         }

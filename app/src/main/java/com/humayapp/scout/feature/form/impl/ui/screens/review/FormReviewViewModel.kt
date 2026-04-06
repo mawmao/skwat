@@ -74,7 +74,10 @@ class FormReviewViewModel @AssistedInject constructor(
         logAnswers(answers)
 
         val serializedString = formType.serializeAnswers(answers).toString()
-        Log.d( LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
+        Log.d(
+            LOG_TAG,
+            "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------"
+        )
 
         viewModelScope.launch {
             try {
@@ -137,6 +140,7 @@ data class FormReviewScreenState(
 sealed class FormReviewEvent {
     object SubmitSuccess : FormReviewEvent()
     data class SubmitSuccessAndNavigate(val activityId: Int) : FormReviewEvent()
+    data class SubmitError(val message: String) : FormReviewEvent()
 }
 
 sealed class FormReviewAction {

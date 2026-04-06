@@ -208,15 +208,4 @@ class CollectionRepositoryImpl @Inject constructor(
         }
         return entity?.toDomain()
     }
-
-    private fun parseFormData(activityType: String, formDataElement: JsonElement): FormData {
-        return when (activityType) {
-            "field-data" -> formDataJson.decodeFromJsonElement<FieldDataForm>(formDataElement)
-            "cultural-management" -> formDataJson.decodeFromJsonElement<CulturalManagementForm>(formDataElement)
-            "nutrient-management" -> formDataJson.decodeFromJsonElement<NutrientManagementForm>(formDataElement)
-            "production" -> formDataJson.decodeFromJsonElement<ProductionForm>(formDataElement)
-            "damage-assessment" -> formDataJson.decodeFromJsonElement<DamageAssessmentForm>(formDataElement)
-            else -> throw IllegalArgumentException("Unknown activity type: $activityType")
-        }
-    }
 }

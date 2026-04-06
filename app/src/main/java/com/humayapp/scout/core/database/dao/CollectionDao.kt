@@ -119,7 +119,7 @@ interface CollectionTaskDao {
     )
     suspend fun markSynced(taskId: Int): Int
 
-    @Query("SELECT * FROM collection_tasks WHERE synced = 0")
+    @Query("SELECT * FROM collection_tasks WHERE synced = 0 AND status = 'completed'")
     suspend fun getUnsyncedTasks(): List<CollectionTaskEntity>
 
     @Query("SELECT * FROM form_images WHERE collectionTaskId = :collectionTaskId")

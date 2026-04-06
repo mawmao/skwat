@@ -125,6 +125,7 @@ class FormDetailsViewModel @AssistedInject constructor(
                     imageUrls = finalImages
                 )
                 _uiState.value = FormDetailsUiState.Success(
+                    task = task,
                     rawDetails = rawDetails,
                     formData = formDataElement,
                     retakeAvailable = task.canRetake,
@@ -167,6 +168,7 @@ class FormDetailsViewModel @AssistedInject constructor(
 sealed class FormDetailsUiState {
     object Loading : FormDetailsUiState()
     data class Success(
+        val task: CollectionTask,
         val rawDetails: FieldActivityDetails,
         val formData: JsonElement,
         val retakeAvailable: Boolean,
