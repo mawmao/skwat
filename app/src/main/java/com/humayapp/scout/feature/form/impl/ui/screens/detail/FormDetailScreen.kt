@@ -210,19 +210,19 @@ private fun FormDetailsContent(
                         )
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = statusColor.copy(alpha = 0.2f),
-                        contentColor = statusColor,
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text(
-                            text = statusText,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+//                    Surface(
+//                        shape = RoundedCornerShape(16.dp),
+//                        color = statusColor.copy(alpha = 0.2f),
+//                        contentColor = statusColor,
+//                        modifier = Modifier.padding(end = 8.dp)
+//                    ) {
+//                        Text(
+//                            text = statusText,
+//                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+//                            style = MaterialTheme.typography.labelSmall,
+//                            fontWeight = FontWeight.Medium
+//                        )
+//                    }
                 }
             )
         },
