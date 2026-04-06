@@ -216,7 +216,7 @@ private fun FormDetailsContent(
             )
         },
         floatingActionButton = {
-            if (rawDetails.verificationStatus == "rejected") {
+            if (task.verificationStatus == "rejected") {
                 FloatingActionButton(
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
                     modifier = Modifier.padding(ScoutTheme.spacing.mediumLarge),
