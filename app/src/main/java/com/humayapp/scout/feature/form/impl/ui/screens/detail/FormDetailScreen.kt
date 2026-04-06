@@ -209,20 +209,6 @@ private fun FormDetailsContent(
                             contentDescription = "Refresh Icon Button"
                         )
                     }
-
-//                    Surface(
-//                        shape = RoundedCornerShape(16.dp),
-//                        color = statusColor.copy(alpha = 0.2f),
-//                        contentColor = statusColor,
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    ) {
-//                        Text(
-//                            text = statusText,
-//                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-//                            style = MaterialTheme.typography.labelSmall,
-//                            fontWeight = FontWeight.Medium
-//                        )
-//                    }
                 }
             )
         },
@@ -300,6 +286,25 @@ private fun FormDetailsContent(
                     }
                 }
             }
+
+            val fertilizerApplicationJson = (formData as? JsonObject)?.get("fertilizer_application")?.jsonObject
+            if (fertilizerApplicationJson != null) {
+                item {
+                    Text(
+                        "FertilizerApplication",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+                val fertAppFields = jsonElementToDisplayList(fertilizerApplicationJson)
+                fertAppFields.forEach { (label, value) ->
+                    item {
+                        FormReviewItem(label = label, value = value)
+                    }
+                }
+            }
+
 
             if (!rawDetails.imageUrls.isNullOrEmpty()) {
                 item {

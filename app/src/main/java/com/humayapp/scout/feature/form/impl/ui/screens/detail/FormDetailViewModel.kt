@@ -198,6 +198,7 @@ fun jsonElementToDisplayList(element: JsonElement, prefix: String = ""): List<Pa
         is JsonObject -> {
             element.entries.flatMap { (key, value) ->
                 if (key == "monitoring_visit") return@flatMap emptyList()
+                if (key == "fertilizer_application") return@flatMap emptyList()
 
                 val label = if (prefix.isEmpty()) getReadableLabel(key) else "$prefix${getReadableLabel(key)}"
                 when (value) {
