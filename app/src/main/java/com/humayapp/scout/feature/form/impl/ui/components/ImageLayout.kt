@@ -34,7 +34,7 @@ fun <T> FormImagesLayout(
 
         Spacer(Modifier.height(ScoutTheme.spacing.medium))
 
-        items.getOrNull(4)?.let { imageContent(it, null, Modifier.fillMaxWidth()) }
+        items.getOrNull(4)?.let { imageContent(it, 1f, Modifier.fillMaxWidth()) }
 
         Spacer(Modifier.height(ScoutTheme.spacing.medium))
     }
