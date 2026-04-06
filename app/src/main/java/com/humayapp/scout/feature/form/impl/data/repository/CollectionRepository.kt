@@ -5,6 +5,7 @@ import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import android.util.Log
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.converters.toDomain
 import com.humayapp.scout.core.database.converters.toEntity
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
@@ -74,6 +75,11 @@ interface CollectionRepository {
     suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity>
 
     suspend fun markSynced(collectionTaskId: Int): Int
+
+    suspend fun getDetailsFromSupabase(collectionTaskId: Int): FieldActivityDetails
+
+    suspend fun getCollectionTaskFromSupabase(taskId: Int): CollectionTask?
+    suspend fun upsertCollectionTask(task: CollectionTask)
 }
 
 class CollectionRepositoryImpl @Inject constructor(
@@ -90,7 +96,7 @@ class CollectionRepositoryImpl @Inject constructor(
     override suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity> =
         collectionTaskDao.getImagesById(collectionTaskId)
 
-    override suspend fun markSynced(collectionTaskId: Int) : Int{
+    override suspend fun markSynced(collectionTaskId: Int): Int {
         return collectionTaskDao.markSynced(collectionTaskId)
     }
 
@@ -159,6 +165,7 @@ class CollectionRepositoryImpl @Inject constructor(
         cacheDao.insert(entity)
     }
 
+
     override suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity? {
         return cacheDao.getByActivityId(activityId)
     }
@@ -166,6 +173,7 @@ class CollectionRepositoryImpl @Inject constructor(
     override suspend fun getCachedFormDetailsByTaskId(collectionTaskId: Int): CachedFormDetailsEntity? {
         return cacheDao.getByCollectionTaskId(collectionTaskId)
     }
+
 
     @OptIn(ExperimentalUuidApi::class)
     override suspend fun pullTasksFromSupabaseForCurrentUser() {
@@ -178,10 +186,11 @@ class CollectionRepositoryImpl @Inject constructor(
         val localTasks = collectionTaskDao.getAllTasksList()
         val localTaskMap = localTasks.associateBy { it.id }
 
+        // 1. Upsert tasks that are present remotely (or keep local completed if remote is pending)
         val tasksToUpsert = mutableListOf<CollectionTaskEntity>()
-
         for (remote in remoteTasks) {
             val local = localTaskMap[remote.id]
+            // If local is completed and remote is pending, keep local completed version
             if (local != null && local.status == "completed" && remote.status == "pending") {
                 continue
             }
@@ -190,10 +199,42 @@ class CollectionRepositoryImpl @Inject constructor(
             )
             tasksToUpsert.add(entity)
         }
-
         if (tasksToUpsert.isNotEmpty()) {
             collectionTaskDao.insertAll(tasksToUpsert)
         }
+
+        // 2. Delete local tasks that are no longer assigned to this user (not in remote list) AND are not completed
+        val remoteIds = remoteTasks.map { it.id }.toSet()
+        val tasksToDelete = localTasks.filter { local ->
+            local.id !in remoteIds && local.status != "completed"
+        }
+        if (tasksToDelete.isNotEmpty()) {
+            val idsToDelete = tasksToDelete.map { it.id }
+            collectionTaskDao.deleteTasksByIds(idsToDelete)
+            // Optionally delete associated images and files
+            deleteAssociatedImagesForTasks(idsToDelete)
+        }
+    }
+
+    // Helper to delete images (implement as needed)
+    private suspend fun deleteAssociatedImagesForTasks(taskIds: List<Int>) {
+        // Delete image entries from DB
+        collectionTaskDao.deleteImagesByTaskIds(taskIds)
+        // Delete actual image files from storage
+        val images = collectionTaskDao.getImagesByTaskIds(taskIds)
+        images.forEach { image ->
+            File(image.localPath).delete()
+        }
+    }
+
+    override suspend fun getDetailsFromSupabase(collectionTaskId: Int): FieldActivityDetails {
+        val userId =
+            authRepository.getCurrentUserId() ?: unreachable("there should be a user when calling this function")
+        val fa = supabaseClient
+            .from("field_activity_details")
+            .select { filter { eq("collection_task_id", userId) } }
+            .decodeSingle<FieldActivityDetails>()
+        return fa
     }
 
     override suspend fun getRetakeTaskByOriginalId(
@@ -207,5 +248,22 @@ class CollectionRepositoryImpl @Inject constructor(
             collectionTaskDao.getRetakeTaskByOriginalIdAndStatus(originalId, status)
         }
         return entity?.toDomain()
+    }
+
+    override suspend fun getCollectionTaskFromSupabase(taskId: Int): CollectionTask? = withContext(ioDispatcher) {
+        try {
+            supabaseClient.from("collection_details")
+                .select {
+                    filter { eq("id", taskId) }
+                }
+                .decodeSingle<CollectionTask>()
+        } catch (e: Exception) {
+            Log.e("Scout: CollectionRepository", "Error fetching task from Supabase", e)
+            null
+        }
+    }
+
+    override suspend fun upsertCollectionTask(task: CollectionTask) = withContext(ioDispatcher) {
+        collectionTaskDao.insertOrUpdate(task.toEntity())
     }
 }

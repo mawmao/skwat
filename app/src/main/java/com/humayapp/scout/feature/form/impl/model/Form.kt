@@ -109,6 +109,7 @@ data class FieldActivityDetails(
     @SerialName("id") val id: Int? = null,
     @SerialName("mfid") val mfid: String,
     @SerialName("season_year") val seasonYear: String? = null,
+    @SerialName("collection_task_id") val collectionTaskId: Int? = null,
     @SerialName("semester") val semester: String? = null,
     @SerialName("field_id") val fieldId: Int? = null,
     @SerialName("season_id") val seasonId: Int,

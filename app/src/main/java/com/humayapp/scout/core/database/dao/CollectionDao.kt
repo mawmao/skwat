@@ -124,4 +124,16 @@ interface CollectionTaskDao {
 
     @Query("SELECT * FROM form_images WHERE collectionTaskId = :collectionTaskId")
     suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(entity: CollectionTaskEntity)
+
+    @Query("DELETE FROM collection_tasks WHERE id IN (:ids)")
+    suspend fun deleteTasksByIds(ids: List<Int>)
+
+    @Query("DELETE FROM form_images WHERE collectionTaskId IN (:taskIds)")
+    suspend fun deleteImagesByTaskIds(taskIds: List<Int>)
+
+    @Query("SELECT * FROM form_images WHERE collectionTaskId IN (:taskIds)")
+    suspend fun getImagesByTaskIds(taskIds: List<Int>): List<FormImageEntity>
 }

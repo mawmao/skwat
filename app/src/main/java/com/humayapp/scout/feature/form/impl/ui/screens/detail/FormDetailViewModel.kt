@@ -46,14 +46,14 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
+import kotlin.uuid.ExperimentalUuidApi
 
 @HiltViewModel(assistedFactory = FormDetailsViewModel.Factory::class)
 class FormDetailsViewModel @AssistedInject constructor(
-    private val formRepository: FormRepository,
     private val collectionRepository: CollectionRepository,
     private val supabase: SupabaseClient,
-    private val authRepository: AuthRepository,
     @Assisted("collectionTaskId") private val collectionTaskId: Int,
     @Assisted("activityId") private val activityId: Int?,
 ) : ViewModel() {
@@ -73,6 +73,7 @@ class FormDetailsViewModel @AssistedInject constructor(
         loadFormData()
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun loadFormData() {
         Log.d(LOG_TAG, "Loading form data of collection_task_id=$collectionTaskId + activityId=$activityId")
 
@@ -81,17 +82,55 @@ class FormDetailsViewModel @AssistedInject constructor(
             _isRefreshing.value = true
 
             try {
-                val task = collectionRepository.getCollectionTaskById(collectionTaskId)
-                Log.d(LOG_TAG, "task=$task")
+                var task = collectionRepository.getCollectionTaskById(collectionTaskId)
+                var formDataElement: JsonElement? = task?.formData?.let { FormDataJson.toJsonElement(it) }
+                var rawDetails: FieldActivityDetails
 
-                val formDataElement: JsonElement? = task?.formData?.let {
-                    FormDataJson.toJsonElement(it)
-                }
-                if (formDataElement == null) {
-                    _uiState.value = FormDetailsUiState.Error("Form data not found")
-                    return@launch
+                if (task == null || formDataElement == null) {
+                    // Fetch from Supabase
+                    Log.d(LOG_TAG, "Local data missing, fetching from Supabase")
+                    val remoteTask = collectionRepository.getCollectionTaskFromSupabase(collectionTaskId)
+                        ?: throw Exception("Form not found on server")
+
+                    // Cache the remote task locally for future use
+                    collectionRepository.upsertCollectionTask(remoteTask)
+
+                    // Use the remote task as the current task
+                    task = remoteTask
+                    formDataElement = remoteTask.formData?.let { FormDataJson.toJsonElement(it) }
+                        ?: throw Exception("Remote form data is null")
+
+                    rawDetails = FieldActivityDetails(
+                        mfid = task.mfid,
+                        seasonId = task.seasonId,
+                        activityType = task.activityType,
+                        collectedAt = task.collectedAt ?: Clock.System.now(),
+                        farmerName = task.farmerName ?: "",
+                        barangay = task.barangay ?: "",
+                        municipality = task.cityMunicipality,
+                        province = task.province,
+                        isRetake = task.retakeOf != null,
+                        formData = formDataElement,
+                        imageUrls = emptyList() // placeholder, will be filled below
+                    )
+                } else {
+                    // Build from local data
+                    rawDetails = FieldActivityDetails(
+                        mfid = task.mfid,
+                        seasonId = task.seasonId,
+                        activityType = task.activityType,
+                        collectedAt = task.collectedAt ?: Clock.System.now(),
+                        farmerName = task.farmerName ?: "",
+                        barangay = task.barangay ?: "",
+                        municipality = task.cityMunicipality,
+                        province = task.province,
+                        isRetake = task.retakeOf != null,
+                        formData = formDataElement,
+                        imageUrls = emptyList()
+                    )
                 }
 
+                // Handle images
                 val images = collectionRepository.getImagesById(collectionTaskId)
                 val localImages = mutableListOf<String>()
                 val remotePaths = mutableListOf<String>()
@@ -110,26 +149,14 @@ class FormDetailsViewModel @AssistedInject constructor(
                 } else emptyList()
 
                 val finalImages = localImages + signedUrls
+                rawDetails = rawDetails.copy(imageUrls = finalImages)
 
-                val rawDetails = FieldActivityDetails(
-                    mfid = task.mfid,
-                    seasonId = task.seasonId,
-                    activityType = task.activityType,
-                    collectedAt = task.collectedAt,
-                    farmerName = task.farmerName ?: "",
-                    barangay = task.barangay ?: "",
-                    municipality = task.cityMunicipality,
-                    province = task.province,
-                    isRetake = task.retakeOf != null,
-                    formData = formDataElement,
-                    imageUrls = finalImages
-                )
                 _uiState.value = FormDetailsUiState.Success(
-                    task = task,
+                    task = task,                      // now guaranteed non-null
                     rawDetails = rawDetails,
-                    formData = formDataElement,
+                    formData = formDataElement!!,     // guaranteed non-null
                     retakeAvailable = task.canRetake,
-                    retakePending = false, // compute as needed
+                    retakePending = false,
                     originalTask = task
                 )
             } catch (e: Exception) {
@@ -179,21 +206,6 @@ sealed class FormDetailsUiState {
     data class Error(val message: String) : FormDetailsUiState()
 }
 
-
-// FormDataCacheHelper.kt (or a new file)
-fun jsonElementToFieldList(jsonElement: JsonElement): List<Pair<String, String>> {
-    return when (jsonElement) {
-        is JsonObject -> jsonElement.entries.map { (key, value) ->
-            when (value) {
-                is JsonPrimitive -> key to value.content
-                is JsonArray -> key to value.joinToString(", ") { it.toString() }
-                is JsonObject -> key to value.toString()
-            }
-        }
-
-        else -> emptyList()
-    }
-}
 
 fun jsonElementToDisplayList(element: JsonElement, prefix: String = ""): List<Pair<String, String>> {
     return when (element) {
