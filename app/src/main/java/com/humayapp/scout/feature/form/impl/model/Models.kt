@@ -26,10 +26,10 @@ typealias FieldData = Map<String, Any?>
 
 fun FieldData.getOrEmpty(key: String) = this[key] as? String ?: ""
 
-fun Map<String, Any?>.toFormImages(): List<FormImageEntity> {
+fun Map<String, Any?>.toFormImages(collectionTaskId: Int): List<FormImageEntity> {
     return this.mapNotNull { (key, value) ->
         if (key.startsWith("img_") && value is String && value.isNotBlank()) {
-            FormImageEntity(localPath = value, formId = -1)
+            FormImageEntity(localPath = value, collectionTaskId = collectionTaskId)
         } else null
     }
 }

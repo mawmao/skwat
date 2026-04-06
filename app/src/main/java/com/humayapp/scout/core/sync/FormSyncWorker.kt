@@ -14,6 +14,7 @@ import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.SyncStatus
+import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -25,6 +26,7 @@ import com.humayapp.scout.feature.form.impl.ui.screens.review.FormDataCacheHelpe
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
@@ -40,6 +42,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import java.io.File
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
 data class UploadDataRequest(
@@ -54,16 +57,17 @@ data class UploadDataRequest(
     val payload: JsonElement
 ) {
     companion object {
-        fun fromEntry(entry: FormEntryEntity, imageUrls: List<String>): UploadDataRequest = UploadDataRequest(
+        @OptIn(ExperimentalUuidApi::class)
+        fun fromEntry(entry: CollectionTask, imageUrls: List<String>): UploadDataRequest = UploadDataRequest(
             mfid = entry.mfid,
-            collection_task_id = entry.collectionTaskId,
+            collection_task_id = entry.id,
             activity_type = entry.activityType,
             season_id = entry.seasonId,
-            collected_by = entry.collectedBy,
+            collected_by = entry.collectedBy.toString(),
             collected_at = entry.collectedAt.toString(),
-            synced_at = entry.syncedAt?.toString(),
+            synced_at = Clock.System.now().toString(),
             image_urls = imageUrls,
-            payload = Json.parseToJsonElement(entry.payloadJson)
+            payload = Json.parseToJsonElement(entry.formData!!)
         )
     }
 }
@@ -111,27 +115,35 @@ class FormSyncWorker @AssistedInject constructor(
     }
 
     private suspend fun isReadyToSync(): Boolean {
-        if (!authRepository.isAuthenticated()) {
-            Log.i(LOG_TAG, "[Sync] No active session. Skipping sync.")
-            return false
-        }
         if (!networkMonitor.isOnline.first()) {
-            Log.i(LOG_TAG, "[Sync] Device is offline. Doing nothing.")
+            Log.i(LOG_TAG, "[Sync] Device is offline.")
             return false
         }
+
+        if (authRepository.getRequiresReauth()) {
+            Log.i(LOG_TAG, "[Sync] Requires reauth. Skipping sync.")
+            return false
+        }
+
+        val session = supabase.auth.currentSessionOrNull()
+        if (session == null) {
+            Log.i(LOG_TAG, "[Sync] No restored Supabase session yet.")
+            return false
+        }
+
         return true
     }
 
-    private suspend fun getPendingEntries(): List<FormEntryEntity> {
-        val entryId = inputData.getLong("ENTRY_ID", -1L)
-        return if (entryId != -1L) {
-            listOfNotNull(formRepository.getEntryById(entryId))
+    private suspend fun getPendingEntries(): List<CollectionTask> {
+        val entryId = inputData.getInt("ENTRY_ID", -1)
+        return if (entryId != -1) {
+            listOfNotNull(collectionRepository.getCollectionTaskById(entryId))
         } else {
-            formRepository.getPendingSyncOnce()
+            collectionRepository.getUnsyncedTasks()
         }
     }
 
-    private suspend fun syncEntries(entries: List<FormEntryEntity>): Boolean {
+    private suspend fun syncEntries(entries: List<CollectionTask>): Boolean {
         var hasError = false
         for (entry in entries) {
             val success = syncEntry(entry)
@@ -140,7 +152,7 @@ class FormSyncWorker @AssistedInject constructor(
         return hasError
     }
 
-    private suspend fun syncEntry(entry: FormEntryEntity): Boolean {
+    private suspend fun syncEntry(entry: CollectionTask): Boolean {
         val formType = FormType.fromActivityType(entry.activityType)
         val timestamp = Clock.System.now()
 
@@ -148,23 +160,7 @@ class FormSyncWorker @AssistedInject constructor(
         return try {
             val imageUrls = uploadImages(entry, timestamp)
             val request = UploadDataRequest.fromEntry(entry, imageUrls)
-            val result = supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
-            val activityId = result.decodeAs<Int>()
-            if (activityId > 0) {
-                val rawDetails = supabase.from("field_activity_details")
-                    .select() {
-                        filter {
-                            eq("id", activityId)
-                        }
-                    }
-                    .decodeSingle<FieldActivityDetails>()
-
-                val signedUrls = SupabaseImageHelper.generateSignedUrls(supabase, rawDetails.imageUrls)
-                val rawWithSignedUrls = rawDetails.copy(imageUrls = signedUrls)
-
-                // Store the raw JsonElement (formData) directly – no parsing
-                collectionRepository.cacheFormDetails(activityId, rawWithSignedUrls, rawWithSignedUrls.formData)
-            }
+            supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
             Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
             Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")
             markSynced(entry.id, timestamp)
@@ -175,8 +171,8 @@ class FormSyncWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun uploadImages(entry: FormEntryEntity, timestamp: Instant): List<String> {
-        val images = formRepository.getImagesOfEntryById(entry.id)
+    private suspend fun uploadImages(entry: CollectionTask, timestamp: Instant): List<String> {
+        val images = collectionRepository.getImagesById(entry.id)
         val imageBucket = supabase.storage.from("form-images")
         return images.map { image ->
             val file = File(image.localPath)
@@ -187,13 +183,13 @@ class FormSyncWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun markSynced(entryId: Long, timestamp: Instant) {
-        try {
-            formRepository.markAsSyncedWithStatus(entryId, timestamp, SyncStatus.SYNCED)
+    private suspend fun markSynced(entryId: Int, timestamp: Instant) {
+        val rowsUpdated = collectionRepository.markSynced(entryId)
+        if (rowsUpdated > 0) {
             Log.i(LOG_TAG, "[Sync] Local sync mark successful for entry $entryId.")
-        } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for entry $entryId: ${e.message}")
-            throw e
+        } else {
+            Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for entry $entryId: no rows updated")
+            throw Exception("Mark synced failed")
         }
     }
 

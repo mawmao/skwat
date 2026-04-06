@@ -57,6 +57,10 @@ interface AuthRepository {
     suspend fun getCurrentUserId(): String?
 
     suspend fun clearSessionOnly()
+
+    suspend fun tryRestoreSession(): Boolean
+
+    suspend fun restoreSessionIfNeeded()
 }
 
 class SupabaseAuthRepository @Inject constructor(
@@ -101,6 +105,7 @@ class SupabaseAuthRepository @Inject constructor(
                     secureCredentialsRepo.saveUser(user)
                     emit(user)
                 }
+
                 else -> {
                     // No session – keep previously emitted stored user
                 }
@@ -109,6 +114,26 @@ class SupabaseAuthRepository @Inject constructor(
     }.distinctUntilChanged()
 
     override suspend fun getCurrentUser(): User? = currentUser.first()
+
+    override suspend fun tryRestoreSession(): Boolean {
+        return try {
+            val (email, password, _) = secureCredentialsRepo.getStoredCredentials()
+
+            if (email != null && password != null) {
+                supabaseClient.auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
+                secureCredentialsRepo.setRequiresReauth(false)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("Auth", "Session restore failed", e)
+            false
+        }
+    }
 
     override suspend fun isOnline() = networkMonitor.isOnline.first()
     override suspend fun isOffline() = !networkMonitor.isOnline.first()
@@ -122,7 +147,18 @@ class SupabaseAuthRepository @Inject constructor(
 
     override suspend fun isAuthenticated(): Boolean {
         val status = sessionStatus.first()
-        return status is SessionStatus.Authenticated
+        if (status is SessionStatus.Authenticated) return true
+        val (_, _, userId) = secureCredentialsRepo.getStoredCredentials()
+        return userId != null
+    }
+
+    override suspend fun restoreSessionIfNeeded() {
+        if (!isAuthenticated() && getRequiresReauth().not()) {
+            val (email, password, userId) = secureCredentialsRepo.getStoredCredentials()
+            if (email != null && password != null) {
+                handleOnlineSignIn(email, password)
+            }
+        }
     }
 
     override suspend fun signIn(email: String, password: String): AuthResult = try {
@@ -188,7 +224,8 @@ class SupabaseAuthRepository @Inject constructor(
 
     private suspend fun handleOnlineSignIn(email: String, password: String): AuthResult {
         supabaseClient.auth.signInWith(Email) { this.email = email; this.password = password }
-        val session = supabaseClient.auth.currentSessionOrNull() ?: throw IllegalStateException("Session not established")
+        val session =
+            supabaseClient.auth.currentSessionOrNull() ?: throw IllegalStateException("Session not established")
         val userId = session.user?.id ?: throw IllegalStateException("User ID missing")
         val metadata = session.user?.userMetadata
         val firstName = (metadata?.get("first_name") as? JsonPrimitive)?.content

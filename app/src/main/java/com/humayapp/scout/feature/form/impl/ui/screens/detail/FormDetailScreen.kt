@@ -91,7 +91,7 @@ fun FormDetailsScreen(
 
     LaunchedEffect(refreshError) {
         refreshError?.let {
-            viewModel.clearRefreshError()
+//            viewModel.clearRefreshError()
         }
     }
 
@@ -109,7 +109,7 @@ fun FormDetailsScreen(
                 rawDetails = state.rawDetails,
                 formData = state.formData,
                 onBack = onBack,
-                onRefresh = viewModel::refresh,
+                onRefresh = {},
                 isRefreshing = isRefreshing,
                 onRetakeClick = {
                     if (state.retakeAvailable && state.originalTask != null) {
@@ -258,7 +258,7 @@ private fun FormDetailsContent(
             }
             if (rawDetails.verificationStatus != "pending") {
                 item {
-                    FormReviewItem(label = "Verification status", value = rawDetails.verificationStatus)
+                    FormReviewItem(label = "Verification status", value = rawDetails.verificationStatus ?: "null")
                 }
                 rawDetails.verifiedBy?.let { user ->
                     item {
@@ -301,7 +301,7 @@ private fun FormDetailsContent(
                 }
             }
 
-            if (rawDetails.imageUrls.isNotEmpty()) {
+            if (!rawDetails.imageUrls.isNullOrEmpty()) {
                 item {
                     Text(
                         "Images",

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e340fd0b912e9c025fc3ade1bd5ca176",
+    "identityHash": "611873fe282aa8b671f3797db0665dac",
     "entities": [
       {
         "tableName": "form_entries",
@@ -95,7 +95,7 @@
       },
       {
         "tableName": "form_images",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `formId` INTEGER NOT NULL, `localPath` TEXT NOT NULL, `remotePath` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionTaskId` INTEGER NOT NULL, `localPath` TEXT NOT NULL, `remotePath` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -104,8 +104,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "formId",
-            "columnName": "formId",
+            "fieldPath": "collectionTaskId",
+            "columnName": "collectionTaskId",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -280,7 +280,7 @@
       },
       {
         "tableName": "collection_tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `verificationStatus` TEXT, `verifiedBy` TEXT, `verifiedAt` TEXT, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `synced` INTEGER NOT NULL, `dependencyData` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `verificationStatus` TEXT, `verifiedBy` TEXT, `verifiedAt` TEXT, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `synced` INTEGER NOT NULL, `dependencyData` TEXT, `formData` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -452,6 +452,11 @@
             "fieldPath": "dependencyData",
             "columnName": "dependencyData",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "formData",
+            "columnName": "formData",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -580,7 +585,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e340fd0b912e9c025fc3ade1bd5ca176')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '611873fe282aa8b671f3797db0665dac')"
     ]
   }
 }

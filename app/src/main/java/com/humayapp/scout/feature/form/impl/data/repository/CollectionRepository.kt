@@ -1,14 +1,20 @@
 package com.humayapp.scout.feature.form.impl.data.repository
 
+import android.content.Context
 import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import android.util.Log
+import com.humayapp.scout.core.common.dispatcher.Dispatcher
+import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.database.converters.toDomain
 import com.humayapp.scout.core.database.converters.toEntity
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.model.CachedFormDetailsEntity
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
+import com.humayapp.scout.core.database.model.FormEntryEntity
+import com.humayapp.scout.core.database.model.FormImageEntity
 import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.network.util.SupabaseImageHelper
+import com.humayapp.scout.core.system.saveImagesToFolder
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.impl.model.CulturalManagementForm
 import com.humayapp.scout.feature.form.impl.model.DamageAssessmentForm
@@ -18,14 +24,21 @@ import com.humayapp.scout.feature.form.impl.model.FormData
 import com.humayapp.scout.feature.form.impl.model.NutrientManagementForm
 import com.humayapp.scout.feature.form.impl.model.ProductionForm
 import com.humayapp.scout.feature.form.impl.model.formDataJson
+import com.humayapp.scout.feature.form.impl.model.toFormImages
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.ktor.utils.io.ioDispatcher
 import jakarta.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
+import java.io.File
+import java.util.UUID
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 
 interface CollectionRepository {
@@ -47,14 +60,67 @@ interface CollectionRepository {
 
     suspend fun getCachedFormDetails(activityId: Int): CachedFormDetailsEntity?
     suspend fun getCachedFormDetailsByTaskId(collectionTaskId: Int): CachedFormDetailsEntity?
+
+    suspend fun saveTaskWithImages(
+        context: Context,
+        answers: Map<String, Any?>,
+        collectionTaskId: Int,
+        userId: String,
+        formData: String
+    ): Int
+
+    suspend fun getUnsyncedTasks(): List<CollectionTask>
+
+    suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity>
+
+    suspend fun markSynced(collectionTaskId: Int): Int
 }
 
 class CollectionRepositoryImpl @Inject constructor(
     private val supabaseClient: SupabaseClient,
     private val authRepository: AuthRepository,
     private val collectionTaskDao: CollectionTaskDao,
-    private val cacheDao: CachedFormDetailsDao
+    private val cacheDao: CachedFormDetailsDao,
+    @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : CollectionRepository {
+
+    override suspend fun getUnsyncedTasks(): List<CollectionTask> =
+        collectionTaskDao.getUnsyncedTasks().map { it.toDomain() }
+
+    override suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity> =
+        collectionTaskDao.getImagesById(collectionTaskId)
+
+    override suspend fun markSynced(collectionTaskId: Int) : Int{
+        return collectionTaskDao.markSynced(collectionTaskId)
+    }
+
+    override suspend fun saveTaskWithImages(
+        context: Context,
+        answers: Map<String, Any?>,
+        collectionTaskId: Int,
+        userId: String,
+        formData: String
+    ): Int = withContext(ioDispatcher) {
+
+        val folder = File(context.filesDir, "forms/${UUID.randomUUID()}").apply { mkdirs() }
+
+        try {
+            val localAnswers = context.saveImagesToFolder(answers, folder)
+
+            collectionTaskDao.completeTaskWithImages(
+                collectionTaskId = collectionTaskId,
+                collectorId = userId,
+                collectedAt = Clock.System.now(),
+                formData = formData,
+                images = localAnswers.toFormImages(collectionTaskId)
+            )
+
+            collectionTaskId
+        } catch (e: Exception) {
+            folder.deleteRecursively()
+            throw e
+        }
+    }
 
     override fun getAllCollectionTasks(): Flow<List<CollectionTask>> =
         collectionTaskDao.getAllTasks()
@@ -119,32 +185,14 @@ class CollectionRepositoryImpl @Inject constructor(
             if (local != null && local.status == "completed" && remote.status == "pending") {
                 continue
             }
-            tasksToUpsert.add(remote.toEntity())
+            val entity = remote.toEntity(false).copy(
+                formData = remote.formData ?: local?.formData
+            )
+            tasksToUpsert.add(entity)
         }
 
         if (tasksToUpsert.isNotEmpty()) {
             collectionTaskDao.insertAll(tasksToUpsert)
-        }
-
-        for (task in remoteTasks) {
-            if (task.activityId != null) {
-                try {
-                    val details = supabaseClient.from("field_activity_details")
-                        .select() {
-                            filter {
-                                eq("id", task.activityId)
-                            }
-                        }.decodeSingle<FieldActivityDetails>()
-
-                    val signedUrls = SupabaseImageHelper.generateSignedUrls(supabaseClient, details.imageUrls)
-                    val detailsWithSignedUrls = details.copy(imageUrls = signedUrls)
-
-                    // Store the raw JsonElement, not parsed FormData
-                    cacheFormDetails(task.activityId, detailsWithSignedUrls, detailsWithSignedUrls.formData)
-                } catch (e: Exception) {
-                    Log.e("CollectionRepo", "Failed to cache form details", e)
-                }
-            }
         }
     }
 

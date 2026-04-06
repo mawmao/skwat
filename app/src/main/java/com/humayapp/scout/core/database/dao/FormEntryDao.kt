@@ -14,12 +14,12 @@ import kotlin.time.Instant
 @Dao
 interface FormEntryDao {
 
-    @Transaction
-    suspend fun insertFormWithImages(entry: FormEntryEntity, images: List<FormImageEntity>): Long {
-        val formId = insertEntry(entry)
-        images.forEach { insertImage(it.copy(formId = formId)) }
-        return formId
-    }
+//    @Transaction
+//    suspend fun insertFormWithImages(entry: FormEntryEntity, images: List<FormImageEntity>): Long {
+//        val formId = insertEntry(entry)
+//        images.forEach { insertImage(it.copy(formId = formId)) }
+//        return formId
+//    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(activity: FormEntryEntity): Long
@@ -62,11 +62,11 @@ interface FormEntryDao {
     @Insert
     suspend fun insertImage(image: FormImageEntity)
 
-    @Query("SELECT * FROM form_images WHERE formId = :formId")
-    suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
-
-    @Query("SELECT * FROM form_images WHERE formId = :formId")
-    fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>>
+//    @Query("SELECT * FROM form_images WHERE formId = :formId")
+//    suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
+//
+//    @Query("SELECT * FROM form_images WHERE formId = :formId")
+//    fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>>
 
     @Query("UPDATE form_images SET remotePath = :remotePath WHERE id = :id")
     suspend fun updateImageRemotePath(id: Long, remotePath: String)

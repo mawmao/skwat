@@ -145,6 +145,9 @@ data class CollectionTask(
     val imageUrls: List<String>? = null,
 
     @SerialName("dependency_data")
-    val dependencyData: JsonElement? = null
+    val dependencyData: JsonElement? = null,
+
+    @SerialName("form_data")
+    val formData: String? = null
 )
 

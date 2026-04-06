@@ -56,8 +56,9 @@ object FormModule {
         supabaseClient: SupabaseClient,
         authRepository: AuthRepository,
         collectionTaskDao: CollectionTaskDao,
-        cacheDao: CachedFormDetailsDao
-    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao, cacheDao)
+        cacheDao: CachedFormDetailsDao,
+        @Dispatcher(IO) ioDispatcher: CoroutineDispatcher,
+    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao, cacheDao, ioDispatcher)
 
 
     @Provides

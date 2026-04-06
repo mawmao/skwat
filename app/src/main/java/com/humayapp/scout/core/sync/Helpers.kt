@@ -28,7 +28,7 @@ fun Context.syncForegroundInfo() = ForegroundInfo(
     syncWorkNotification(),
 )
 
-fun Context.enqueueSyncWork(entryId: Long? = null) {
+fun Context.enqueueSyncWork(entryId: Int? = null) {
 
     val builder = OneTimeWorkRequestBuilder<FormSyncWorker>()
         .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)

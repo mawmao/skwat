@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.main
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,9 @@ import com.humayapp.scout.feature.auth.data.User
 import com.humayapp.scout.feature.auth.model.AuthResult
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import jakarta.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -34,7 +38,9 @@ class MainSectionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val collectionRepository: CollectionRepository,
     private val notificationRepository: NotificationRepository,
+    private val supabase: SupabaseClient,
     private val networkMonitor: NetworkMonitor,
+    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private var pollingJob: Job? = null
@@ -93,11 +99,47 @@ class MainSectionViewModel @Inject constructor(
             }
             _isOnline.value = initialOnline
             Log.d(LOG_TAG, "Initial network status: $initialOnline")
-            // then collect further updates
+
             networkMonitor.isOnline.collect { online ->
                 _isOnline.value = online
                 Log.d(LOG_TAG, "Network status: ${if (online) "online" else "offline"}")
+
+                if (online) {
+                    viewModelScope.launch {
+                        // restore session if needed
+                        if (authRepository.getRequiresReauth()) {
+                            val restored = authRepository.tryRestoreSession() // suspend function
+                            if (!restored) return@launch // failed, don't sync
+                        }
+
+                        // wait until session is ready
+                        repeat(10) {
+                            if (supabase.auth.currentSessionOrNull() != null) return@repeat
+                            delay(200)
+                        }
+
+                        // now safe to start sync
+                        FormSyncWorker.start(appContext)
+                    }
+                }
             }
+        }
+    }
+
+    private fun handleReconnect() {
+        viewModelScope.launch {
+            if (authRepository.getRequiresReauth()) return@launch
+            if (authRepository.isAuthenticated()) return@launch
+
+            val restored = authRepository.tryRestoreSession()
+            if (!restored) return@launch
+
+            repeat(10) {
+                if (supabase.auth.currentSessionOrNull() != null) return@launch
+                delay(200)
+            }
+
+            refreshTasks()
         }
     }
 

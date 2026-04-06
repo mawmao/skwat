@@ -36,17 +36,17 @@ interface FormRepository {
     suspend fun getPendingSyncOnceForUser(userId: String): List<FormEntryEntity>
     suspend fun markAsSyncedWithStatus(id: Long, timestamp: Instant, status: SyncStatus)
 
-    suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
-    fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>>
+//    suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity>
+//    fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>>
     suspend fun updateImageRemotePath(id: Long, remotePath: String)
 
     suspend fun saveFormEntry(entry: FormEntryEntity): Long
-    suspend fun saveFormWithImages(
-        context: Context,
-        answers: Map<String, Any?>,
-        initialEntry: FormEntryEntity,
-        serializerFn: (Map<String, Any?>) -> String
-    ): Long
+//    suspend fun saveFormWithImages(
+//        context: Context,
+//        answers: Map<String, Any?>,
+//        initialEntry: FormEntryEntity,
+//        serializerFn: (Map<String, Any?>) -> String
+//    ): Long
 
 
     // NOTE: development only
@@ -75,15 +75,15 @@ class FormRepositoryImpl @Inject constructor(
         return formEntryDao.getEntryByIdFlow(id)
     }
 
-    override suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity> {
-        Log.d(TAG, "getImagesOfEntryById(formId = $formId)")
-        return formEntryDao.getImagesOfEntryById(formId)
-    }
-
-    override fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>> {
-        Log.d(TAG, "getImagesOfEntryByIdFlow(formId = $formId)")
-        return formEntryDao.getImagesOfEntryByIdFlow(formId)
-    }
+//    override suspend fun getImagesOfEntryById(formId: Long): List<FormImageEntity> {
+//        Log.d(TAG, "getImagesOfEntryById(formId = $formId)")
+//        return formEntryDao.getImagesOfEntryById(formId)
+//    }
+//
+//    override fun getImagesOfEntryByIdFlow(formId: Long): Flow<List<FormImageEntity>> {
+//        Log.d(TAG, "getImagesOfEntryByIdFlow(formId = $formId)")
+//        return formEntryDao.getImagesOfEntryByIdFlow(formId)
+//    }
 
     override suspend fun updateImageRemotePath(id: Long, remotePath: String) {
         return formEntryDao.updateImageRemotePath(id, remotePath)
@@ -100,28 +100,28 @@ class FormRepositoryImpl @Inject constructor(
     }
 
     // todo: review this sheit
-    override suspend fun saveFormWithImages(
-        context: Context,
-        answers: Map<String, Any?>,
-        initialEntry: FormEntryEntity,
-        serializerFn: (Map<String, Any?>) -> String
-    ): Long = withContext(ioDispatcher) {
-
-        val folder = File(context.filesDir, "forms/${UUID.randomUUID()}").apply { mkdirs() }
-
-        try {
-            val localAnswers = context.saveImagesToFolder(answers, folder)
-            val insertedId = formEntryDao.insertFormWithImages(
-                entry = initialEntry.copy(payloadJson = serializerFn(localAnswers)),
-                images = localAnswers.toFormImages()
-            )
-
-            insertedId
-        } catch (e: Exception) {
-            folder.deleteRecursively()
-            throw e
-        }
-    }
+//    override suspend fun saveFormWithImages(
+//        context: Context,
+//        answers: Map<String, Any?>,
+//        initialEntry: FormEntryEntity,
+//        serializerFn: (Map<String, Any?>) -> String
+//    ): Long = withContext(ioDispatcher) {
+//
+//        val folder = File(context.filesDir, "forms/${UUID.randomUUID()}").apply { mkdirs() }
+//
+//        try {
+//            val localAnswers = context.saveImagesToFolder(answers, folder)
+//            val insertedId = formEntryDao.insertFormWithImages(
+//                entry = initialEntry.copy(payloadJson = serializerFn(localAnswers)),
+//                images = localAnswers.toFormImages()
+//            )
+//
+//            insertedId
+//        } catch (e: Exception) {
+//            folder.deleteRecursively()
+//            throw e
+//        }
+//    }
 
     override suspend fun getPendingSyncOnce(): List<FormEntryEntity> {
         Log.d(TAG, "getPendingSyncOnce()")

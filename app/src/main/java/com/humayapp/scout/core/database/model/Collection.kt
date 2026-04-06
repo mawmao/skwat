@@ -41,4 +41,5 @@ data class CollectionTaskEntity(
     val synced: Boolean = false,
 
     val dependencyData: String? = null,
+    val formData: String? = null
 )

@@ -5,6 +5,11 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
 import kotlin.time.Duration.Companion.hours
 
+sealed class ImageSource {
+    data class Local(val path: String) : ImageSource()
+    data class Remote(val path: String) : ImageSource()
+}
+
 object SupabaseImageHelper {
     suspend fun generateSignedUrls(supabase: SupabaseClient, remotePaths: List<String>): List<String> {
         return remotePaths.map { remotePath ->

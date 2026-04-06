@@ -6,6 +6,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
+import com.humayapp.scout.core.database.model.FormEntryEntity
+import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.network.CollectionTask
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -71,4 +74,54 @@ interface CollectionTaskDao {
 
     @Query("UPDATE collection_tasks SET status = 'completed', collectedBy = :collectorId, collectedAt = :collectedAt WHERE id = :taskId")
     suspend fun markTaskCompleted(taskId: Int, collectorId: String, collectedAt: Instant)
+
+    @Transaction
+    suspend fun completeTaskWithImages(
+        collectionTaskId: Int,
+        collectorId: String,
+        collectedAt: Instant,
+        formData: String,
+        images: List<FormImageEntity>
+    ) {
+        images.forEach { insertImage(it) }
+        markComplete(collectionTaskId, collectorId, collectedAt, formData)
+    }
+
+    @Insert
+    suspend fun insertImage(image: FormImageEntity)
+
+
+    @Query(
+        """
+            UPDATE collection_tasks 
+            SET status = 'completed', 
+                collectedBy = :collectorId, 
+                collectedAt = :collectedAt,
+                formData = :formData,
+                synced = 0
+            WHERE id = :taskId
+        """
+    )
+    suspend fun markComplete(
+        taskId: Int,
+        collectorId: String,
+        collectedAt: Instant,
+        formData: String
+    )
+
+
+    @Query(
+        """
+        UPDATE collection_tasks 
+        SET synced = 1
+        WHERE id = :taskId
+    """
+    )
+    suspend fun markSynced(taskId: Int): Int
+
+    @Query("SELECT * FROM collection_tasks WHERE synced = 0")
+    suspend fun getUnsyncedTasks(): List<CollectionTaskEntity>
+
+    @Query("SELECT * FROM form_images WHERE collectionTaskId = :collectionTaskId")
+    suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity>
 }

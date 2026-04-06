@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.main.collected.impl
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,6 +49,7 @@ fun CollectedScreen(
             ) {
                 items(collectedTasks) { task ->
                     TaskCard(task = task, onClick = {
+                        Log.d("Scout: CollectedScreen", "Navigating to detail screen - task $task")
                         rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
                     })
                 }

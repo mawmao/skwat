@@ -35,7 +35,7 @@ enum class SyncStatus {
 @Entity(tableName = "form_images")
 data class FormImageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val formId: Long,
+    val collectionTaskId: Int,
     val localPath: String,
     val remotePath: String? = null
 )

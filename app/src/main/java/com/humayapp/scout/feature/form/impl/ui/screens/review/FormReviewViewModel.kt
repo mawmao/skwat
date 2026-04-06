@@ -73,73 +73,25 @@ class FormReviewViewModel @AssistedInject constructor(
 
         logAnswers(answers)
 
-        val serialized = formType.serializeAnswers(answers)
-        val serializedString = serialized.toString()
-        Log.d(LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
+        val serializedString = formType.serializeAnswers(answers).toString()
+        Log.d( LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
 
         viewModelScope.launch {
             try {
                 val userId = getAuthenticatedUserId() ?: unreachable("user id in this context can never be null")
                 Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
 
-                val id = formRepository.saveFormWithImages(
-                    answers = answers,
-                    initialEntry = FormEntryEntity(
-                        mfid = mfid,
-                        activityType = formType.id,
-                        collectedBy = userId,
-                        seasonId = answers["season_id"] as Int,
-                        collectionTaskId = collectionTaskId,
-                        payloadJson = "",
-                    ),
+                collectionRepository.saveTaskWithImages(
                     context = context,
-                    serializerFn = { answers -> formType.serializeAnswers(answers).toString() }
+                    answers = answers,
+                    collectionTaskId = collectionTaskId,
+                    userId = userId,
+                    formData = serializedString
                 )
 
-                collectionTaskDao.markTaskCompleted(
-                    taskId = collectionTaskId,
-                    collectorId = userId,
-                    collectedAt = Clock.System.now()
-                )
+                context.enqueueSyncWork(entryId = collectionTaskId)
+                _uiEvent.send(FormReviewEvent.SubmitSuccess)
 
-                val task = collectionRepository.getCollectionTaskById(collectionTaskId)
-                if (task != null) {
-                    val tempEntry = FormEntryEntity(
-                        mfid = mfid,
-                        activityType = formType.id,
-                        collectedBy = userId,
-                        seasonId = answers["season_id"] as Int,
-                        collectionTaskId = collectionTaskId,
-                        payloadJson = serializedString
-                    )
-                    val rawDetails = buildLocalFieldActivityDetails(tempEntry, task, authRepository)
-                    collectionRepository.cacheFormDetailsByTaskId(collectionTaskId, rawDetails, rawDetails.formData)
-                    Log.d(LOG_TAG, "Cached form details by taskId $collectionTaskId")
-                }
-
-                context.enqueueSyncWork(entryId = id)
-
-                val isOnline = authRepository.isOnline()
-                if (isOnline) {
-                    var activityId: Int? = null
-                    var attempts = 0
-                    while (activityId == null && attempts < 10) {
-                        delay(500)
-                        val entry = formRepository.getEntryById(id)
-                        if (entry.syncStatus == SyncStatus.SYNCED) {
-                            val updatedTask = collectionRepository.getCollectionTaskById(collectionTaskId)
-                            activityId = updatedTask?.activityId
-                        }
-                        attempts++
-                    }
-                    if (activityId != null) {
-                        _uiEvent.send(FormReviewEvent.SubmitSuccessAndNavigate(activityId))
-                    } else {
-                        _uiEvent.send(FormReviewEvent.SubmitSuccess)
-                    }
-                } else {
-                    _uiEvent.send(FormReviewEvent.SubmitSuccess)
-                }
             } catch (e: Exception) {
                 Log.e(LOG_TAG, "Database insert failed", e)
             } finally {
