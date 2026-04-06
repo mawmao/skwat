@@ -23,6 +23,11 @@ import com.humayapp.scout.core.ui.component.ScoutGhostButton
 import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 
+import android.Manifest
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageOptionsBottomSheet(
@@ -36,6 +41,21 @@ fun ImageOptionsBottomSheet(
 ) {
     val context = LocalContext.current
     var tempUri by remember { mutableStateOf<Uri?>(null) }
+    var shouldLaunchCamera by remember { mutableStateOf(false) } // added fix
+
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success && tempUri != null && key != null) {
+            onImageResult(tempUri!!)
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && shouldLaunchCamera && tempUri != null && key != null) {
+            takePicture.launch(tempUri!!)
+        }
+        shouldLaunchCamera = false
+    }
 
     val pickGallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null && key != null) {
@@ -43,11 +63,7 @@ fun ImageOptionsBottomSheet(
         }
     }
 
-    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success && tempUri != null && key != null) {
-            onImageResult(tempUri!!)
-        }
-    }
+
 
     if (key != null) {
         ScoutBottomSheet(
@@ -108,7 +124,17 @@ fun ImageOptionsBottomSheet(
                     onClick = {
                         val uri = context.createTempUri()
                         tempUri = uri
-                        takePicture.launch(uri)
+
+                        // Check if camera permission is granted
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED) {
+                            // Permission granted, launch camera
+                            takePicture.launch(uri)
+                        } else {
+                            // Need to request permission first
+                            shouldLaunchCamera = true
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     }
                 )
 

@@ -58,6 +58,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 
+import androidx.compose.ui.platform.LocalContext
+
 val LocalScoutAppState = staticCompositionLocalOf<ScoutAppState> {
     error("No ScoutAppState provided")
 }
@@ -142,7 +144,7 @@ fun ScoutApp(state: ScoutAppState) {
             entryProvider = entryProvider {
                 authSection(metadata = NavTransition.anchoredTop())
                 mainSection(metadata = NavTransition.anchoredBottom())
-                formSection(metadata = NavTransition.anchoredRight())
+                formSection(metadata = NavTransition.anchoredRight() + mapOf("context" to LocalContext.current))
 
                 notificationsEntryProvider(metadata = NavTransition.anchoredRight())
 
