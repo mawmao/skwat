@@ -1,19 +1,25 @@
 package com.humayapp.scout.feature.form.impl.navigation
 
+import android.content.Context
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
+import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.network.util.getDouble
 import com.humayapp.scout.core.network.util.getString
 import com.humayapp.scout.core.ui.component.ScoutConfirmDialog
@@ -24,9 +30,15 @@ import com.humayapp.scout.feature.form.api.navigation.FormWizardNavKey
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.CulturalManagement
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
+import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.rememberFormState
 import com.humayapp.scout.navigation.RootNavKey
 import com.humayapp.scout.navigation.navigateToMain
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.jsonObject
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -36,8 +48,58 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
     entry<RootNavKey.Form>(metadata = metadata) { key ->
 
         val rootNavigator = LocalRootStackNavigator.current
-        val formType = FormType.fromActivityType(key.collectionTask.activityType)
-        val formState = rememberFormState(formType, key.collectionTask.mfid, key.collectionTask.id)
+        val collectionTaskId = key.collectionTaskId
+
+        // Get the application context from metadata
+        val applicationContext = (metadata["context"] as? Context)?.applicationContext
+            ?: throw IllegalStateException("Context not found in metadata")
+
+        // Get repository from Hilt
+        val entryPoint = EntryPointAccessors.fromApplication(
+            applicationContext,
+            CollectionRepositoryEntryPoint::class.java
+        )
+        val collectionRepository = entryPoint.collectionRepository()
+
+        // State for loading and task
+        var collectionTask by remember { mutableStateOf<CollectionTask?>(null) }
+        var isLoading by remember { mutableStateOf(true) }
+        var error by remember { mutableStateOf<String?>(null) }
+
+        // Fetch the task by ID
+        LaunchedEffect(collectionTaskId) {
+            isLoading = true
+            error = null
+            try {
+                collectionTask = collectionRepository.getCollectionTaskById(collectionTaskId)
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
+            }
+        }
+
+        // Show loading state
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@entry
+        }
+
+        // Show error state
+        if (error != null || collectionTask == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Error loading form: ${error ?: "Task not found"}")
+            }
+            return@entry
+        }
+
+        // Now use collectionTask (guaranteed non-null)
+        val task = collectionTask!!
+
+        val formType = FormType.fromActivityType(task.activityType)
+        val formState = rememberFormState(formType, task.mfid, task.id)
         val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormWizardNavKey)
 
         var showExitDialog by remember { mutableStateOf(false) }
@@ -45,7 +107,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         var pendingExitAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
         LaunchedEffect(Unit) {
-            val task = key.collectionTask
+            // FIXED: Use 'task' instead of 'key.collectionTask'
             formState.setFieldData("season_id", task.seasonId)
 
             when (formType) {
@@ -141,4 +203,10 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
             }
         )
     }
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface CollectionRepositoryEntryPoint {
+    fun collectionRepository(): CollectionRepository
 }

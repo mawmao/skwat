@@ -20,7 +20,7 @@ sealed interface RootNavKey : NavKey {
     data object Auth : RootNavKey
 
     @Serializable
-    data class Form(val collectionTask: CollectionTask) : RootNavKey
+    data class Form(val collectionTaskId: Int) : RootNavKey  // ✅ Only ID
 
     @Serializable
     data object Notification : RootNavKey
@@ -47,7 +47,8 @@ sealed class OverlayType {
 fun StackNavigator<NavKey>.navigateToMain() = this.popAll(RootNavKey.Main)
 fun StackNavigator<NavKey>.navigateToAuth() = this.popAll(RootNavKey.Auth)
 
-fun StackNavigator<NavKey>.navigateToForms(task: CollectionTask) = this.push(RootNavKey.Form(task))
+fun StackNavigator<NavKey>.navigateToForms(taskId: Int) =    // ✅ Correct
+    this.push(RootNavKey.Form(taskId)) // ✅ Pass only ID
 
 fun StackNavigator<NavKey>.navigateToNotifications() = this.push(RootNavKey.Notification)
 

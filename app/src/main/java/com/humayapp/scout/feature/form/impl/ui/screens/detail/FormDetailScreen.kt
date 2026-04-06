@@ -113,7 +113,7 @@ fun FormDetailsScreen(
                 isRefreshing = isRefreshing,
                 onRetakeClick = {
                     if (state.retakeAvailable && state.originalTask != null) {
-                        rootNavigator.navigateToForms(state.originalTask)
+                        rootNavigator.navigateToForms(state.originalTask.id)
                     } else if (state.retakePending) {
                         showPendingApprovalDialog = true
                     } else {

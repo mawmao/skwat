@@ -92,7 +92,7 @@ fun PendingScreen(
         },
         onConfirm = {
             selectedTask?.let { task ->
-                rootNavigator.navigateToForms(task)
+                rootNavigator.navigateToForms(task.id)  // Pass the ID
             }
             showSimpleDialog = false
             selectedTask = null
@@ -145,7 +145,7 @@ fun PendingScreen(
                         onClick = {
                             showRetakeDialog = false
                             selectedTask?.let { task ->
-                                rootNavigator.navigateToForms(task)
+                                rootNavigator.navigateToForms(task.id)  // Pass the ID
                             }
                             selectedTask = null
                         }
