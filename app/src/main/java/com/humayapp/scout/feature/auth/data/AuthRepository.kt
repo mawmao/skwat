@@ -77,7 +77,6 @@ class AuthRepository(
         }
     }
 
-
     suspend fun login(email: String, password: String): AuthResult {
         val isOnline = networkMonitor.isOnline.first()
 
