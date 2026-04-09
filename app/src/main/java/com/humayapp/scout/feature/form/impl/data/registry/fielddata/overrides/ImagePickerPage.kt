@@ -70,16 +70,16 @@ fun ImagesPage(page: MonitoringVisit.Images) {
 
     if (actionState is ImageActionState.Cropping) {
         val state = actionState as ImageActionState.Cropping
-        Log.d(LOG_TAG, "Show CropDialog key=${state.fieldKey} uri=${state.uri}")
+        Log.v(LOG_TAG, "Show CropDialog key=${state.fieldKey} uri=${state.uri}")
 
         ImageCropDialog(
             uri = state.uri,
             onDismiss = {
-                Log.d(LOG_TAG, "CropDialog dismissed")
+                Log.v(LOG_TAG, "CropDialog dismissed")
                 actionState = ImageActionState.Idle
             },
             onCropComplete = { croppedUri ->
-                Log.d(LOG_TAG, "Crop complete uri=$croppedUri")
+                Log.v(LOG_TAG, "Crop complete uri=$croppedUri")
                 formState.setFieldData(state.fieldKey, croppedUri.toString())
                 actionState = ImageActionState.Idle
             }

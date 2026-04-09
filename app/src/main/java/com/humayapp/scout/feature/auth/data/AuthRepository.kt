@@ -8,6 +8,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import jakarta.inject.Inject
@@ -24,7 +25,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlin.time.Instant
 
 @Serializable
-data class User(
+data class ScoutUser(
     val id: String,
     val email: String?,
     @SerialName("first_name") val firstName: String? = null,
@@ -39,11 +40,30 @@ data class User(
     val name: String? get() = listOfNotNull(firstName, lastName).joinToString(" ").ifEmpty { null }
 }
 
+fun UserInfo?.toScoutUser(): ScoutUser {
+    val metadata = this?.userMetadata
+    val firstName = (metadata?.get("first_name") as? JsonPrimitive)?.content
+    val lastName = (metadata?.get("last_name") as? JsonPrimitive)?.content
+    val role = (metadata?.get("role") as? JsonPrimitive)?.content
+    val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
+    val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
+    val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
+    return ScoutUser(
+        id = this?.id!!,
+        email = this.email,
+        firstName = firstName,
+        lastName = lastName,
+        role = role,
+        dateOfBirth = dateOfBirth,
+        isActive = isActive
+    )
+}
+
 interface AuthRepository {
     val sessionStatus: Flow<SessionStatus>
-    val currentUser: Flow<User?>
+    val currentUser: Flow<ScoutUser?>
 
-    suspend fun getCurrentUser(): User?
+    suspend fun getCurrentUser(): ScoutUser?
 
     suspend fun isOnline(): Boolean
     suspend fun isOffline(): Boolean
@@ -71,14 +91,14 @@ class SupabaseAuthRepository @Inject constructor(
 
     override val sessionStatus: StateFlow<SessionStatus> = supabaseClient.auth.sessionStatus
 
-    override val currentUser: Flow<User?> = flow {
+    override val currentUser: Flow<ScoutUser?> = flow {
         val storedUser = secureCredentialsRepo.getUser()
         if (storedUser != null) {
             emit(storedUser)
         } else {
             val (storedEmail, _, storedUserId) = secureCredentialsRepo.getStoredCredentials()
             if (storedUserId != null && storedEmail != null) {
-                emit(User(id = storedUserId, email = storedEmail))
+                emit(ScoutUser(id = storedUserId, email = storedEmail))
             }
         }
 
@@ -93,7 +113,7 @@ class SupabaseAuthRepository @Inject constructor(
                     val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
                     val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
                     val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
-                    val user = User(
+                    val user = ScoutUser(
                         id = userInfo?.id!!,
                         email = userInfo.email,
                         firstName = firstName,
@@ -113,12 +133,11 @@ class SupabaseAuthRepository @Inject constructor(
         }
     }.distinctUntilChanged()
 
-    override suspend fun getCurrentUser(): User? = currentUser.first()
+    override suspend fun getCurrentUser(): ScoutUser? = currentUser.first()
 
     override suspend fun tryRestoreSession(): Boolean {
         return try {
             val (email, password, _) = secureCredentialsRepo.getStoredCredentials()
-
             if (email != null && password != null) {
                 supabaseClient.auth.signInWith(Email) {
                     this.email = email
@@ -224,8 +243,7 @@ class SupabaseAuthRepository @Inject constructor(
 
     private suspend fun handleOnlineSignIn(email: String, password: String): AuthResult {
         supabaseClient.auth.signInWith(Email) { this.email = email; this.password = password }
-        val session =
-            supabaseClient.auth.currentSessionOrNull() ?: throw IllegalStateException("Session not established")
+        val session = supabaseClient.auth.currentSessionOrNull() ?: throw IllegalStateException("Session not established")
         val userId = session.user?.id ?: throw IllegalStateException("User ID missing")
         val metadata = session.user?.userMetadata
         val firstName = (metadata?.get("first_name") as? JsonPrimitive)?.content
@@ -234,7 +252,7 @@ class SupabaseAuthRepository @Inject constructor(
         val dateOfBirthString = (metadata?.get("date_of_birth") as? JsonPrimitive)?.content
         val dateOfBirth = dateOfBirthString?.let { LocalDate.parse(it) }
         val isActive = (metadata?.get("is_active") as? JsonPrimitive)?.booleanOrNull
-        val user = User(
+        val user = ScoutUser(
             id = userId,
             email = email,
             firstName = firstName,

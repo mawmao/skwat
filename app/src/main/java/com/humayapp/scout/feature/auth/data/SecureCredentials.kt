@@ -55,15 +55,15 @@ class SecureCredentialsRepository @Inject constructor(
         sharedPreferences.getBoolean("requires_reauth", false)
     }
 
-    suspend fun saveUser(user: User) = withContext(Dispatchers.IO) {
+    suspend fun saveUser(user: ScoutUser) = withContext(Dispatchers.IO) {
         sharedPreferences.edit {
             putString("user_json", Json.encodeToString(user))
         }
     }
 
-    suspend fun getUser(): User? = withContext(Dispatchers.IO) {
+    suspend fun getUser(): ScoutUser? = withContext(Dispatchers.IO) {
         val json = sharedPreferences.getString("user_json", null)
-        json?.let { Json.decodeFromString<User>(it) }
+        json?.let { Json.decodeFromString<ScoutUser>(it) }
     }
 
     suspend fun clearUser() = withContext(Dispatchers.IO) {

@@ -48,13 +48,13 @@ class FieldValidator {
         return when (val result = validator(value, data)) {
             ValidationResult.Valid -> {
                 errors[field.key] = null
-                Log.d(LOG_TAG, "  [OK] ${field.key}")
+                Log.v(LOG_TAG, "  [OK] ${field.key}")
                 true
             }
 
             is ValidationResult.Invalid -> {
                 errors[field.key] = result.message
-                Log.d(LOG_TAG, "  [FAIL] ${field.key}")
+                Log.v(LOG_TAG, "  [FAIL] ${field.key}")
                 false
             }
         }
@@ -62,11 +62,11 @@ class FieldValidator {
 
     fun validatePage(entry: WizardEntry, data: Map<String, Any?>): Boolean {
         var ok = true
-        Log.d(LOG_TAG, "[Validator] Validating ${entry.title}.")
+        Log.v(LOG_TAG, "[Validator] Validating ${entry.title}.")
         entry.fields.forEach { field ->
             if (!validateField(field, data)) ok = false
         }
-        Log.d(LOG_TAG, "[Validator] ${entry.title} is ${if (ok) "valid" else "invalid"}.")
+        Log.v(LOG_TAG, "[Validator] ${entry.title} is ${if (ok) "valid" else "invalid"}.")
         return ok
     }
 

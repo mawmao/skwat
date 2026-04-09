@@ -1,6 +1,7 @@
 package com.humayapp.scout
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -15,32 +16,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
-import com.humayapp.scout.core.SANDBOX_ENABLE
 import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
-import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.jan.supabase.auth.status.SessionStatus
 import jakarta.inject.Inject
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.launch
 
 @OptIn(DelicateCoroutinesApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var authRepository: AuthRepository
+    lateinit var newAuthRepository: NewAuthRepository
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -55,6 +53,7 @@ class MainActivity : ComponentActivity() {
     lateinit var collectionRepository: CollectionRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.i("Scout: MainActivity", "[Core] Launching app.")
 
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -70,46 +69,20 @@ class MainActivity : ComponentActivity() {
             )
         )
 
+        lifecycleScope.launch {
+            newAuthRepository.restoreSession()
+        }
+
         setContent {
 
-            val sessionStatus by authRepository.sessionStatus.collectAsState(initial = null)
-            val isOnline by networkMonitor.isOnline.collectAsState(initial = false)
+            val authState by newAuthRepository.authState.collectAsState(initial = ScoutAuthState.Initializing)
             var targetKey by remember { mutableStateOf<RootNavKey?>(null) }
 
-            LaunchedEffect(Unit) {
-                val requiresReauth = authRepository.getRequiresReauth()
-                if (requiresReauth) {
-                    authRepository.clearSessionOnly()
-                    targetKey = RootNavKey.Auth
-                    return@LaunchedEffect
-                }
-
-                val session = sessionStatus ?: return@LaunchedEffect
-                val networkReady = withTimeoutOrNull(3000L) {
-                    networkMonitor.isOnline.drop(1).first { it }
-                    true
-                } ?: isOnline
-
-                targetKey = when {
-                    SANDBOX_ENABLE -> RootNavKey.Sandbox
-                    session is SessionStatus.Authenticated && networkReady -> RootNavKey.Main
-                    else -> RootNavKey.Auth
-                }
-            }
-
-            LaunchedEffect(targetKey) {
-                when {
-                    targetKey is RootNavKey.Auth -> {
-                        val currentSession = sessionStatus
-                        if (currentSession is SessionStatus.Authenticated) {
-                            authRepository.signOut()
-                        }
-                    }
-                     targetKey is RootNavKey.Main -> {
-                         // TaskPullWorker.start(context = this@MainActivity)
-                         FormSyncWorker.startUpSyncWork()
-                     }
-                }
+            targetKey = when (authState) {
+                is ScoutAuthState.Unauthenticated -> RootNavKey.Auth
+                is ScoutAuthState.AuthenticatedOnline, is ScoutAuthState.AuthenticatedOffline -> RootNavKey.Main
+                is ScoutAuthState.SessionExpired -> RootNavKey.Auth
+                is ScoutAuthState.Initializing -> null
             }
 
             keepSplash = targetKey == null

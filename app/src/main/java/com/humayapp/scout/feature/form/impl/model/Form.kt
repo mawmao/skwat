@@ -1,6 +1,6 @@
 package com.humayapp.scout.feature.form.impl.model
 
-import com.humayapp.scout.feature.auth.data.User
+import com.humayapp.scout.feature.auth.data.ScoutUser
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -114,8 +114,8 @@ data class FieldActivityDetails(
     @SerialName("field_id") val fieldId: Int? = null,
     @SerialName("season_id") val seasonId: Int,
     @SerialName("activity_type") val activityType: String,
-    @SerialName("collected_by") val collectedBy: User? = null,
-    @SerialName("verified_by") val verifiedBy: User? = null,
+    @SerialName("collected_by") val collectedBy: ScoutUser? = null,
+    @SerialName("verified_by") val verifiedBy: ScoutUser? = null,
     @SerialName("remarks") val remarks: String? = null,
     @SerialName("verification_status") val verificationStatus: String? = null,
     @SerialName("collected_at") val collectedAt: Instant?,

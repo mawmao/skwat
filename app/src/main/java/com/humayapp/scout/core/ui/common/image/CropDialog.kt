@@ -100,18 +100,18 @@ fun ImageCropDialog(
         ) {
             CropToolbar(
                 onCancel = {
-                    Log.d(LOG_TAG, "Cancel clicked")
+                    Log.v(LOG_TAG, "Cancel clicked")
                     onDismiss()
                 },
                 onDone = {
-                    Log.d(LOG_TAG, "Done clicked")
-                    Log.d(
+                    Log.v(LOG_TAG, "Done clicked")
+                    Log.v(
                         LOG_TAG,
                         "Crop params scale=${cropState.value.scale} offset=${cropState.value.offset} " +
                                 "container=$containerSize content=$displayedImageSize cropBox=$cropBoxSize"
                     )
                     scope.launch {
-                        Log.d(LOG_TAG, "Crop coroutine start")
+                        Log.v(LOG_TAG, "Crop coroutine start")
                         val cropped = cropImage(
                             context = context,
                             uri = uri.toUri(),
@@ -122,7 +122,7 @@ fun ImageCropDialog(
                             cropBoxSizePx = cropBoxSize,
                             outputSize = IntSize(600, 600)
                         )
-                        Log.d(LOG_TAG, "cropImage result=$cropped")
+                        Log.v(LOG_TAG, "cropImage result=$cropped")
 
                         if (cropped != null) {
                             onCropComplete(cropped)
@@ -139,7 +139,7 @@ fun ImageCropDialog(
                     .weight(1f)
                     .clipToBounds()
                     .onGloballyPositioned { coordinates ->
-                        Log.d(LOG_TAG, "Container size=$containerSize")
+                        Log.v(LOG_TAG, "Container size=$containerSize")
                         containerSize = coordinates.size
                     },
                 contentAlignment = Alignment.Center

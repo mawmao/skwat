@@ -61,6 +61,11 @@ object ScoutButtonDefaults {
 
     val filledContentColor: Color
         @Composable get() = ScoutTheme.material.colorScheme.background
+
+    val iconButtonColors @Composable get() = IconButtonDefaults.iconButtonColors(
+        contentColor = ScoutTheme.material.colorScheme.onBackground,
+        disabledContentColor = ScoutTheme.material.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
+    )
 }
 
 
@@ -288,7 +293,7 @@ fun ScoutIconButton(
     onDoubleTap: (() -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
     @DrawableRes icon: Int = -1,
-    colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+    colors: IconButtonColors = ScoutButtonDefaults.iconButtonColors,
     interactionSource: MutableInteractionSource? = null,
     contentDescription: String?,
     tint: Color = MaterialTheme.colorScheme.onBackground,
@@ -309,7 +314,7 @@ fun ScoutIconButton(
                 modifier = Modifier.size(iconSize),
                 painter = painterResource(icon),
                 contentDescription = contentDescription,
-                tint = tint
+                tint = if (enabled) colors.contentColor else colors.disabledContentColor,
             )
         }
     }

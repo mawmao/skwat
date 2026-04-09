@@ -12,22 +12,16 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.database.model.SyncStatus
 import com.humayapp.scout.core.network.CollectionTask
-import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import com.humayapp.scout.core.system.NetworkMonitor
-import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
-import com.humayapp.scout.feature.form.impl.model.FieldActivityDetails
-import com.humayapp.scout.feature.form.impl.ui.screens.review.FormDataCacheHelper.parseFormData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.storage.storage
@@ -79,7 +73,7 @@ class FormSyncWorker @AssistedInject constructor(
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     private val formRepository: FormRepository,
     private val supabase: SupabaseClient,
-    private val authRepository: AuthRepository,
+    private val newAuthRepository: NewAuthRepository,
     private val networkMonitor: NetworkMonitor,
     private val collectionRepository: CollectionRepository,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
@@ -115,23 +109,35 @@ class FormSyncWorker @AssistedInject constructor(
     }
 
     private suspend fun isReadyToSync(): Boolean {
+        Log.i(LOG_TAG, "[Sync] Checking if device can sync.")
+
         if (!networkMonitor.isOnline.first()) {
-            Log.i(LOG_TAG, "[Sync] Device is offline.")
+            Log.i(LOG_TAG, "    Device is offline. Skipping sync.")
             return false
         }
 
-        if (authRepository.getRequiresReauth()) {
-            Log.i(LOG_TAG, "[Sync] Requires reauth. Skipping sync.")
-            return false
+        val authState = newAuthRepository.authState.first {
+            it !is ScoutAuthState.Initializing
         }
 
-        val session = supabase.auth.currentSessionOrNull()
-        if (session == null) {
-            Log.i(LOG_TAG, "[Sync] No restored Supabase session yet.")
-            return false
+        when (authState) {
+            is ScoutAuthState.AuthenticatedOnline -> {
+                Log.i(LOG_TAG, "    Authenticated online. Proceeding.")
+                return true
+            }
+            is ScoutAuthState.AuthenticatedOffline -> {
+                Log.i(LOG_TAG, "    Offline session. Skipping sync.")
+                return false
+            }
+            is ScoutAuthState.SessionExpired -> {
+                Log.i(LOG_TAG, "    Session expired. Skipping sync.")
+                return false
+            }
+            else -> {
+                Log.i(LOG_TAG, "    Not authenticated. Skipping sync.")
+                return false
+            }
         }
-
-        return true
     }
 
     private suspend fun getPendingEntries(): List<CollectionTask> {
@@ -152,21 +158,20 @@ class FormSyncWorker @AssistedInject constructor(
         return hasError
     }
 
-    private suspend fun syncEntry(entry: CollectionTask): Boolean {
-        val formType = FormType.fromActivityType(entry.activityType)
+    private suspend fun syncEntry(task: CollectionTask): Boolean {
+        val formType = FormType.fromActivityType(task.activityType)
         val timestamp = Clock.System.now()
 
-        Log.d(LOG_TAG, "[Sync] Starting upload for entry MFID ${entry.mfid}.")
+        Log.i(LOG_TAG, "[Sync] Starting sync for task MFID ${task.mfid}.")
         return try {
-            val imageUrls = uploadImages(entry, timestamp)
-            val request = UploadDataRequest.fromEntry(entry, imageUrls)
+            val imageUrls = uploadImages(task, timestamp)
+            val request = UploadDataRequest.fromEntry(task, imageUrls)
             supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
-            Log.d(LOG_TAG, "[Sync] uploadForm returned normally")
-            Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${entry.mfid} - ${formType.label}.")
-            markSynced(entry.id, timestamp)
+            Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${task.mfid} - ${formType.label}.")
+            markSynced(task.id, timestamp)
             true
         } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Sync] Upload failed for MFID ${entry.mfid} - ${formType.label}: ${e.message}.")
+            Log.e(LOG_TAG, "[Sync] Upload failed for MFID ${task.mfid} - ${formType.label}: ${e.message}.")
             false
         }
     }
@@ -201,6 +206,8 @@ class FormSyncWorker @AssistedInject constructor(
             .build()
 
         fun start(context: Context) {
+            Log.i(LOG_TAG, "[Sync] Starting form sync worker.")
+
             val request = OneTimeWorkRequestBuilder<FormSyncWorker>()
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .setConstraints(SyncConstraints)

@@ -2,58 +2,20 @@ package com.humayapp.scout.core.data.notification
 
 import android.util.Log
 import com.humayapp.scout.core.database.dao.NotificationDao
-import com.humayapp.scout.feature.auth.data.AuthRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
 import jakarta.inject.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 class NotificationRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val dao: NotificationDao,
-    private val authRepository: AuthRepository
 ) {
-    private var pollingJob: Job? = null
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    fun startPolling() {
-        pollingJob?.cancel()
-        pollingJob = scope.launch {
-            while (isActive) {
-                fetchNewNotifications()
-                delay(10000)
-            }
-        }
-    }
-
-    fun stopPolling() {
-        pollingJob?.cancel()
-        pollingJob = null
-    }
-
-    private suspend fun fetchNewNotifications() {
-
-        if (!authRepository.isOnline()) {
-            Log.d(LOG_TAG, "Device offline, skipping fetch")
-            return
-        }
-        val userId = authRepository.getCurrentUserId() ?: run {
-            Log.e(LOG_TAG, "fetchNewNotifications: userId is null")
-            return
-        }
-
+    suspend fun pullNotifications(userId: String) {
         val latestTimestamp = dao.getLatestCreatedAt(userId)
-        Log.d(LOG_TAG, "fetchNewNotifications: userId=$userId, latestTimestamp=$latestTimestamp")
-
         val query = supabase.from("notifications").select {
             filter {
                 and {
@@ -74,7 +36,6 @@ class NotificationRepository @Inject constructor(
             emptyList()
         }
 
-        Log.d(LOG_TAG, "Fetched ${newNotifications.size} new notifications")
         if (newNotifications.isNotEmpty()) {
             val entities = newNotifications.map { notif ->
                 notif.copy(userId = userId).toEntity()
@@ -91,8 +52,7 @@ class NotificationRepository @Inject constructor(
         // no remote update – role‑based notifications are not user‑owned
     }
 
-    suspend fun markAllAsRead() {
-        val userId = authRepository.getCurrentUserId() ?: return
+    suspend fun markAllAsRead(userId: String) {
         dao.markAllAsRead(userId)
     }
 

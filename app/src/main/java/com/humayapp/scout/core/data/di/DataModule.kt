@@ -5,7 +5,6 @@ import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.data.settings.SettingsDataSource
 import com.humayapp.scout.core.data.settings.SettingsDataSourceImpl
 import com.humayapp.scout.core.database.dao.NotificationDao
-import com.humayapp.scout.feature.auth.data.AuthRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,8 +28,7 @@ object DataSourceModule {
     fun providesNotificationRepository(
         supabase: SupabaseClient,
         dao: NotificationDao,
-        authRepository: AuthRepository
     ): NotificationRepository {
-        return NotificationRepository(supabase, dao, authRepository)
+        return NotificationRepository(supabase, dao)
     }
 }

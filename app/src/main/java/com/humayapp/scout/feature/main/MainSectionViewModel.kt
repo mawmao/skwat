@@ -4,46 +4,55 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.network.CollectionTask
-import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
-import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.auth.data.User
-import com.humayapp.scout.feature.auth.model.AuthResult
+import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.ScoutAuthState
+import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.data.ensureSession
+import com.humayapp.scout.feature.auth.data.toScoutUser
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.auth
 import jakarta.inject.Inject
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
 @HiltViewModel
 class MainSectionViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
     private val collectionRepository: CollectionRepository,
     private val notificationRepository: NotificationRepository,
-    private val supabase: SupabaseClient,
     private val networkMonitor: NetworkMonitor,
+    private val newAuthRepository: NewAuthRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
-    private var pollingJob: Job? = null
     private val pollingInterval = 15.seconds
 
     private val _uiState = MutableStateFlow(MainSectionUiState())
@@ -55,8 +64,8 @@ class MainSectionViewModel @Inject constructor(
     private val _uiEvent = Channel<MainSectionEvent>(Channel.BUFFERED)
     val uiEvent = _uiEvent.receiveAsFlow()
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+    private val _currentUser = MutableStateFlow<ScoutUser?>(null)
+    val currentUser: StateFlow<ScoutUser?> = _currentUser.asStateFlow()
 
     private val _isOnline = MutableStateFlow(false)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
@@ -64,26 +73,37 @@ class MainSectionViewModel @Inject constructor(
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications = _notifications.asStateFlow()
 
+    private val _authState = MutableStateFlow<ScoutAuthState>(ScoutAuthState.Initializing)
+    val authState = _authState.asStateFlow()
+
     init {
         observeNetworkState()
-        observeAuthState()
         observeTasks()
-        startPolling()
-
-        viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId() ?: return@launch
-            notificationRepository.startPolling()
-            notificationRepository.getLocalNotifications(userId).collect { local ->
-                _notifications.value = local
-            }
-        }
+        observeAuthState()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     private fun observeAuthState() {
         viewModelScope.launch {
-            authRepository.currentUser.collect { user ->
-                _currentUser.value = user
-            }
+            newAuthRepository.authState
+                .onEach { state ->
+                    _authState.value = state
+                    val user = when (state) {
+                        is ScoutAuthState.AuthenticatedOnline -> state.session.user
+                        is ScoutAuthState.AuthenticatedOffline -> state.session?.user
+                        else -> null
+                    }
+                    _currentUser.value = user?.toScoutUser()
+                }
+                .flatMapLatest { state ->
+                    if (state is ScoutAuthState.AuthenticatedOnline) {
+                        pollWhenOnline(state.session.user?.id ?: unreachable("should always have an id"))
+                    } else {
+                        emptyFlow()
+                    }
+                }
+                .debounce(100.milliseconds)
+                .collect()
         }
     }
 
@@ -92,54 +112,14 @@ class MainSectionViewModel @Inject constructor(
             val initialOnline = withTimeoutOrNull(2000L) {
                 networkMonitor.isOnline.first { it }
             } ?: run {
-                // fallback: use ConnectivityManager directly
-                // val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                // cm.activeNetwork != null
                 false
             }
+
             _isOnline.value = initialOnline
-            Log.d(LOG_TAG, "Initial network status: $initialOnline")
 
             networkMonitor.isOnline.collect { online ->
                 _isOnline.value = online
-                Log.d(LOG_TAG, "Network status: ${if (online) "online" else "offline"}")
-
-                if (online) {
-                    viewModelScope.launch {
-                        // restore session if needed
-                        if (authRepository.getRequiresReauth()) {
-                            val restored = authRepository.tryRestoreSession() // suspend function
-                            if (!restored) return@launch // failed, don't sync
-                        }
-
-                        // wait until session is ready
-                        repeat(10) {
-                            if (supabase.auth.currentSessionOrNull() != null) return@repeat
-                            delay(200)
-                        }
-
-                        // now safe to start sync
-                        FormSyncWorker.start(appContext)
-                    }
-                }
             }
-        }
-    }
-
-    private fun handleReconnect() {
-        viewModelScope.launch {
-            if (authRepository.getRequiresReauth()) return@launch
-            if (authRepository.isAuthenticated()) return@launch
-
-            val restored = authRepository.tryRestoreSession()
-            if (!restored) return@launch
-
-            repeat(10) {
-                if (supabase.auth.currentSessionOrNull() != null) return@launch
-                delay(200)
-            }
-
-            refreshTasks()
         }
     }
 
@@ -171,15 +151,15 @@ class MainSectionViewModel @Inject constructor(
                 return@launch
             }
 
-            if (!authRepository.isAuthenticated()) {
+            if (_authState.value == ScoutAuthState.Unauthenticated) {
                 _uiError.update { "You are not logged in. Please sign in again." }
                 return@launch
             }
 
             _uiState.update { it.copy(isRefreshing = true) }
             try {
-                FormSyncWorker.startUpSyncWork()
-                collectionRepository.pullTasksFromSupabaseForCurrentUser()
+                // FormSyncWorker.startUpSyncWork()
+                // collectionRepository.pullTasks()
                 delay(300)
             } catch (e: Exception) {
                 Log.e("Scout: MainSectionViewModel", "Refresh error:", e)
@@ -192,59 +172,45 @@ class MainSectionViewModel @Inject constructor(
 
     fun onAction(action: MainSectionAction) {
         when (action) {
-            is MainSectionAction.LogoutRequest -> onLogout()
+            is MainSectionAction.LogoutRequest -> viewModelScope.launch {
+                newAuthRepository.logout()
+                _uiEvent.send(MainSectionEvent.LogoutSuccess)
+            }
+
             is MainSectionAction.ClearUiError -> _uiError.update { null }
             is MainSectionAction.ToggleProfile -> _uiState.update { it.copy(isProfileShown = action.isVisible) }
         }
     }
 
-    private fun onLogout() {
-        viewModelScope.launch {
-            when (val result = authRepository.signOut()) {
-                is AuthResult.Success, is AuthResult.SuccessOffline -> _uiEvent.send(MainSectionEvent.LogoutSuccess)
-                else -> _uiError.update { result.message }
+    private fun pollWhenOnline(userId: String): Flow<Unit> = flow {
+        pullTaskAndNotifications(userId)
+        while (true) {
+            delay(pollingInterval)
+            if (networkMonitor.isOnline.first()) {
+                pullTaskAndNotifications(userId)
             }
         }
     }
 
-    private fun startPolling() {
-        pollingJob?.cancel()
-        pollingJob = viewModelScope.launch {
-            // listen for network becoming online
-            launch {
-                _isOnline.collect { isOnline ->
-                    if (isOnline && authRepository.isAuthenticated()) {
-                        pullTasks()
-                    }
-                }
-            }
-            // periodic polling fallback
-            while (isActive) {
-                delay(pollingInterval)
-                if (_isOnline.value && authRepository.isAuthenticated()) {
-                    pullTasks()
-                }
-            }
-        }
-    }
-
-    private suspend fun pullTasks() {
+    private suspend fun pullTaskAndNotifications(userId: String) {
         try {
-            collectionRepository.pullTasksFromSupabaseForCurrentUser()
-            Log.d(LOG_TAG, "Polling: tasks pulled successfully")
+            ensureSession(onSessionExpired = ::handleSessionExpired) {
+                collectionRepository.pullTasks(userId)
+                notificationRepository.pullNotifications(userId)
+            }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(LOG_TAG, "Polling failed", e)
         }
     }
 
-    private fun stopPolling() {
-        pollingJob?.cancel()
-        pollingJob = null
-    }
+    private suspend fun handleSessionExpired() {
+        Log.d(LOG_TAG, "    Handling session expiration. Logging out user. Emitting event to UI.")
 
-    override fun onCleared() {
-        super.onCleared()
-        stopPolling()
+        newAuthRepository.logout()
+        withContext(NonCancellable) {
+            _uiEvent.send(MainSectionEvent.SessionExpired)
+        }
     }
 
     companion object {
@@ -267,4 +233,5 @@ sealed interface MainSectionAction {
 
 sealed class MainSectionEvent {
     object LogoutSuccess : MainSectionEvent()
+    object SessionExpired : MainSectionEvent()
 }

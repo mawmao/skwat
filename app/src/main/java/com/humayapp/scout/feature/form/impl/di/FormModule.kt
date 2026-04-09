@@ -11,7 +11,6 @@ import com.humayapp.scout.core.database.dao.CityMunicipalityDao
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.dao.FormEntryDao
 import com.humayapp.scout.core.database.dao.ProvinceDao
-import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepositoryImpl
 import com.humayapp.scout.feature.form.impl.data.repository.CoordinatesRepository
@@ -54,11 +53,10 @@ object FormModule {
     @Singleton
     fun provideCollectionsRepository(
         supabaseClient: SupabaseClient,
-        authRepository: AuthRepository,
         collectionTaskDao: CollectionTaskDao,
         cacheDao: CachedFormDetailsDao,
         @Dispatcher(IO) ioDispatcher: CoroutineDispatcher,
-    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, authRepository, collectionTaskDao, cacheDao, ioDispatcher)
+    ): CollectionRepository = CollectionRepositoryImpl(supabaseClient, collectionTaskDao, cacheDao, ioDispatcher)
 
 
     @Provides

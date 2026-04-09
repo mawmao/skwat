@@ -42,9 +42,9 @@ fun ImageBox(
                     onError = { _, throwable ->
                         Log.e("Scout: ImageBox", "Failed to load image: $uri", throwable.throwable)
                     },
-                    onStart = { Log.d("Scout: ImageBox", "Starting load: $uri") },
+                    onStart = { Log.v("Scout: ImageBox", "Starting load: $uri") },
                     onSuccess = {  _, _ ->
-                        Log.d("Scout: ImageBox", "Success loading: $uri")
+                        Log.v("Scout: ImageBox", "Success loading: $uri")
                     }
                 )
                 .build()

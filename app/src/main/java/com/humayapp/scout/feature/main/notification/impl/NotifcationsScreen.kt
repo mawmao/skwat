@@ -47,7 +47,7 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
     val rootNavigator = LocalRootStackNavigator.current
 
     LaunchedEffect(Unit) {
-        viewModel.markAllAsRead()
+        // viewModel.markAllAsRead()
     }
 
     Scaffold(

@@ -49,10 +49,11 @@ fun MainSectionTopAppBar(
     currentKey: NavKey,
     modifier: Modifier = Modifier,
     onProfileClick: () -> Unit,
+    canRefresh: Boolean = false,
     isRefreshing: Boolean = false,
     onRefreshClick: () -> Unit,
     onNotificationsClick: () -> Unit,
-    unreadCount: Int = 0
+    unreadCount: Int = 0,
 ) {
     val maxTitleHeight = 48.dp
 
@@ -126,6 +127,7 @@ fun MainSectionTopAppBar(
                     )
                 } else {
                     ScoutIconButton(
+                        enabled = canRefresh,
                         onClick = onRefreshClick,
                         icon = ScoutIcons.Sync,
                         contentDescription = "Refresh Icon Button"

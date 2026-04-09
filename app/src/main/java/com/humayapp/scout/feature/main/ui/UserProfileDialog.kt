@@ -18,14 +18,14 @@ import com.humayapp.scout.core.ui.component.ScoutDialog
 import com.humayapp.scout.core.ui.component.ScoutTextButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.theme.ScoutTypography
-import com.humayapp.scout.feature.auth.data.User
+import com.humayapp.scout.feature.auth.data.ScoutUser
 import java.util.Locale.getDefault
 
 @Composable
 fun UserProfileDialog(
     modifier: Modifier = Modifier,
     isVisible: Boolean,
-    user: User?,
+    user: ScoutUser?,
     onDismissRequest: () -> Unit,
     onSignOut: () -> Unit
 ) {

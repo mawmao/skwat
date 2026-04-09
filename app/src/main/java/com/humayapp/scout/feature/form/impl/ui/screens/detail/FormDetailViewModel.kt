@@ -1,19 +1,11 @@
 package com.humayapp.scout.feature.form.impl.ui.screens.detail
 
 import android.util.Log
-import android.webkit.ConsoleMessage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil3.decode.ImageSource
-import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.network.util.SupabaseImageHelper
-import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.auth.data.User
-import com.humayapp.scout.feature.form.api.barangay
-import com.humayapp.scout.feature.form.api.province
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
-import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.feature.form.impl.model.CulturalManagementForm
 import com.humayapp.scout.feature.form.impl.model.DamageAssessmentForm
 import com.humayapp.scout.feature.form.impl.model.FieldActivityDetails
@@ -27,17 +19,10 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.storage.storage
-import io.ktor.client.request.forms.formData
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -47,7 +32,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.hours
 import kotlin.uuid.ExperimentalUuidApi
 
 @HiltViewModel(assistedFactory = FormDetailsViewModel.Factory::class)

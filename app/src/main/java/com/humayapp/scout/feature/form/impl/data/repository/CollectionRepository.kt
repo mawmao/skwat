@@ -5,30 +5,18 @@ import com.humayapp.scout.core.database.dao.CachedFormDetailsDao
 import android.util.Log
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
-import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.converters.toDomain
 import com.humayapp.scout.core.database.converters.toEntity
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.model.CachedFormDetailsEntity
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
-import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
 import com.humayapp.scout.core.network.CollectionTask
-import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import com.humayapp.scout.core.system.saveImagesToFolder
-import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.form.impl.model.CulturalManagementForm
-import com.humayapp.scout.feature.form.impl.model.DamageAssessmentForm
 import com.humayapp.scout.feature.form.impl.model.FieldActivityDetails
-import com.humayapp.scout.feature.form.impl.model.FieldDataForm
-import com.humayapp.scout.feature.form.impl.model.FormData
-import com.humayapp.scout.feature.form.impl.model.NutrientManagementForm
-import com.humayapp.scout.feature.form.impl.model.ProductionForm
-import com.humayapp.scout.feature.form.impl.model.formDataJson
 import com.humayapp.scout.feature.form.impl.model.toFormImages
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
-import io.ktor.utils.io.ioDispatcher
 import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -36,7 +24,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
 import java.util.UUID
 import kotlin.time.Clock
@@ -45,7 +32,7 @@ import kotlin.uuid.ExperimentalUuidApi
 interface CollectionRepository {
     fun getAllCollectionTasks(): Flow<List<CollectionTask>>
     suspend fun getCollectionTaskById(taskId: Int): CollectionTask?
-    suspend fun pullTasksFromSupabaseForCurrentUser()
+    suspend fun pullTasks(userId: String)
     suspend fun getRetakeTaskByOriginalId(
         originalId: Int,
         status: String,
@@ -76,15 +63,13 @@ interface CollectionRepository {
 
     suspend fun markSynced(collectionTaskId: Int): Int
 
-    suspend fun getDetailsFromSupabase(collectionTaskId: Int): FieldActivityDetails
-
     suspend fun getCollectionTaskFromSupabase(taskId: Int): CollectionTask?
     suspend fun upsertCollectionTask(task: CollectionTask)
 }
 
 class CollectionRepositoryImpl @Inject constructor(
     private val supabaseClient: SupabaseClient,
-    private val authRepository: AuthRepository,
+//    private val authRepository: AuthRepository,
     private val collectionTaskDao: CollectionTaskDao,
     private val cacheDao: CachedFormDetailsDao,
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
@@ -176,8 +161,7 @@ class CollectionRepositoryImpl @Inject constructor(
 
 
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun pullTasksFromSupabaseForCurrentUser() {
-        val userId = authRepository.getCurrentUserId() ?: return
+    override suspend fun pullTasks(userId: String) {
         val remoteTasks = supabaseClient
             .from("collection_details")
             .select { filter { eq("collector_id", userId) } }
@@ -186,11 +170,9 @@ class CollectionRepositoryImpl @Inject constructor(
         val localTasks = collectionTaskDao.getAllTasksList()
         val localTaskMap = localTasks.associateBy { it.id }
 
-        // 1. Upsert tasks that are present remotely (or keep local completed if remote is pending)
         val tasksToUpsert = mutableListOf<CollectionTaskEntity>()
         for (remote in remoteTasks) {
             val local = localTaskMap[remote.id]
-            // If local is completed and remote is pending, keep local completed version
             if (local != null && local.status == "completed" && remote.status == "pending") {
                 continue
             }
@@ -203,7 +185,6 @@ class CollectionRepositoryImpl @Inject constructor(
             collectionTaskDao.insertAll(tasksToUpsert)
         }
 
-        // 2. Delete local tasks that are no longer assigned to this user (not in remote list) AND are not completed
         val remoteIds = remoteTasks.map { it.id }.toSet()
         val tasksToDelete = localTasks.filter { local ->
             local.id !in remoteIds && local.status != "completed"
@@ -211,7 +192,6 @@ class CollectionRepositoryImpl @Inject constructor(
         if (tasksToDelete.isNotEmpty()) {
             val idsToDelete = tasksToDelete.map { it.id }
             collectionTaskDao.deleteTasksByIds(idsToDelete)
-            // Optionally delete associated images and files
             deleteAssociatedImagesForTasks(idsToDelete)
         }
     }
@@ -227,15 +207,16 @@ class CollectionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDetailsFromSupabase(collectionTaskId: Int): FieldActivityDetails {
-        val userId =
-            authRepository.getCurrentUserId() ?: unreachable("there should be a user when calling this function")
-        val fa = supabaseClient
-            .from("field_activity_details")
-            .select { filter { eq("collection_task_id", userId) } }
-            .decodeSingle<FieldActivityDetails>()
-        return fa
-    }
+//    override suspend fun getDetailsFromSupabase(collectionTaskId: Int): FieldActivityDetails {
+//        val userId =
+//            authRepository.getCurrentUserId() ?: unreachable("there should be a user when calling this function")
+//
+//        val fa = supabaseClient
+//            .from("field_activity_details")
+//            .select { filter { eq("collection_task_id", userId) } }
+//            .decodeSingle<FieldActivityDetails>()
+//        return fa
+//    }
 
     override suspend fun getRetakeTaskByOriginalId(
         originalId: Int,

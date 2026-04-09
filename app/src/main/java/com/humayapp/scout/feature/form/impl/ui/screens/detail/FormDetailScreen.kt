@@ -215,17 +215,17 @@ private fun FormDetailsContent(
 //                }
             )
         },
-        floatingActionButton = {
-            if (task.verificationStatus == "rejected") {
-                FloatingActionButton(
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
-                    modifier = Modifier.padding(ScoutTheme.spacing.mediumLarge),
-                    onClick = onRetakeClick
-                ) {
-                    Text(text = "Retake Form", modifier = Modifier.padding(horizontal = ScoutTheme.spacing.medium))
-                }
-            }
-        }
+//        floatingActionButton = {
+//            if (task.verificationStatus == "rejected") {
+//                FloatingActionButton(
+//                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp),
+//                    modifier = Modifier.padding(ScoutTheme.spacing.mediumLarge),
+//                    onClick = onRetakeClick
+//                ) {
+//                    Text(text = "Retake Form", modifier = Modifier.padding(horizontal = ScoutTheme.spacing.medium))
+//                }
+//            }
+//        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier

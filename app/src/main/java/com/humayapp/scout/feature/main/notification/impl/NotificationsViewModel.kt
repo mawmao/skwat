@@ -1,44 +1,134 @@
 package com.humayapp.scout.feature.main.notification.impl
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
-import com.humayapp.scout.feature.auth.data.AuthRepository
+import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.ScoutAuthState
+import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.data.ensureSession
+import com.humayapp.scout.feature.auth.data.toScoutUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
-    private val authRepository: AuthRepository
+    private val networkMonitor: NetworkMonitor,
+    private val newAuthRepository: NewAuthRepository
 ) : ViewModel() {
+
+    private val pollingInterval = 15.seconds
 
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications = _notifications.asStateFlow()
 
+    private val _isOnline = MutableStateFlow(false)
+    private val _authState = MutableStateFlow<ScoutAuthState>(ScoutAuthState.Initializing)
+    private val _currentUser = MutableStateFlow<ScoutUser?>(null)
+
     init {
+        observeNetworkState()
+        observeAuthState()
+
         viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId() ?: return@launch
-            notificationRepository.startPolling()
-            notificationRepository.getLocalNotifications(userId).collect { local ->
-                _notifications.value = local
+            val userId = _currentUser.value?.id
+            if (userId != null) {
+                notificationRepository.getLocalNotifications(userId).collect { local ->
+                    _notifications.value = local
+                }
             }
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        notificationRepository.stopPolling()
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    private fun observeAuthState() {
+        viewModelScope.launch {
+            newAuthRepository.authState.onEach { state ->
+                _authState.value = state
+                val user = when (state) {
+                    is ScoutAuthState.AuthenticatedOffline -> state.session?.user
+                    is ScoutAuthState.SessionExpired -> state.session?.user
+                    else -> null
+                }
+                _currentUser.value = user?.toScoutUser()
+            }.flatMapLatest { state ->
+                if (state is ScoutAuthState.AuthenticatedOnline) {
+                    pollWhenOnline(state.session.user?.id ?: unreachable("should always have an id"))
+                } else {
+                    emptyFlow()
+                }
+            }
+                .debounce(100.milliseconds)
+                .collect()
+        }
     }
 
-    fun markAllAsRead() {
+    private fun observeNetworkState() {
         viewModelScope.launch {
-            notificationRepository.markAllAsRead()
+            val initialOnline = withTimeoutOrNull(2000L) {
+                networkMonitor.isOnline.first { it }
+            } ?: run {
+                // fallback: use ConnectivityManager directly
+                // val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                // cm.activeNetwork != null
+                false
+            }
+            _isOnline.value = initialOnline
+
+            networkMonitor.isOnline.collect { online ->
+                _isOnline.value = online
+            }
+        }
+    }
+
+    private fun pollWhenOnline(userId: String): Flow<Unit> = flow {
+        pullNotifications(userId)
+        while (true) {
+            delay(pollingInterval)
+            if (networkMonitor.isOnline.first()) {
+                pullNotifications(userId)
+            }
+        }
+    }
+
+    private suspend fun pullNotifications(userId: String) {
+        try {
+            ensureSession(onSessionExpired = newAuthRepository::logout) {
+                notificationRepository.pullNotifications(userId)
+            }
+            Log.d(LOG_TAG, "Polling: tasks pulled successfully")
+        } catch (e: Exception) {
+            Log.e(LOG_TAG, "Polling failed", e)
+        }
+    }
+
+    fun markAllAsRead(userId: String) {
+        viewModelScope.launch {
+            notificationRepository.markAllAsRead(userId)
         }
     }
 
@@ -46,5 +136,9 @@ class NotificationsViewModel @Inject constructor(
         viewModelScope.launch {
             notificationRepository.markAsRead(id)
         }
+    }
+
+    companion object {
+        private const val LOG_TAG = "Scout: NotificationsViewModel"
     }
 }

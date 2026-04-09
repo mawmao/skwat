@@ -128,8 +128,8 @@ suspend fun cropImage(
             return@withContext null
         }
 
-        Log.d("Scout: Crop", "EXIF orientation: $exifOrientation")
-        Log.d("Scout: Crop", "Bitmap: ${rotatedBitmap.width}x${rotatedBitmap.height}, " +
+        Log.v("Scout: Crop", "EXIF orientation: $exifOrientation")
+        Log.v("Scout: Crop", "Bitmap: ${rotatedBitmap.width}x${rotatedBitmap.height}, " +
                 "Crop region: left=$srcLeft, top=$srcTop, w=$srcW, h=$srcH")
 
         val cropped = Bitmap.createBitmap(rotatedBitmap, srcLeft, srcTop, srcW, srcH)

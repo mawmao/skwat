@@ -26,11 +26,10 @@ val LocalStackNavigator = staticCompositionLocalOf<StackNavigator<NavKey>> {
 // Created for logging purposes
 @Composable
 fun <T : NavKey> rememberStackNavigator(id: String, initialKey: T): StackNavigator<T> {
-
-    Log.d(createLogTag(id), "Created [$id] navigator")
+    Log.v(createLogTag(id), "[Navigator] Created $id navigator")
     DisposableEffect(Unit) {
         onDispose {
-            Log.d(createLogTag(id), "Disposed [$id] navigator")
+            Log.v(createLogTag(id), "[Navigator] Disposed $id navigator")
         }
     }
 
@@ -77,22 +76,22 @@ open class StackNavigator<T: NavKey>(
         val currentKey = "Current: ${current.toString().removeSuffix(suffix)}"
         val currentStack = "Stack: $entries"
 
-        Log.d(
+        Log.v(
             createLogTag(id),
-            "[$id] navigator\n    $currentAction\n    $currentKey\n    $currentStack"
+            "[Navigator] $id navigator\n    $currentAction\n    $currentKey\n    $currentStack"
         )
     }
 
     fun push(route: T) {
         if (!canNavigate()) return
         stack.add(route)
-//        logStack(action = "Push(${route.toString().removeSuffix("NavKey")})")
+        logStack(action = "Push(${route.toString().removeSuffix("NavKey")})")
     }
 
     fun pop(): T? {
         if (!canNavigate() || stack.isEmpty())  return null
         val removed = stack.removeAt(stack.lastIndex)
-//        logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
+        logStack("Pop(${removed.toString().removeSuffix("NavKey")})")
         return removed
     }
 
@@ -100,6 +99,6 @@ open class StackNavigator<T: NavKey>(
         if (!canNavigate()) return
         stack.clear()
         stack.add(route)
-//        logStack("popAll(${route.toString().removeSuffix("NavKey")})")
+        logStack("popAll(${route.toString().removeSuffix("NavKey")})")
     }
 }
