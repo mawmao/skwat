@@ -9,11 +9,9 @@ import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
 import com.humayapp.scout.feature.auth.data.OfflineAuthDataStore
 import com.humayapp.scout.feature.auth.data.SecureCredentialsRepository
 import com.humayapp.scout.feature.auth.data.SessionDataStore
-import com.humayapp.scout.feature.auth.data.SupabaseAuthRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +19,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import jakarta.inject.Singleton
-import kotlinx.coroutines.CoroutineScope
 import kotlin.jvm.java
 
 private val Context.userPrefsStore by preferencesDataStore(name = "session_store")
@@ -58,25 +55,12 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun providesAuthRepository(
-        supabaseClient: SupabaseClient,
-        secureCredentialsRepository: SecureCredentialsRepository,
-        networkMonitor: NetworkMonitor
-    ): AuthRepository =
-        SupabaseAuthRepository(
-            supabaseClient = supabaseClient,
-            secureCredentialsRepo = secureCredentialsRepository,
-            networkMonitor = networkMonitor
-        )
-
-    @Provides
-    @Singleton
     fun providesNewAuthRepository(
         supabase: SupabaseClient,
         store: SessionDataStore,
         offlineAuthDataStore: OfflineAuthDataStore,
         networkMonitor: NetworkMonitor,
-    ): NewAuthRepository = NewAuthRepository(supabase, store, offlineAuthDataStore, networkMonitor)
+    ): AuthRepository = AuthRepository(supabase, store, offlineAuthDataStore, networkMonitor)
 
     @Provides
     @Singleton

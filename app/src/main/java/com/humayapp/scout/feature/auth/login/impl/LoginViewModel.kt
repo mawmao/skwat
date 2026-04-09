@@ -1,14 +1,12 @@
 package com.humayapp.scout.feature.auth.login.impl
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.sync.FormSyncWorker
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
-import com.humayapp.scout.feature.auth.data.UserPreferencesRepository
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.model.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,8 +22,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val newAuthRepository: NewAuthRepository,
+    private val authRepository: AuthRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -51,31 +48,6 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    //    private fun onLogin() {
-//        viewModelScope.launch {
-//            updateLoggingIn(true)
-//            val email = emailState.text.toString()
-//            val password = passwordState.text.toString()
-//
-//            when (val result = authRepository.signIn(email, password)) {
-//                is AuthResult.Success -> {
-//                    userPreferencesRepository.saveLastUsedEmail(email)
-//                    emailState.clearText()
-//                    passwordState.clearText()
-//                    FormSyncWorker.start(appContext)
-//                    _uiEvent.send(LoginUiEvent.LoginSuccess)
-//                }
-//                is AuthResult.SuccessOffline -> {
-//                    userPreferencesRepository.saveLastUsedEmail(email)
-//                    emailState.clearText()
-//                    passwordState.clearText()
-//                    _uiEvent.send(LoginUiEvent.LoginSuccess)
-//                }
-//                else -> _uiError.update { result.message }
-//            }
-//            updateLoggingIn(false)
-//        }
-//    }
     private fun onLogin() {
         viewModelScope.launch {
             updateLoggingIn(true)
@@ -83,7 +55,7 @@ class LoginViewModel @Inject constructor(
             val email = emailState.text.toString()
             val password = passwordState.text.toString()
 
-            when (val result = newAuthRepository.login(email, password)) {
+            when (val result = authRepository.login(email, password)) {
                 is AuthResult.Success -> {
                     emailState.clearText()
                     passwordState.clearText()

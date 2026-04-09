@@ -7,12 +7,13 @@ import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.system.NetworkMonitor
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.data.ensureSession
-import com.humayapp.scout.feature.auth.data.toScoutUser
+import com.humayapp.scout.feature.auth.model.toScoutUser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.jan.supabase.exceptions.HttpRequestException
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,7 +39,7 @@ import kotlin.time.Duration.Companion.seconds
 class NotificationsViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
-    private val newAuthRepository: NewAuthRepository
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val pollingInterval = 15.seconds
@@ -67,7 +69,7 @@ class NotificationsViewModel @Inject constructor(
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun observeAuthState() {
         viewModelScope.launch {
-            newAuthRepository.authState.onEach { state ->
+            authRepository.authState.onEach { state ->
                 _authState.value = state
                 val user = when (state) {
                     is ScoutAuthState.AuthenticatedOffline -> state.session?.user
@@ -117,12 +119,17 @@ class NotificationsViewModel @Inject constructor(
 
     private suspend fun pullNotifications(userId: String) {
         try {
-            ensureSession(onSessionExpired = newAuthRepository::logout) {
+            ensureSession(onSessionExpired = authRepository::logout) {
                 notificationRepository.pullNotifications(userId)
             }
             Log.d(LOG_TAG, "Polling: tasks pulled successfully")
+        } catch (e: CancellationException) {
+            Log.w(LOG_TAG, "[Poll] Polling cancelled because user left or app backgrounded.")
+            throw e
+        } catch (e: HttpRequestException) {
+            Log.w(LOG_TAG, "[Poll] Network error during polling: ${e.message}")
         } catch (e: Exception) {
-            Log.e(LOG_TAG, "Polling failed", e)
+            Log.e(LOG_TAG, "[Poll] Unexpected polling failure", e)
         }
     }
 

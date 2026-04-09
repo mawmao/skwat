@@ -1,6 +1,9 @@
 package com.humayapp.scout
 
 import android.app.Application
+import android.util.Log
+import androidx.compose.runtime.Composer
+import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import coil3.ImageLoader
@@ -34,9 +37,11 @@ class ScoutApplication : Application(), Configuration.Provider, SingletonImageLo
 
     override fun onCreate() {
         super.onCreate()
+        Log.i("Scout: Application", "[Core] Launching app.")
+
         Sync.initialize(context = this)
 
-//        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
     }
 
     override fun onTerminate() {

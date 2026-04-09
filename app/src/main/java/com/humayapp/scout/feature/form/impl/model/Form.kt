@@ -1,6 +1,6 @@
 package com.humayapp.scout.feature.form.impl.model
 
-import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

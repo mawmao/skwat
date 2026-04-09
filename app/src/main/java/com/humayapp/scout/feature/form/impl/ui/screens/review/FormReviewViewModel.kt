@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.sync.enqueueSyncWork
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import dagger.assisted.Assisted
@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel(assistedFactory = FormReviewViewModel.Factory::class)
 class FormReviewViewModel @AssistedInject constructor(
-    private val newAuthRepository: NewAuthRepository,
+    private val authRepository: AuthRepository,
     private val collectionRepository: CollectionRepository,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
@@ -56,7 +56,7 @@ class FormReviewViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             try {
-                val userId = newAuthRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")
+                val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")
                 Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
 
                 collectionRepository.saveTaskWithImages(

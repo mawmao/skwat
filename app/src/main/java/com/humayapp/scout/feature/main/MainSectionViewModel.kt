@@ -8,15 +8,17 @@ import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.data.ensureSession
-import com.humayapp.scout.feature.auth.data.toScoutUser
+import com.humayapp.scout.feature.auth.model.toScoutUser
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.exceptions.HttpRequestException
 import jakarta.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,7 +51,7 @@ class MainSectionViewModel @Inject constructor(
     private val collectionRepository: CollectionRepository,
     private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
-    private val newAuthRepository: NewAuthRepository,
+    private val authRepository: AuthRepository,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -85,7 +87,7 @@ class MainSectionViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     private fun observeAuthState() {
         viewModelScope.launch {
-            newAuthRepository.authState
+            authRepository.authState
                 .onEach { state ->
                     _authState.value = state
                     val user = when (state) {
@@ -158,9 +160,12 @@ class MainSectionViewModel @Inject constructor(
 
             _uiState.update { it.copy(isRefreshing = true) }
             try {
-                // FormSyncWorker.startUpSyncWork()
-                // collectionRepository.pullTasks()
+                val userId = _currentUser.value?.id ?: unreachable("user id must be available in this context")
+                collectionRepository.pullTasks(userId)
+
+                FormSyncWorker.startUpSyncWork()
                 delay(300)
+
             } catch (e: Exception) {
                 Log.e("Scout: MainSectionViewModel", "Refresh error:", e)
                 _uiError.update { e.message ?: "Failed to refresh tasks" }
@@ -173,7 +178,7 @@ class MainSectionViewModel @Inject constructor(
     fun onAction(action: MainSectionAction) {
         when (action) {
             is MainSectionAction.LogoutRequest -> viewModelScope.launch {
-                newAuthRepository.logout()
+                authRepository.logout()
                 _uiEvent.send(MainSectionEvent.LogoutSuccess)
             }
 
@@ -198,16 +203,20 @@ class MainSectionViewModel @Inject constructor(
                 collectionRepository.pullTasks(userId)
                 notificationRepository.pullNotifications(userId)
             }
+        } catch (e: CancellationException) {
+            Log.w(LOG_TAG, "[Poll] Polling cancelled because user left or app backgrounded.")
+            throw e
+        } catch (e: HttpRequestException) {
+            Log.w(LOG_TAG, "[Poll] Network error during polling: ${e.message}")
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            Log.e(LOG_TAG, "Polling failed", e)
+            Log.e(LOG_TAG, "[Poll] Unexpected polling failure", e)
         }
     }
 
     private suspend fun handleSessionExpired() {
         Log.d(LOG_TAG, "    Handling session expiration. Logging out user. Emitting event to UI.")
 
-        newAuthRepository.logout()
+        authRepository.logout()
         withContext(NonCancellable) {
             _uiEvent.send(MainSectionEvent.SessionExpired)
         }

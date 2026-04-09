@@ -18,7 +18,7 @@ import com.humayapp.scout.core.ui.component.ScoutDialog
 import com.humayapp.scout.core.ui.component.ScoutTextButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.theme.ScoutTypography
-import com.humayapp.scout.feature.auth.data.ScoutUser
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import java.util.Locale.getDefault
 
 @Composable

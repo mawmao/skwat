@@ -14,7 +14,7 @@ import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
 import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.system.NetworkMonitor
-import com.humayapp.scout.feature.auth.data.NewAuthRepository
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
@@ -73,7 +73,7 @@ class FormSyncWorker @AssistedInject constructor(
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
     private val formRepository: FormRepository,
     private val supabase: SupabaseClient,
-    private val newAuthRepository: NewAuthRepository,
+    private val authRepository: AuthRepository,
     private val networkMonitor: NetworkMonitor,
     private val collectionRepository: CollectionRepository,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
@@ -116,7 +116,7 @@ class FormSyncWorker @AssistedInject constructor(
             return false
         }
 
-        val authState = newAuthRepository.authState.first {
+        val authState = authRepository.authState.first {
             it !is ScoutAuthState.Initializing
         }
 

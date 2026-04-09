@@ -7,7 +7,7 @@ import androidx.work.WorkManager
 
 object Sync {
     fun initialize(context: Context) {
-        Log.d("Scout: Sync", "Initializing Form Sync Worker")
+        Log.i("Scout: Sync", "[Sync] Initializing Form Sync Worker")
         WorkManager.getInstance(context).apply {
             enqueueUniqueWork(
                 SYNC_WORK_NAME,
