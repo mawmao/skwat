@@ -202,9 +202,14 @@ private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
             }
         JsonObject(fields)
     }
-
+    val excludedRootKeys = setOf("id", "monitoring_visit")
     return buildJsonObject {
-        put(APPLIED_AREA_KEY, appliedArea?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+        answers.forEach { (key, value) ->
+            if (key in excludedRootKeys) return@forEach
+            if (key == APPLIED_AREA_KEY) {
+                put(key, value?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+            }
+        }
         put("fertilizer_application", JsonArray(fertilizerApplications))
     }
 }
