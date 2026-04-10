@@ -38,6 +38,7 @@ import com.humayapp.scout.navigation.navigateToForms
 @Composable
 fun PendingScreen(
     modifier: Modifier = Modifier,
+    isRefreshing: Boolean,
     vm: MainSectionViewModel,
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
@@ -66,6 +67,7 @@ fun PendingScreen(
             ) {
                 items(pendingTasks) { task ->
                     TaskCard(
+                        isRefreshing = isRefreshing,
                         task = task,
                         onClick = {
                             selectedTask = task

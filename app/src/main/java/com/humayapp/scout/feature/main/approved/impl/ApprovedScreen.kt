@@ -24,6 +24,7 @@ import com.humayapp.scout.navigation.navigateToDetail
 fun ApprovedScreen(
     modifier: Modifier = Modifier,
     vm: MainSectionViewModel,
+    isRefreshing: Boolean = false,
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val approvedTasks = uiState.tasks.filter { it.verificationStatus.equals("approved", true) }
@@ -47,9 +48,13 @@ fun ApprovedScreen(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
             ) {
                 items(approvedTasks) { task ->
-                    TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
-                    })
+                    TaskCard(
+                        isRefreshing = isRefreshing,
+                        task = task,
+                        onClick = {
+                            rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
+                        }
+                    )
                 }
             }
         }

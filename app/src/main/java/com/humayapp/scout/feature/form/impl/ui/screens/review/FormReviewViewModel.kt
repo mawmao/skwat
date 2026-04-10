@@ -56,9 +56,14 @@ class FormReviewViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             try {
-                val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")
+                // handle this cleanly when session expires
+                val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null. session expiry not handled yet tho")
 
                 val serializedString = formType.serializeAnswers(answers).toString()
+
+                Log.d("Scout: FormReviewViewModel", "answers = $answers")
+                Log.d("Scout: FormReviewViewModel", serializedString)
+
                 val imageAnswers = answers
                     .filter { it.key.startsWith("img_") && it.value is String }
                     .mapValues { it.value as String }

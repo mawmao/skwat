@@ -6,7 +6,10 @@ import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.field
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 sealed class DamageAssessment : WizardEntry() {
 
@@ -86,6 +89,20 @@ sealed class DamageAssessment : WizardEntry() {
 
         val startEntry = CropStageAndSoilType
         val entries = listOf(CropStageAndSoilType, CauseOfDamage, DamageImpact)
+
+        fun damageAssessmentJsonToAnswers(json: JsonElement): Map<String, Any?> {
+            val obj = json.jsonObject
+            val answers = mutableMapOf<String, Any?>()
+
+            obj["crop_stage"]?.let { answers[CROP_STAGE_KEY] = it.jsonPrimitive.content }
+            obj["soil_type"]?.let { answers[SOIL_TYPE_KEY] = it.jsonPrimitive.content }
+            obj["observed_pest"]?.let { answers[OBSERVED_PEST_KEY] = it.jsonPrimitive.content }
+            obj["cause"]?.let { answers[CAUSE_OF_DAMAGE_KEY] = it.jsonPrimitive.content }
+            obj["severity"]?.let { answers[SEVERITY_KEY] = it.jsonPrimitive.content }
+            obj["affected_area_ha"]?.let { answers[AFFECTED_AREA_KEY] = it.jsonPrimitive.content.toDoubleOrNull() }
+
+            return answers
+        }
 
         const val CROP_STAGE_KEY = "crop_stage"
         const val SOIL_TYPE_KEY = "soil_type"

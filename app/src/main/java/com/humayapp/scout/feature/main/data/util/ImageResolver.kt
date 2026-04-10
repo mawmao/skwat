@@ -2,12 +2,12 @@ package com.humayapp.scout.feature.main.data.util
 
 import com.humayapp.scout.core.network.util.SupabaseImageHelper
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class ImageResolver(private val supabase: SupabaseClient) {
-
-    suspend fun resolve(localImages: List<String>, remotePaths: List<String>): List<String> {
-
+    suspend fun resolve(localImages: List<String>, remotePaths: List<String>): List<String> = withContext(Dispatchers.IO) {
         val local = localImages.mapNotNull { path ->
             val file = File(path)
             if (file.exists()) file.toURI().toString() else null
@@ -17,6 +17,6 @@ class ImageResolver(private val supabase: SupabaseClient) {
             SupabaseImageHelper.generateSignedUrls(supabase, remotePaths)
         } else emptyList()
 
-        return local + remote
+        local + remote
     }
 }

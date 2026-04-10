@@ -25,6 +25,7 @@ import com.humayapp.scout.feature.main.data.collection.TaskNetworkDataSource
 import com.humayapp.scout.feature.main.data.util.ImageResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -43,7 +44,6 @@ class CollectionRepository(
     private val syncRepository: SyncRepository,
     private val taskDataSource: TaskNetworkDataSource,
     private val formDataSource: FormNetworkDataSource,
-    private val syncOrchestrator: SyncOrchestrator,
     private val imageResolver: ImageResolver,
     private val networkMonitor: NetworkMonitor
 ) {
@@ -53,6 +53,7 @@ class CollectionRepository(
     fun observeTaskById(id: Int) = taskDao.observeTaskById(id).map { it.toUiModel() }
 
     fun observeTaskWithImages(taskId: Int) = observeTaskById(taskId)
+        .distinctUntilChanged()
         .mapLatest { task ->
             val localImages = imagesDao.getImagesById(taskId).map { it.localPath }
             val remotePaths = task.imageUrls.orEmpty()

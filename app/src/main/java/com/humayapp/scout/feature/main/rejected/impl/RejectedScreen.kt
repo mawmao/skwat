@@ -23,6 +23,7 @@ import com.humayapp.scout.navigation.navigateToDetail
 fun RejectedScreen(
     modifier: Modifier = Modifier,
     vm: MainSectionViewModel,
+    isRefreshing: Boolean = false
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
     val rejectedTasks = uiState.tasks.filter { it.verificationStatus.equals("rejected", true) }
@@ -40,14 +41,19 @@ fun RejectedScreen(
                     CircularProgressIndicator()
                 }
             }
+
             rejectedTasks.isEmpty() -> EmptyState(message = "No rejected tasks")
             else -> LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
             ) {
                 items(rejectedTasks) { task ->
-                    TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
-                    })
+                    TaskCard(
+                        isRefreshing = isRefreshing,
+                        task = task,
+                        onClick = {
+                            rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
+                        }
+                    )
                 }
             }
         }

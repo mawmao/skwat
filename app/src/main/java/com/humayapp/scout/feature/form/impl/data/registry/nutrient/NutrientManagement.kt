@@ -17,10 +17,14 @@ import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 sealed class NutrientManagement : WizardEntry() {
 
@@ -65,7 +69,6 @@ sealed class NutrientManagement : WizardEntry() {
         override val fields = emptyList<WizardField>()
 
         override fun nextScreen(answers: Map<String, Any?>) = MonitoringVisit.MonitoringDate
-
 
         override val nextRule: (FormState) -> Boolean = { state ->
             val hasApplication = state.fieldData.keys.any { it.startsWith(FERTILIZER_TYPE_KEY) }
@@ -166,6 +169,41 @@ sealed class NutrientManagement : WizardEntry() {
 
         fun serialize(answers: Map<String, Any?>): JsonObject = serializeImpl(answers)
 
+
+        fun nutrientManagementJsonToAnswers(json: JsonElement, imageUrls: List<String>? = emptyList()): Map<String, Any?> {
+            val obj = json.jsonObject
+            val answers = mutableMapOf<String, Any?>()
+
+            // Top‑level fields (flat)
+            obj["applied_area_sqm"]?.let { answers[APPLIED_AREA_KEY] = it.jsonPrimitive.content }
+            obj["date_monitored"]?.let { answers["date_monitored"] = it.jsonPrimitive.content }
+            obj["crop_stage"]?.let { answers["crop_stage"] = it.jsonPrimitive.content }
+            obj["soil_moisture_status"]?.let { answers["soil_moisture_status"] = it.jsonPrimitive.content }
+            obj["avg_plant_height"]?.let { answers["avg_plant_height"] = it.jsonPrimitive.content.toDoubleOrNull() }
+
+            // Applications array
+            val applicationsArray = obj["applications"]?.jsonArray ?: return answers
+            applicationsArray.forEachIndexed { idx, appElement ->
+                val app = appElement.jsonObject
+                val index = idx + 1
+                answers["${FERTILIZER_TYPE_KEY}_$index"] = app["fertilizer_type"]?.jsonPrimitive?.content
+                answers["${BRAND_KEY}_$index"] = app["brand"]?.jsonPrimitive?.content
+                answers["${NITROGEN_CONTENT_KEY}_$index"] = app["nitrogen_content_pct"]?.jsonPrimitive?.content?.toFloatOrNull()
+                answers["${PHOSPHORUS_CONTENT_KEY}_$index"] =
+                    app["phosphorus_content_pct"]?.jsonPrimitive?.content?.toFloatOrNull()
+                answers["${POTASSIUM_CONTENT_KEY}_$index"] = app["potassium_content_pct"]?.jsonPrimitive?.content?.toFloatOrNull()
+                answers["${AMOUNT_APPLIED_KEY}_$index"] = app["amount_applied"]?.jsonPrimitive?.content?.toFloatOrNull()
+                answers["${AMOUNT_UNIT_KEY}_$index"] = app["amount_unit"]?.jsonPrimitive?.content
+                answers["${CROP_STAGE_ON_APPLICATION_KEY}_$index"] = app["crop_stage_on_application"]?.jsonPrimitive?.content
+            }
+
+            imageUrls?.forEachIndexed { index, url ->
+                answers["img_${index + 1}"] = url
+            }
+
+            return answers
+        }
+
         const val APPLICATION_DATE_KEY = "application_date"
         const val APPLIED_AREA_KEY = "applied_area_sqm"
         const val FERTILIZER_TYPE_KEY = "fertilizer_type"
@@ -181,13 +219,14 @@ sealed class NutrientManagement : WizardEntry() {
 
 
 private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
+    // Existing logic for applied area and applications
     val appliedArea = answers[APPLIED_AREA_KEY]
     val indices = answers.keys
         .mapNotNull { "_(\\d+)$".toRegex().find(it)?.groupValues?.get(1)?.toInt() }
         .distinct()
         .sorted()
 
-    val fertilizerApplications = indices.map { index ->
+    val fertilizerApplications = indices.mapNotNull { index ->
         val fields = answers
             .filterKeys { it.endsWith("_$index") && !it.startsWith("img_") && it != "season_id" }
             .mapKeys { it.key.removeSuffix("_$index") }
@@ -200,18 +239,36 @@ private fun serializeImpl(answers: Map<String, Any?>): JsonObject {
                     else -> JsonPrimitive(value.toString())
                 }
             }
-        JsonObject(fields)
+        if (fields.isEmpty()) null else JsonObject(fields)
     }
-    val excludedRootKeys = setOf("id", "monitoring_visit")
+
+    // --- Monitoring visit fields (will be added as top-level) ---
+    val monitoringVisitKeys = setOf(
+        "date_monitored",
+        "crop_stage",
+        "soil_moisture_status",
+        "avg_plant_height"
+    )
+
     return buildJsonObject {
+        // Add applied area
+        put(APPLIED_AREA_KEY, appliedArea?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+
+        // Add applications array
+        put("applications", JsonArray(fertilizerApplications))
+
+        // Add monitoring visit fields directly as top-level keys
         answers.forEach { (key, value) ->
-            if (key in excludedRootKeys) return@forEach
-            if (key == APPLIED_AREA_KEY) {
-                put(key, value?.let { JsonPrimitive(it.toString()) } ?: JsonNull)
+            if (key in monitoringVisitKeys) {
+                val jsonValue = when (value) {
+                    is Number -> JsonPrimitive(value)
+                    is Boolean -> JsonPrimitive(value)
+                    is String -> JsonPrimitive(value)
+                    null -> JsonNull
+                    else -> JsonPrimitive(value.toString())
+                }
+                put(key, jsonValue)
             }
         }
-        put("fertilizer_application", JsonArray(fertilizerApplications))
     }
 }
-
-

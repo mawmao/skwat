@@ -94,9 +94,6 @@ class NotificationsViewModel @Inject constructor(
             val initialOnline = withTimeoutOrNull(2000L) {
                 networkMonitor.isOnline.first { it }
             } ?: run {
-                // fallback: use ConnectivityManager directly
-                // val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                // cm.activeNetwork != null
                 false
             }
             _isOnline.value = initialOnline

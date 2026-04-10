@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,10 +42,11 @@ fun FormDetailsContent(state: FormState) {
     otherFields.fastForEach { field ->
         val rawValue = state.getFieldData(field.key)
         FormReviewItem(label = field.label, value = rawValue.ifBlank { "N/A" })
-        Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+        Spacer(Modifier.height(ScoutTheme.spacing.small))
     }
 
     if (monitoringFields.isNotEmpty()) {
+        Spacer(Modifier.height(ScoutTheme.spacing.small))
         Column {
             Text(
                 "Monitoring Visit",
@@ -52,13 +54,13 @@ fun FormDetailsContent(state: FormState) {
                 fontWeight = FontWeight.Medium,
                 color = ScoutTheme.material.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(ScoutTheme.spacing.small))
             monitoringFields.fastForEach { field ->
                 val rawValue = state.getFieldData(field.key)
                 FormReviewItem(label = field.label, value = rawValue.ifBlank { "N/A" })
                 Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(ScoutTheme.spacing.small))
         }
     }
 
@@ -108,11 +110,13 @@ fun FormReviewItem(
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "$label:",
+                text = label,
                 style = ScoutTheme.material.typography.bodyMedium,
                 color = ScoutTheme.material.colorScheme.onSurfaceVariant,
             )
-            Text(text = value ?: "No Data")
+            Text(
+                text = value.replace("\"", "").replace("'", "") ?: "No Data"
+            )
         }
     }
 }

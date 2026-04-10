@@ -11,7 +11,10 @@ import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 sealed class Production : WizardEntry() {
 
@@ -113,6 +116,37 @@ sealed class Production : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
+
+        fun productionJsonToAnswers(
+            json: JsonElement,
+            imageUrls: List<String>? = emptyList()
+        ): Map<String, Any?> {
+            val obj = json.jsonObject
+            val answers = mutableMapOf<String, Any?>()
+
+            obj["harvest_date"]?.let { answers[HARVEST_DATE_KEY] = it.jsonPrimitive.content }
+            obj["harvesting_method"]?.let { answers[HARVEST_METHOD_KEY] = it.jsonPrimitive.content }
+            obj["bags_harvested"]?.let { answers[BAGS_HARVESTED_KEY] = it.jsonPrimitive.content.toIntOrNull() }
+            obj["avg_bag_weight_kg"]?.let { answers[AVG_BAG_WEIGHT_KEY] = it.jsonPrimitive.content.toDoubleOrNull() }
+            obj["area_harvested_ha"]?.let { answers[AREA_HARVESTED] = it.jsonPrimitive.content.toDoubleOrNull() }
+            obj["irrigation_supply"]?.let { answers[IRRIGATION_SUPPLY] = it.jsonPrimitive.content }
+
+            val monitoringVisitJson = obj["monitoring_visit"]?.jsonObject
+            if (monitoringVisitJson != null) {
+                monitoringVisitJson["date_monitored"]?.let { answers["date_monitored"] = it.jsonPrimitive.content }
+                monitoringVisitJson["crop_stage"]?.let { answers["crop_stage"] = it.jsonPrimitive.content }
+                monitoringVisitJson["soil_moisture_status"]?.let { answers["soil_moisture_status"] = it.jsonPrimitive.content }
+                monitoringVisitJson["avg_plant_height"]?.let {
+                    answers["avg_plant_height"] = it.jsonPrimitive.content.toDoubleOrNull()
+                }
+            }
+
+            imageUrls?.forEachIndexed { index, url ->
+                answers["img_${index + 1}"] = url
+            }
+
+            return answers
+        }
 
         const val HARVEST_DATE_KEY = "harvest_date"
         const val HARVEST_METHOD_KEY = "harvesting_method"

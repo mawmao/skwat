@@ -15,7 +15,10 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 sealed class CulturalManagement : WizardEntry() {
 
@@ -317,6 +320,72 @@ sealed class CulturalManagement : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
+
+        fun culturalManagementJsonToAnswers(
+            json: JsonElement,
+            imageUrls: List<String>? = emptyList()
+        ): Map<String, Any?> {
+            val obj = json.jsonObject
+            val answers = mutableMapOf<String, Any?>()
+
+            obj["ecosystem"]?.let { answers[ECOSYSTEM_KEY] = it.jsonPrimitive.content }
+            obj["monitoring_field_area_sqm"]?.let {
+                answers[MONITORING_FIELD_AREA_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["actual_crop_establishment_date"]?.let { answers[ACTUAL_CROP_ESTABLISHMENT_DATE_KEY] = it.jsonPrimitive.content }
+            obj["actual_crop_establishment_method"]?.let {
+                answers[ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY] = it.jsonPrimitive.content
+            }
+            obj["sowing_date"]?.let { answers[SOWING_DATE_KEY] = it.jsonPrimitive.content }
+            obj["seedling_age_at_transplanting"]?.let {
+                answers[SEEDLING_AGE_AT_TRANSPLANTING_KEY] = it.jsonPrimitive.content.toIntOrNull()
+            }
+            obj["distance_between_plant_row_1"]?.let {
+                answers[D_BETWEEN_PLANT_ROW_1_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["distance_between_plant_row_2"]?.let {
+                answers[D_BETWEEN_PLANT_ROW_2_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["distance_between_plant_row_3"]?.let {
+                answers[D_BETWEEN_PLANT_ROW_3_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["distance_within_plant_row_1"]?.let {
+                answers[D_WITHIN_PLANT_ROW_1_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["distance_within_plant_row_2"]?.let {
+                answers[D_WITHIN_PLANT_ROW_2_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["distance_within_plant_row_3"]?.let {
+                answers[D_WITHIN_PLANT_ROW_3_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["seeding_rate_kg_ha"]?.let { answers[SEEDING_RATE_KG_HA_KEY] = it.jsonPrimitive.content.toDoubleOrNull() }
+            obj["direct_seeding_method"]?.let { answers[DIRECT_SEEDING_METHOD_KEY] = it.jsonPrimitive.content }
+            obj["num_plants_1"]?.let { answers[NUM_PLANTS_1_KEY] = it.jsonPrimitive.content.toIntOrNull() }
+            obj["num_plants_2"]?.let { answers[NUM_PLANTS_2_KEY] = it.jsonPrimitive.content.toIntOrNull() }
+            obj["num_plants_3"]?.let { answers[NUM_PLANTS_3_KEY] = it.jsonPrimitive.content.toIntOrNull() }
+            obj["rice_variety"]?.let { answers[RICE_VARIETY_KEY] = it.jsonPrimitive.content }
+            obj["rice_variety_no"]?.let { answers[RICE_VARIETY_NO_KEY] = it.jsonPrimitive.content }
+            obj["rice_variety_maturity_duration"]?.let {
+                answers[RICE_VARIETY_MATURITY_DURATION_KEY] = it.jsonPrimitive.content.toIntOrNull()
+            }
+            obj["seed_class"]?.let { answers[SEED_CLASS_KEY] = it.jsonPrimitive.content }
+
+            val monitoringVisitJson = obj["monitoring_visit"]?.jsonObject
+            if (monitoringVisitJson != null) {
+                monitoringVisitJson["date_monitored"]?.let { answers["date_monitored"] = it.jsonPrimitive.content }
+                monitoringVisitJson["crop_stage"]?.let { answers["crop_stage"] = it.jsonPrimitive.content }
+                monitoringVisitJson["soil_moisture_status"]?.let { answers["soil_moisture_status"] = it.jsonPrimitive.content }
+                monitoringVisitJson["avg_plant_height"]?.let {
+                    answers["avg_plant_height"] = it.jsonPrimitive.content.toDoubleOrNull()
+                }
+            }
+
+            imageUrls?.forEachIndexed { index, url ->
+                answers["img_${index + 1}"] = url
+            }
+
+            return answers
+        }
 
         const val MONITORING_FIELD_AREA_KEY = "monitoring_field_area_sqm"
         const val ECOSYSTEM_KEY = "ecosystem"

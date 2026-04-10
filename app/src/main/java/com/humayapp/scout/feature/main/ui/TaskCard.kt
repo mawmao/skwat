@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,7 +43,8 @@ val dateFormatter = LocalDate.Format {
 @Composable
 fun TaskCard(
     task: CollectionTaskUiModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isRefreshing: Boolean = false,
 ) {
 
     val statusColor = when (task.status.lowercase()) {
@@ -73,9 +75,15 @@ fun TaskCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        enabled = !isRefreshing,
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (isRefreshing) 0.5f else 1f),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = ScoutTheme.extras.colors.white),
+        colors = CardDefaults.cardColors(
+            containerColor = ScoutTheme.extras.colors.white,
+            disabledContainerColor = ScoutTheme.extras.colors.white,
+        ),
         elevation = CardDefaults.cardElevation(0.dp),
         onClick = onClick
     ) {

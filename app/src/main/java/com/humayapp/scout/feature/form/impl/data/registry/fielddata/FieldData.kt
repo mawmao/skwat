@@ -17,7 +17,10 @@ import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.Period
 
 @Serializable
@@ -232,6 +235,50 @@ sealed class FieldData : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
+
+        fun fieldDataJsonToAnswers(
+            json: JsonElement,
+            imageUrls: List<String>? = emptyList(),
+        ): Map<String, Any?> {
+            val obj = json.jsonObject
+            val answers = mutableMapOf<String, Any?>()
+
+            obj["first_name"]?.let { answers[FIRST_NAME_KEY] = it.jsonPrimitive.content }
+            obj["last_name"]?.let { answers[LAST_NAME_KEY] = it.jsonPrimitive.content }
+            obj["gender"]?.let { answers[GENDER_KEY] = it.jsonPrimitive.content }
+            obj["date_of_birth"]?.let { answers[DATE_OF_BIRTH_KEY] = it.jsonPrimitive.content }
+            obj["cellphone_no"]?.let { answers[CELLPHONE_NO_KEY] = it.jsonPrimitive.content }
+            obj["land_preparation_start_date"]?.let { answers[LAND_PREPARATION_DATE_KEY] = it.jsonPrimitive.content }
+            obj["est_crop_establishment_date"]?.let { answers[EST_CROP_ESTABLISHMENT_KEY] = it.jsonPrimitive.content }
+            obj["est_crop_establishment_method"]?.let {
+                answers[EST_METHOD_OF_ESTABLISHMENT_KEY] = it.jsonPrimitive.content
+            }
+            obj["total_field_area_ha"]?.let {
+                answers[TOTAL_FIELD_AREA_KEY] = it.jsonPrimitive.content.toDoubleOrNull()
+            }
+            obj["soil_type"]?.let { answers[SOIL_TYPE_KEY] = it.jsonPrimitive.content }
+            obj["current_field_condition"]?.let { answers[CURRENT_FIELD_CONDITION_KEY] = it.jsonPrimitive.content }
+            obj["province"]?.let { answers[PROVINCE_KEY] = it.jsonPrimitive.content }
+            obj["municipality_or_city"]?.let { answers[MUNICIPALITY_OR_CITY_KEY] = it.jsonPrimitive.content }
+            obj["barangay"]?.let { answers[BARANGAY_KEY] = it.jsonPrimitive.content }
+            obj["location"]?.let { location -> answers[COORDINATES_KEY] = location.toString() }
+
+            val monitoringVisitJson = obj["monitoring_visit"]?.jsonObject
+            if (monitoringVisitJson != null) {
+                monitoringVisitJson["date_monitored"]?.let { answers["date_monitored"] = it.jsonPrimitive.content }
+                monitoringVisitJson["crop_stage"]?.let { answers["crop_stage"] = it.jsonPrimitive.content }
+                monitoringVisitJson["soil_moisture_status"]?.let { answers["soil_moisture_status"] = it.jsonPrimitive.content }
+                monitoringVisitJson["avg_plant_height"]?.let {
+                    answers["avg_plant_height"] = it.jsonPrimitive.content.toDoubleOrNull()
+                }
+            }
+
+            imageUrls?.forEachIndexed { index, url ->
+                answers["img_${index + 1}"] = url
+            }
+
+            return answers
+        }
 
         const val FIRST_NAME_KEY = "first_name"
         const val LAST_NAME_KEY = "last_name"

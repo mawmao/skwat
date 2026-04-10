@@ -26,6 +26,7 @@ import kotlinx.serialization.json.Json
 fun CollectedScreen(
     modifier: Modifier = Modifier,
     vm: MainSectionViewModel,
+    isRefreshing: Boolean = false,
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
@@ -57,9 +58,13 @@ fun CollectedScreen(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
             ) {
                 items(collectedTasks) { task ->
-                    TaskCard(task = task, onClick = {
-                        rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
-                    })
+                    TaskCard(
+                        isRefreshing = isRefreshing,
+                        task = task,
+                        onClick = {
+                            rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
+                        }
+                    )
                 }
             }
         }

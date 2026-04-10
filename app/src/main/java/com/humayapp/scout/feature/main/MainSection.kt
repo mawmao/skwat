@@ -27,16 +27,16 @@ import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.main.approved.api.navigation.ApprovedNavKey
 import com.humayapp.scout.feature.main.approved.api.navigation.navigateToApproved
-import com.humayapp.scout.feature.main.approved.impl.navigation.approvedEntryProvider
+import com.humayapp.scout.feature.main.approved.impl.ApprovedScreen
 import com.humayapp.scout.feature.main.collected.api.navigation.CollectedNavKey
 import com.humayapp.scout.feature.main.collected.api.navigation.navigateToCollected
-import com.humayapp.scout.feature.main.collected.impl.navigation.collectedEntryProvider
+import com.humayapp.scout.feature.main.collected.impl.CollectedScreen
 import com.humayapp.scout.feature.main.pending.api.navigation.PendingNavKey
 import com.humayapp.scout.feature.main.pending.api.navigation.navigateToPending
-import com.humayapp.scout.feature.main.pending.impl.navigation.pendingEntryProvider
+import com.humayapp.scout.feature.main.pending.impl.PendingScreen
 import com.humayapp.scout.feature.main.rejected.api.navigation.RejectedNavKey
 import com.humayapp.scout.feature.main.rejected.api.navigation.navigateToRejected
-import com.humayapp.scout.feature.main.rejected.impl.navigation.rejectedEntryProvider
+import com.humayapp.scout.feature.main.rejected.impl.RejectedScreen
 import com.humayapp.scout.feature.main.ui.MainSectionNavigationBar
 import com.humayapp.scout.feature.main.ui.MainSectionTopAppBar
 import com.humayapp.scout.feature.main.ui.UserProfileDialog
@@ -156,10 +156,20 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
                 backStack = mainNavigator.asBackStack(),
                 onBack = mainNavigator::pop,
                 entryProvider = entryProvider {
-                    pendingEntryProvider(metadata = NavTransition.fade(), vm = vm)
-                    collectedEntryProvider(metadata = NavTransition.fade(), vm = vm)
-                    approvedEntryProvider(metadata = NavTransition.fade(), vm = vm)
-                    rejectedEntryProvider(metadata = NavTransition.fade(), vm = vm)
+                    val isRefreshing = uiState.isLoading || uiState.isRefreshing
+
+                    entry<PendingNavKey>(metadata = NavTransition.fade()) {
+                        PendingScreen(vm = vm, isRefreshing = isRefreshing)
+                    }
+                    entry<CollectedNavKey>(metadata = NavTransition.fade()) {
+                        CollectedScreen(vm = vm, isRefreshing = isRefreshing)
+                    }
+                    entry<ApprovedNavKey>(metadata = NavTransition.fade()) {
+                        ApprovedScreen(vm = vm, isRefreshing = isRefreshing)
+                    }
+                    entry<RejectedNavKey>(metadata = NavTransition.fade()) {
+                        RejectedScreen(vm = vm, isRefreshing = isRefreshing)
+                    }
                 },
             )
         }

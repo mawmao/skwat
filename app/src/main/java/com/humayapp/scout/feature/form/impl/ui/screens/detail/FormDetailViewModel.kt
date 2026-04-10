@@ -35,14 +35,6 @@ class FormDetailsViewModel @AssistedInject constructor(
     private val _uiState = MutableStateFlow<FormDetailsUiState>(FormDetailsUiState.Loading)
     val uiState: StateFlow<FormDetailsUiState> = _uiState.asStateFlow()
 
-    private val _refreshError = MutableStateFlow<String?>(null)
-    val refreshError: StateFlow<String?> = _refreshError.asStateFlow()
-
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-
-    private var originalTask: CollectionTask? = null
-
     init {
         loadFormData()
     }
@@ -94,38 +86,4 @@ sealed class FormDetailsUiState {
     data class Error(val message: String) : FormDetailsUiState()
 }
 
-
-fun jsonElementToDisplayList(element: JsonElement, prefix: String = ""): List<Pair<String, String>> {
-    return when (element) {
-        is JsonObject -> {
-            element.entries.flatMap { (key, value) ->
-                if (key == "monitoring_visit") return@flatMap emptyList()
-                if (key == "fertilizer_application") return@flatMap emptyList()
-
-                val label = if (prefix.isEmpty()) getReadableLabel(key) else "$prefix${getReadableLabel(key)}"
-                when (value) {
-                    is JsonNull -> listOf(label to "No Data")
-                    is JsonPrimitive -> listOf(label to value.content)
-                    is JsonArray -> {
-                        if (key == "applications") {
-                            value.flatMapIndexed { idx, app ->
-                                val header = "$label ${idx + 1}"
-                                val fields = jsonElementToDisplayList(app, "  ")
-                                listOf(header to "") + fields
-                            }
-                        } else {
-                            listOf(label to value.joinToString(", ") { it.toString() })
-                        }
-                    }
-
-                    is JsonObject -> {
-                        jsonElementToDisplayList(value, "$label - ")
-                    }
-                }
-            }
-        }
-
-        else -> emptyList()
-    }
-}
 

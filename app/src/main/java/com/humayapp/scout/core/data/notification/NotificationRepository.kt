@@ -13,7 +13,6 @@ class NotificationRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val dao: NotificationDao,
 ) {
-
     suspend fun pullNotifications(userId: String) {
         val latestTimestamp = dao.getLatestCreatedAt(userId)
         val query = supabase.from("notifications").select {
@@ -49,7 +48,6 @@ class NotificationRepository @Inject constructor(
 
     suspend fun markAsRead(id: Int) {
         dao.markAsRead(id)
-        // no remote update – role‑based notifications are not user‑owned
     }
 
     suspend fun markAllAsRead(userId: String) {

@@ -1,5 +1,6 @@
 package com.humayapp.scout.feature.form.impl.ui.screens.review
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,11 @@ fun FormReviewScreen(vm: FormReviewViewModel) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+//    LaunchedEffect(Unit) {
+//        Log.d("Scout: FormReviewViewModel", "answers = ${state.fieldData}")
+//        Log.d("Scout: FormReviewScreen", "${state.formType.serializeAnswers(state.fieldData)}")
+//    }
 
     ScoutUiEvents(vm.uiEvent) { event ->
         when (event) {

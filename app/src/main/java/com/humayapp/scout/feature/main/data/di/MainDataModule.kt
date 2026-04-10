@@ -44,7 +44,6 @@ object MainDataModule {
         syncRepository,
         taskDataSource,
         formDataSource,
-        syncOrchestrator,
         imageResolver,
         networkMonitor
     )
