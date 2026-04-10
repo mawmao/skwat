@@ -54,8 +54,6 @@ class FormReviewViewModel @AssistedInject constructor(
 
         logAnswers(answers)
 
-        // Log.d(LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
-
         viewModelScope.launch {
             try {
                 val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")

@@ -25,6 +25,7 @@ import com.humayapp.scout.feature.main.data.collection.TaskNetworkDataSource
 import com.humayapp.scout.feature.main.data.util.ImageResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -137,6 +138,11 @@ class CollectionRepository(
     }
 
     suspend fun fullSync() {
+        if (!networkMonitor.isOnline.drop(1).first()) {
+            Log.i(LOG_TAG, "[Sync] Offline – skipping sync to preserve local data")
+            return
+        }
+
         Log.i(LOG_TAG, "[Sync] Starting unified pipeline")
 
         val remoteTasks = try {
@@ -154,6 +160,7 @@ class CollectionRepository(
         }
 
         val remoteTaskIds = remoteTasks.map { it.id }
+        val canReconcile = remoteTasks.isNotEmpty()
 
         database.withTransaction {
 
@@ -185,7 +192,7 @@ class CollectionRepository(
                 }
             }
 
-            if (remoteTaskIds.isNotEmpty()) {
+            if (canReconcile) {
                 Log.i(LOG_TAG, "[Sync] Reconciling tasks (${remoteTaskIds.size} ids)")
                 taskDao.deleteWhereNotIn(remoteTaskIds)
             } else {
