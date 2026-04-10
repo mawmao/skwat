@@ -20,6 +20,7 @@ import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.main.MainSectionViewModel
 import com.humayapp.scout.feature.main.ui.TaskCard
 import com.humayapp.scout.navigation.navigateToDetail
+import kotlinx.serialization.json.Json
 
 @Composable
 fun CollectedScreen(
@@ -28,11 +29,14 @@ fun CollectedScreen(
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
-    val collectedTasks = uiState.tasks.filter { it.status == "completed" && it.verificationStatus == null }
+    val collectedTasks =
+        uiState.tasks.filter { it.status == "completed" && (it.verificationStatus == "pending" || it.verificationStatus == null) }
     val rootNavigator = LocalRootStackNavigator.current
 
     LaunchedEffect(collectedTasks) {
-        Log.d("Scout: CollectedScreen", "tasks: ${uiState.tasks}")
+        collectedTasks.forEach {
+            Log.d("Scout: CollectedScreen", "$it")
+        }
     }
 
     Box(

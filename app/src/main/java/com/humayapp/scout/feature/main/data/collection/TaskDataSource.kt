@@ -29,7 +29,7 @@ class TaskNetworkDataSource(
     suspend fun getTasks(updatedAfter: Instant?, limit: Long = -1L): List<CollectionTaskDto> {
         val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
 
-        Log.v(LOG_TAG, "[Fetch] Trying to fetch new tasks from the server.")
+//        Log.v(LOG_TAG, "[Fetch] Trying to fetch new tasks from the server.")
 
         val query = supabase.from(DatabaseViews.COLLECTION_DETAILS).select() {
             filter {
@@ -46,11 +46,11 @@ class TaskNetworkDataSource(
 
         val result = query.decodeList<CollectionTaskDto>()
 
-        if (result.size > 1) {
-            Log.i(LOG_TAG, "    Fetched ${result.size} tasks successfully.")
-        } else {
-            Log.i(LOG_TAG, "    No new tasks found.")
-        }
+//        if (result.size > 1) {
+//            Log.i(LOG_TAG, "    Fetched ${result.size} tasks successfully.")
+//        } else {
+//            Log.i(LOG_TAG, "    No new tasks found.")
+//        }
 
         return result
     }

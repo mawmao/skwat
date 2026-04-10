@@ -17,6 +17,7 @@ import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import com.humayapp.scout.core.database.model.toUiModel
 import com.humayapp.scout.core.database.util.toInstantSafeOrNull
 import com.humayapp.scout.core.sync.SyncOrchestrator
+import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.system.saveImagesToFolder
 import com.humayapp.scout.feature.form.impl.model.toFormImages
 import com.humayapp.scout.feature.main.data.collection.FormNetworkDataSource
@@ -24,6 +25,7 @@ import com.humayapp.scout.feature.main.data.collection.TaskNetworkDataSource
 import com.humayapp.scout.feature.main.data.util.ImageResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
@@ -42,6 +44,7 @@ class CollectionRepository(
     private val formDataSource: FormNetworkDataSource,
     private val syncOrchestrator: SyncOrchestrator,
     private val imageResolver: ImageResolver,
+    private val networkMonitor: NetworkMonitor
 ) {
 
     fun observeTasks() = taskDao.observeTasks().map { relations -> relations.map { it.toUiModel() } }
@@ -80,13 +83,24 @@ class CollectionRepository(
         activityType: String,
     ): Boolean = withContext(Dispatchers.IO) {
         val folder = File(context.filesDir, "forms/${UUID.randomUUID()}").apply { mkdirs() }
+
+        Log.d(LOG_TAG, "[START] taskId=$collectionTaskId userId=$userId images=${images.size}")
+
         try {
+            Log.d(LOG_TAG, "[STEP] Saving images locally...")
+
             val imagesEntities = context
                 .saveImagesToFolder(images, folder)
                 .toFormImages(collectionTaskId)
 
+            Log.d(LOG_TAG, "[SUCCESS] Saved ${imagesEntities.size} images")
+
             return@withContext database.withTransaction {
+                Log.d(LOG_TAG, "[STEP] Inserting images into DB...")
                 imagesDao.insertAll(imagesEntities)
+                Log.d(LOG_TAG, "[SUCCESS] Images inserted")
+
+                Log.d(LOG_TAG, "[STEP] Inserting form...")
                 formDao.insert(
                     form = CollectionFormEntity(
                         activityType = activityType,
@@ -96,10 +110,23 @@ class CollectionRepository(
                         verificationStatus = "pending"
                     )
                 )
+                Log.d(LOG_TAG, "[SUCCESS] Form inserted")
+
+                Log.d(LOG_TAG, "[STEP] Marking task as completed...")
                 val updated = taskDao.markTaskCompleted(collectionTaskId, userId, Clock.System.now())
-                updated == 1
+
+                val success = updated == 1
+
+                if (success) {
+                    Log.d(LOG_TAG, "[SUCCESS] Task marked completed (rowsUpdated=$updated)")
+                } else {
+                    Log.e(LOG_TAG, "[FAIL] Task NOT marked completed (rowsUpdated=$updated)")
+                }
+
+                success
             }
         } catch (e: Exception) {
+            Log.e(LOG_TAG, "[ERROR] Failed to save task. Cleaning up folder.", e)
             folder.deleteRecursively()
             throw e
         }
@@ -110,61 +137,66 @@ class CollectionRepository(
     }
 
     suspend fun fullSync() {
-        Log.i("Scout: CollectionRepository", "[Sync] Pulling new data...")
-        syncOrchestrator.run {
-            pullTasks()
-            reconcileTasks()
-            pullForms()
+        Log.i(LOG_TAG, "[Sync] Starting unified pipeline")
+
+        val remoteTasks = try {
+            taskDataSource.getTasks(updatedAfter = null)
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "[Sync] Task fetch failed. Aborting pipeline.")
+            return
         }
-    }
 
-    private suspend fun pullTasks() {
-        val lastSync = syncRepository.getLastSync("tasks")
+        val remoteForms = try {
+            formDataSource.getForms(updatedAfter = null)
+        } catch (e: Exception) {
+            Log.w(LOG_TAG, "[Sync] Form fetch failed. Continuing with tasks only.")
+            emptyList()
+        }
 
-        val remote = taskDataSource.getTasks(updatedAfter = lastSync)
-
-        val maxUpdated = remote
-            .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
-            .maxOrNull()
+        val remoteTaskIds = remoteTasks.map { it.id }
 
         database.withTransaction {
-            taskDao.upsert(remote.map { it.toTaskEntity() })
 
-            val newSync = listOfNotNull(lastSync, maxUpdated).maxOrNull()
+            Log.i(LOG_TAG, "[Sync] Applying tasks (${remoteTasks.size})")
 
-            if (newSync != null) {
-                syncRepository.updateSyncState(key = "tasks", lastSync = newSync)
+            if (remoteTasks.isNotEmpty()) {
+                taskDao.upsert(remoteTasks.map { it.toTaskEntity() })
+
+                val maxTaskUpdated = remoteTasks
+                    .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
+                    .maxOrNull()
+
+                if (maxTaskUpdated != null) {
+                    syncRepository.updateSyncState("tasks", maxTaskUpdated)
+                }
+            }
+
+            Log.i(LOG_TAG, "[Sync] Applying forms (${remoteForms.size})")
+
+            if (remoteForms.isNotEmpty()) {
+                formDao.upsert(remoteForms.map { it.toFormEntity() })
+
+                val maxFormUpdated = remoteForms
+                    .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
+                    .maxOrNull()
+
+                if (maxFormUpdated != null) {
+                    syncRepository.updateSyncState("forms", maxFormUpdated)
+                }
+            }
+
+            if (remoteTaskIds.isNotEmpty()) {
+                Log.i(LOG_TAG, "[Sync] Reconciling tasks (${remoteTaskIds.size} ids)")
+                taskDao.deleteWhereNotIn(remoteTaskIds)
+            } else {
+                Log.i(LOG_TAG, "[Sync] Skipping reconciliation (empty id list)")
             }
         }
+
+        Log.i(LOG_TAG, "[Sync] Pipeline completed")
     }
 
-    private suspend fun reconcileTasks() {
-        val remoteIds = taskDataSource.getAllTaskIds()
-
-        database.withTransaction {
-            if (remoteIds.isNotEmpty()) {
-                taskDao.deleteTasksNotIn(remoteIds)
-            }
-        }
-    }
-
-    private suspend fun pullForms() {
-        val lastSync = syncRepository.getLastSync("forms")
-
-        val remote = formDataSource.getForms(updatedAfter = lastSync)
-
-        val maxUpdated = remote
-            .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
-            .maxOrNull()
-
-        database.withTransaction {
-            formDao.upsert(remote.map { it.toFormEntity() })
-
-            val newSync = listOfNotNull(lastSync, maxUpdated).maxOrNull()
-
-            if (newSync != null) {
-                syncRepository.updateSyncState(key = "forms", lastSync = newSync)
-            }
-        }
+    companion object {
+        private const val LOG_TAG = "Scout: CollectionRepository"
     }
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "611873fe282aa8b671f3797db0665dac",
+    "identityHash": "bd8e6c3fabcdaa023715552f3bacf6ec",
     "entities": [
       {
         "tableName": "form_entries",
@@ -95,7 +95,7 @@
       },
       {
         "tableName": "form_images",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionTaskId` INTEGER NOT NULL, `localPath` TEXT NOT NULL, `remotePath` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionTaskId` INTEGER NOT NULL, `localPath` TEXT NOT NULL, `remotePath` TEXT, FOREIGN KEY(`collectionTaskId`) REFERENCES `collection_tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -126,7 +126,31 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_form_images_collectionTaskId",
+            "unique": false,
+            "columnNames": [
+              "collectionTaskId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_form_images_collectionTaskId` ON `${TABLE_NAME}` (`collectionTaskId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "collection_tasks",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "collectionTaskId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "provinces",
@@ -280,7 +304,7 @@
       },
       {
         "tableName": "collection_tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `verificationStatus` TEXT, `verifiedBy` TEXT, `verifiedAt` TEXT, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `synced` INTEGER NOT NULL, `dependencyData` TEXT, `formData` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `dependencyData` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -336,18 +360,6 @@
           {
             "fieldPath": "status",
             "columnName": "status",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -408,21 +420,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "verificationStatus",
-            "columnName": "verificationStatus",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "verifiedBy",
-            "columnName": "verifiedBy",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "verifiedAt",
-            "columnName": "verifiedAt",
-            "affinity": "TEXT"
-          },
-          {
             "fieldPath": "remarks",
             "columnName": "remarks",
             "affinity": "TEXT"
@@ -443,19 +440,20 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "synced",
-            "columnName": "synced",
-            "affinity": "INTEGER",
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
             "fieldPath": "dependencyData",
             "columnName": "dependencyData",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "formData",
-            "columnName": "formData",
             "affinity": "TEXT"
           }
         ],
@@ -465,6 +463,87 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "collection_forms",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`taskId` INTEGER NOT NULL, `payload` TEXT, `verificationStatus` TEXT NOT NULL, `activityType` TEXT NOT NULL, `verifiedBy` TEXT, `verifiedAt` TEXT, `updatedAt` TEXT NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY(`taskId`), FOREIGN KEY(`taskId`) REFERENCES `collection_tasks`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "taskId",
+            "columnName": "taskId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "verificationStatus",
+            "columnName": "verificationStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activityType",
+            "columnName": "activityType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verifiedBy",
+            "columnName": "verifiedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "verifiedAt",
+            "columnName": "verifiedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "synced",
+            "columnName": "synced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "taskId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_collection_forms_taskId",
+            "unique": false,
+            "columnNames": [
+              "taskId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_collection_forms_taskId` ON `${TABLE_NAME}` (`taskId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "collection_tasks",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "taskId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "notifications",
@@ -531,8 +610,32 @@
         }
       },
       {
-        "tableName": "cached_form_details",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `activityId` INTEGER, `collectionTaskId` INTEGER, `rawDetailsJson` TEXT NOT NULL, `formDataJson` TEXT NOT NULL, `activityType` TEXT NOT NULL, `syncedAt` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `lastSync` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSync",
+            "columnName": "lastSync",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "sync_queue",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `refId` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `payload` TEXT, `attempts` INTEGER NOT NULL, `lastError` TEXT, `status` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -541,42 +644,48 @@
             "notNull": true
           },
           {
-            "fieldPath": "activityId",
-            "columnName": "activityId",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "collectionTaskId",
-            "columnName": "collectionTaskId",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "rawDetailsJson",
-            "columnName": "rawDetailsJson",
+            "fieldPath": "type",
+            "columnName": "type",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "formDataJson",
-            "columnName": "formDataJson",
+            "fieldPath": "refId",
+            "columnName": "refId",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "activityType",
-            "columnName": "activityType",
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "syncedAt",
-            "columnName": "syncedAt",
+            "fieldPath": "payload",
+            "columnName": "payload",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attempts",
+            "columnName": "attempts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "lastError",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
             "affinity": "TEXT",
             "notNull": true
           }
         ],
         "primaryKey": {
-          "autoGenerate": false,
+          "autoGenerate": true,
           "columnNames": [
             "id"
           ]
@@ -585,7 +694,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '611873fe282aa8b671f3797db0665dac')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bd8e6c3fabcdaa023715552f3bacf6ec')"
     ]
   }
 }

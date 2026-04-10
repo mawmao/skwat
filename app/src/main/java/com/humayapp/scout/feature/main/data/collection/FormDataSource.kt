@@ -18,7 +18,7 @@ class FormNetworkDataSource(
     suspend fun getForms(updatedAfter: Instant?, limit: Long = -1L): List<CollectionFormDto> {
         val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
 
-        Log.v(LOG_TAG, "[Fetch] Trying to fetch new forms from the server.")
+        // Log.v(LOG_TAG, "[Fetch] Trying to fetch new forms from the server.")
 
         val query = supabase.from(DatabaseViews.FIELD_ACTIVITY_DETAILS).select() {
             filter {
@@ -35,11 +35,11 @@ class FormNetworkDataSource(
 
         val result = query.decodeList<CollectionFormDto>()
 
-        if (result.size > 1) {
-            Log.i(LOG_TAG, "    Fetched ${result.size} forms successfully.")
-        } else {
-            Log.i(LOG_TAG, "    No new forms found.")
-        }
+//        if (result.size > 1) {
+//            Log.i(LOG_TAG, "    Fetched ${result.size} forms successfully.")
+//        } else {
+//            Log.i(LOG_TAG, "    No new forms found.")
+//        }
 
         return result
     }

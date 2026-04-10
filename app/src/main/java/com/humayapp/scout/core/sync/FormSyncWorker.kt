@@ -43,66 +43,20 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 
-@Serializable
-data class UploadDataRequest(
-    val mfid: String,
-
-    @SerialName("collection_task_id")
-    val collectionTaskId: Int,
-
-    @SerialName("activity_type")
-    val activityType: String,
-
-    @SerialName("season_id")
-    val seasonId: Int,
-
-    @SerialName("collected_by")
-    val collectedBy: String,
-
-    @SerialName("collected_at")
-    val collectedAt: String,
-
-    @SerialName("synced_at")
-    val syncedAt: String?,
-
-    @SerialName("image_urls")
-    val imageUrls: List<String>,
-
-    val payload: JsonElement
-) {
-    companion object {
-        @OptIn(ExperimentalUuidApi::class)
-        fun fromQueue(task: TaskWithFormRelation, imageUrls: List<String>, payload: String?): UploadDataRequest =
-            UploadDataRequest(
-                mfid = task.task.mfid,
-                collectionTaskId = task.task.id,
-                activityType = task.task.activityType,
-                seasonId = task.task.seasonId,
-                collectedBy = task.task.collectedBy.toString(),
-                collectedAt = task.task.collectedAt.toString(),
-                syncedAt = Clock.System.now().toString(),
-                imageUrls = imageUrls,
-                payload = Json.parseToJsonElement(payload ?: unreachable("payload in this context must be available"))
-            )
-    }
-}
 
 @HiltWorker
 class FormSyncWorker @AssistedInject constructor(
     @Assisted val appContext: Context,
     @Assisted val workerParams: WorkerParameters,
-    @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
-    private val supabase: SupabaseClient,
-    private val authRepository: AuthRepository,
-    private val networkMonitor: NetworkMonitor,
     private val syncRepository: SyncRepository,
-    private val collectionRepository: CollectionRepository,
+    private val syncManager: SyncManager,
+    @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
 
     override suspend fun getForegroundInfo(): ForegroundInfo = appContext.syncForegroundInfo()
 
     override suspend fun doWork(): Result = withContext(ioDispatcher) {
-        if (!isReadyToSync()) return@withContext Result.success()
+        if (!syncManager.isReadyToSync()) return@withContext Result.success()
 
         Log.i(LOG_TAG, "[Sync] Doing sync work.")
 
@@ -118,7 +72,7 @@ class FormSyncWorker @AssistedInject constructor(
             Log.i(LOG_TAG, "[Sync] Trying to sync ${queue.size} entries.")
 
             for (item in queue) {
-                val success = processQueueItem(item)
+                val success = syncManager.processQueueItem(item)
                 if (!success) hasError = true
             }
 
@@ -135,111 +89,6 @@ class FormSyncWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun isReadyToSync(): Boolean {
-        Log.i(LOG_TAG, "[Sync] Checking if device can sync.")
-
-        if (!networkMonitor.isOnline.first()) {
-            Log.i(LOG_TAG, "    Device is offline. Skipping sync.")
-            return false
-        }
-        if (!authRepository.isAuthReady.first { it }) {
-            Log.i(LOG_TAG, "    Auth not ready. Skipping sync.")
-            return false
-        }
-
-        val authState = authRepository.authState.first {
-            it !is ScoutAuthState.Initializing
-        }
-
-        when (authState) {
-            is ScoutAuthState.AuthenticatedOnline -> {
-                Log.i(LOG_TAG, "    Authenticated online. Proceeding.")
-                return true
-            }
-
-            is ScoutAuthState.AuthenticatedOffline -> {
-                Log.i(LOG_TAG, "    Offline session. Skipping sync.")
-                return false
-            }
-
-            is ScoutAuthState.SessionExpired -> {
-                Log.i(LOG_TAG, "    Session expired. Skipping sync.")
-                return false
-            }
-
-            else -> {
-                Log.i(LOG_TAG, "    Not authenticated. Skipping sync.")
-                return false
-            }
-        }
-    }
-
-    private suspend fun processQueueItem(item: SyncQueueEntity): Boolean {
-        return try {
-            syncRepository.markInProgress(item.id)
-
-            when (item.type) {
-                SyncType.FORM_SUBMISSION -> {
-                    handleFormSubmission(item)
-                }
-
-                SyncType.TASK_UPDATE -> {
-                    // future
-                }
-            }
-
-            syncRepository.markDone(item.id)
-            true
-
-        } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Sync] Failed queue item ${item.id}", e)
-            syncRepository.markFailed(item.id, e.message)
-            false
-        }
-    }
-
-    private suspend fun handleFormSubmission(item: SyncQueueEntity) {
-        val timestamp = Clock.System.now()
-
-        val taskId = item.refId.toInt()
-        val task = collectionRepository.getTaskById(taskId)
-        val images = collectionRepository.getImagesById(taskId)
-
-        val formType = FormType.fromActivityType(task.task.activityType)
-
-        Log.i(LOG_TAG, "[Sync] Starting sync for task MFID ${task.task.mfid}.")
-
-        val imageUrls = uploadImages(task, images, timestamp)
-
-        val request = UploadDataRequest.fromQueue(
-            task = task,
-            imageUrls = imageUrls,
-            payload = item.payload
-        )
-
-        supabase.postgrest.rpc(
-            function = "upload_form_data",
-            parameters = mapOf("data" to Json.encodeToJsonElement(request))
-        )
-
-        collectionRepository.markFormAsSynced(taskId)
-        Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${task.task.mfid} - ${formType.label}.")
-    }
-
-    private suspend fun uploadImages(
-        task: TaskWithFormRelation,
-        images: List<FormImageEntity>,
-        timestamp: Instant
-    ): List<String> {
-        val imageBucket = supabase.storage.from("form-images")
-        return images.map { image ->
-            val file = File(image.localPath)
-            val remotePath = "${task.task.seasonId}/${task.task.activityType}/${task.task.mfid}/$timestamp/${file.name}"
-            imageBucket.upload(remotePath, file) { upsert = true }
-            collectionRepository.updateImageRemotePath(image.id, remotePath)
-            remotePath
-        }
-    }
 
     companion object {
         private const val LOG_TAG = "Scout: Sync"

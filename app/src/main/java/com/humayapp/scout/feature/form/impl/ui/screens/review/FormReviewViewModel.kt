@@ -8,6 +8,7 @@ import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.sync.SyncRepository
 import com.humayapp.scout.core.database.model.SyncQueueEntity
 import com.humayapp.scout.core.database.model.SyncType
+import com.humayapp.scout.core.sync.SyncOrchestrator
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
@@ -53,18 +54,13 @@ class FormReviewViewModel @AssistedInject constructor(
 
         logAnswers(answers)
 
-        val serializedString = formType.serializeAnswers(answers).toString()
-        Log.d(
-            LOG_TAG,
-            "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------"
-        )
+        // Log.d(LOG_TAG, "---- Serialized Answers (without season_id) ----\n$serializedString\n-----------------------------------------------")
 
         viewModelScope.launch {
             try {
                 val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")
 
-                Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
-
+                val serializedString = formType.serializeAnswers(answers).toString()
                 val imageAnswers = answers
                     .filter { it.key.startsWith("img_") && it.value is String }
                     .mapValues { it.value as String }
@@ -77,7 +73,6 @@ class FormReviewViewModel @AssistedInject constructor(
                     userId = userId,
                     formData = serializedString
                 )
-
 
                 if (success) {
                     syncRepository.queueSync(

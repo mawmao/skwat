@@ -6,6 +6,7 @@ import com.humayapp.scout.core.database.dao.CollectionFormDao
 import com.humayapp.scout.core.database.dao.CollectionTaskDao
 import com.humayapp.scout.core.database.dao.ImagesDao
 import com.humayapp.scout.core.sync.SyncOrchestrator
+import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.main.data.CollectionRepository
 import com.humayapp.scout.feature.main.data.collection.FormNetworkDataSource
@@ -33,7 +34,8 @@ object MainDataModule {
         taskDataSource: TaskNetworkDataSource,
         formDataSource: FormNetworkDataSource,
         syncOrchestrator: SyncOrchestrator,
-        imageResolver: ImageResolver
+        imageResolver: ImageResolver,
+        networkMonitor: NetworkMonitor
     ): CollectionRepository = CollectionRepository(
         database,
         taskDao,
@@ -43,7 +45,8 @@ object MainDataModule {
         taskDataSource,
         formDataSource,
         syncOrchestrator,
-        imageResolver
+        imageResolver,
+        networkMonitor
     )
 
     @Provides

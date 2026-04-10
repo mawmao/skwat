@@ -19,6 +19,11 @@ class SyncRepository(
         return syncQueueDao.getPending()
     }
 
+    suspend fun hasPendingQueue(): Boolean {
+        // should probably change but this would work
+        return getPendingQueue().isNotEmpty()
+    }
+
     suspend fun markInProgress(id: Long) {
         syncQueueDao.updateStatus(id, SyncStatus.IN_PROGRESS)
     }

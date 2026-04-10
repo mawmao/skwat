@@ -64,7 +64,7 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
     val pendingCount = uiState.tasks.count { it.status == "pending" }
-    val collectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == null }
+    val collectedCount = uiState.tasks.count { it.status == "completed" && (it.verificationStatus == "pending" || it.verificationStatus == null) }
     val approvedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "approved" }
     val rejectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "rejected" }
 

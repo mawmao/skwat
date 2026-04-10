@@ -7,6 +7,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 data class TaskWithFormRelation(

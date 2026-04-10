@@ -38,12 +38,32 @@ interface CollectionTaskDao {
     @Query("UPDATE collection_tasks SET status = 'completed', collectedBy = :collectorId, collectedAt = :collectedAt WHERE id = :taskId")
     suspend fun markTaskCompleted(taskId: Int, collectorId: String, collectedAt: Instant): Int
 
-    @Query("""
+    @Query(
+        """
         DELETE FROM collection_tasks
         WHERE id NOT IN (:ids)
-        """)
+        """
+    )
     suspend fun deleteTasksNotIn(ids: List<Int>)
 
+    @Query("DELETE FROM collection_tasks")
+    suspend fun deleteAll()
+
+    @Query(
+        """
+        DELETE FROM collection_tasks
+        WHERE id NOT IN (:ids)
+        """
+    )
+    suspend fun deleteTasksNotOwnedByUser(ids: List<Int>)
+
+    @Query(
+        """
+            DELETE FROM collection_tasks
+            WHERE id NOT IN (:ids)
+        """
+    )
+    suspend fun deleteWhereNotIn(ids: List<Int>)
 }
 
 
@@ -61,6 +81,6 @@ interface CollectionFormDao {
     @Insert
     suspend fun insert(form: CollectionFormEntity)
 
-    @Query("SELECT * FROM collection_forms WHERE synced = 0")
-    suspend fun getUnsyncedForms(): List<CollectionFormEntity>
+    @Query("DELETE FROM collection_forms")
+    suspend fun deleteAll()
 }

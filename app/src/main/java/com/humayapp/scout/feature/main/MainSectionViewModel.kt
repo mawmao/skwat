@@ -8,6 +8,8 @@ import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.sync.FormSyncWorker
+import com.humayapp.scout.core.sync.SyncManager
+import com.humayapp.scout.core.sync.SyncOrchestrator
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
@@ -53,6 +55,7 @@ class MainSectionViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
     private val authRepository: AuthRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val pollingInterval = 5.seconds
@@ -128,7 +131,6 @@ class MainSectionViewModel @Inject constructor(
     private fun observeTasks() {
         collectionRepository.observeTasks()
             .onStart { _uiState.update { it.copy(isLoading = true) } }
-            .drop(1)
             .onEach { tasks ->
                 _uiState.update {
                     it.copy(
@@ -156,7 +158,7 @@ class MainSectionViewModel @Inject constructor(
             _uiState.update { it.copy(isRefreshing = true) }
             try {
                 val userId = _currentUser.value?.id ?: unreachable("user id must be available in this context")
-                pullTaskAndNotifications(userId)
+                syncManager.syncNow(userId)
                 FormSyncWorker.startUpSyncWork()
                 delay(300)
             } catch (e: Exception) {
@@ -193,7 +195,7 @@ class MainSectionViewModel @Inject constructor(
     private suspend fun pullTaskAndNotifications(userId: String) {
         try {
             ensureSession(onSessionExpired = ::handleSessionExpired) {
-                collectionRepository.fullSync()
+                syncManager.syncNow(userId)
                 notificationRepository.pullNotifications(userId)
             }
         } catch (e: CancellationException) {
