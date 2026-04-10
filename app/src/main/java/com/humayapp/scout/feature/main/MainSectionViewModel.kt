@@ -1,23 +1,21 @@
 package com.humayapp.scout.feature.main
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.notification.Notification
 import com.humayapp.scout.core.data.notification.NotificationRepository
-import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.data.ensureSession
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.model.toScoutUser
-import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
+import com.humayapp.scout.feature.main.data.CollectionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.exceptions.HttpRequestException
 import jakarta.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -32,11 +30,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -52,10 +53,9 @@ class MainSectionViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
     private val authRepository: AuthRepository,
-    @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
-    private val pollingInterval = 15.seconds
+    private val pollingInterval = 5.seconds
 
     private val _uiState = MutableStateFlow(MainSectionUiState())
     val uiState: StateFlow<MainSectionUiState> = _uiState.asStateFlow()
@@ -126,25 +126,20 @@ class MainSectionViewModel @Inject constructor(
     }
 
     private fun observeTasks() {
-        viewModelScope.launch {
-            var firstEmission = true
-            collectionRepository.getAllCollectionTasks()
-                .collect { tasks ->
-                    _uiState.update { it.copy(tasks = tasks) }
-                    if (firstEmission) {
-                        firstEmission = false
-                        if (tasks.isNotEmpty()) {
-                            _uiState.update { state -> state.copy(isLoading = false) }
-                        } else {
-                            launch {
-                                delay(2000L)
-                                _uiState.update { state -> state.copy(isLoading = false) }
-                            }
-                        }
-                    }
+        collectionRepository.observeTasks()
+            .onStart { _uiState.update { it.copy(isLoading = true) } }
+            .drop(1)
+            .onEach { tasks ->
+                _uiState.update {
+                    it.copy(
+                        tasks = tasks,
+                        isLoading = false
+                    )
                 }
-        }
+            }
+            .launchIn(viewModelScope)
     }
+
 
     fun refreshTasks() {
         viewModelScope.launch {
@@ -161,11 +156,9 @@ class MainSectionViewModel @Inject constructor(
             _uiState.update { it.copy(isRefreshing = true) }
             try {
                 val userId = _currentUser.value?.id ?: unreachable("user id must be available in this context")
-                collectionRepository.pullTasks(userId)
-
+                pullTaskAndNotifications(userId)
                 FormSyncWorker.startUpSyncWork()
                 delay(300)
-
             } catch (e: Exception) {
                 Log.e("Scout: MainSectionViewModel", "Refresh error:", e)
                 _uiError.update { e.message ?: "Failed to refresh tasks" }
@@ -200,7 +193,7 @@ class MainSectionViewModel @Inject constructor(
     private suspend fun pullTaskAndNotifications(userId: String) {
         try {
             ensureSession(onSessionExpired = ::handleSessionExpired) {
-                collectionRepository.pullTasks(userId)
+                collectionRepository.fullSync()
                 notificationRepository.pullNotifications(userId)
             }
         } catch (e: CancellationException) {
@@ -229,7 +222,7 @@ class MainSectionViewModel @Inject constructor(
 
 data class MainSectionUiState(
     val isProfileShown: Boolean = false,
-    val tasks: List<CollectionTask> = emptyList(),
+    val tasks: List<CollectionTaskUiModel> = emptyList(),
     val isRefreshing: Boolean = false,
     val isLoading: Boolean = true
 )

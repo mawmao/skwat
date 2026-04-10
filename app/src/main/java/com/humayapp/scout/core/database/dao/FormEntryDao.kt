@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import com.humayapp.scout.core.database.model.FormEntryEntity
 import com.humayapp.scout.core.database.model.FormImageEntity
 import com.humayapp.scout.core.database.model.SyncStatus

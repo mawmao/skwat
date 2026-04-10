@@ -1,12 +1,10 @@
 package com.humayapp.scout.feature.main
 
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,14 +25,12 @@ import com.humayapp.scout.core.ui.theme.ScoutIcons
 import com.humayapp.scout.core.ui.util.ScoutErrorEvent
 import com.humayapp.scout.core.ui.util.ScoutUiEvents
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.main.approved.api.navigation.ApprovedNavKey
 import com.humayapp.scout.feature.main.approved.api.navigation.navigateToApproved
 import com.humayapp.scout.feature.main.approved.impl.navigation.approvedEntryProvider
 import com.humayapp.scout.feature.main.collected.api.navigation.CollectedNavKey
 import com.humayapp.scout.feature.main.collected.api.navigation.navigateToCollected
 import com.humayapp.scout.feature.main.collected.impl.navigation.collectedEntryProvider
-import com.humayapp.scout.feature.main.notification.impl.navigation.notificationsEntryProvider
 import com.humayapp.scout.feature.main.pending.api.navigation.PendingNavKey
 import com.humayapp.scout.feature.main.pending.api.navigation.navigateToPending
 import com.humayapp.scout.feature.main.pending.impl.navigation.pendingEntryProvider
@@ -44,7 +40,6 @@ import com.humayapp.scout.feature.main.rejected.impl.navigation.rejectedEntryPro
 import com.humayapp.scout.feature.main.ui.MainSectionNavigationBar
 import com.humayapp.scout.feature.main.ui.MainSectionTopAppBar
 import com.humayapp.scout.feature.main.ui.UserProfileDialog
-import com.humayapp.scout.navigation.RootNavKey
 import com.humayapp.scout.navigation.navigateToAuth
 import com.humayapp.scout.navigation.navigateToNotifications
 
@@ -69,7 +64,7 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
     var showSessionExpiredDialog by remember { mutableStateOf(false) }
 
     val pendingCount = uiState.tasks.count { it.status == "pending" }
-    val collectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "pending" }
+    val collectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == null }
     val approvedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "approved" }
     val rejectedCount = uiState.tasks.count { it.status == "completed" && it.verificationStatus == "rejected" }
 

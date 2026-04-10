@@ -1,6 +1,7 @@
 package com.humayapp.scout.core.database.model
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
@@ -26,13 +27,18 @@ data class FormEntryEntity(
     val collectionTaskId: Int
 )
 
-enum class SyncStatus {
-    PENDING,
-    SYNCED,
-    DUPLICATE
-}
-
-@Entity(tableName = "form_images")
+@Entity(
+    tableName = "form_images",
+    foreignKeys = [
+        ForeignKey(
+            entity = CollectionTaskEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["collectionTaskId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("collectionTaskId")]
+)
 data class FormImageEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val collectionTaskId: Int,

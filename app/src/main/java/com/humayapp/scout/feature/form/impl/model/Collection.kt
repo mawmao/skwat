@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.main.MainSectionViewModel
@@ -39,7 +40,7 @@ fun getTasksByStatus(tasks: List<CollectionTask>, status: TaskStatus): List<Coll
 fun TaskListScreen(
     vm: MainSectionViewModel,
     status: TaskStatus,
-    onTaskClick: (CollectionTask) -> Unit
+    onTaskClick: (CollectionTaskUiModel) -> Unit
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 

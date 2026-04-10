@@ -1,9 +1,6 @@
 package com.humayapp.scout.feature.form.impl.data.registry.production
 
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
-import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
@@ -14,7 +11,6 @@ import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
-import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
 sealed class Production : WizardEntry() {
@@ -117,16 +113,6 @@ sealed class Production : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
-
-        val mapper: FormMapper = object : FormMapper() {
-            override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
-                defaultMapping(
-                    table = SupabaseDBTables.HARVEST_RECORDS,
-                    entry = entry,
-                    client = client,
-                )
-            }
-        }
 
         const val HARVEST_DATE_KEY = "harvest_date"
         const val HARVEST_METHOD_KEY = "harvesting_method"

@@ -1,7 +1,6 @@
 package com.humayapp.scout.core.ui.component
 
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -38,15 +37,6 @@ fun ImageBox(
             ImageRequest.Builder(context)
                 .data(uri)
                 .crossfade(true)
-                .listener(
-                    onError = { _, throwable ->
-                        Log.e("Scout: ImageBox", "Failed to load image: $uri", throwable.throwable)
-                    },
-                    onStart = { Log.v("Scout: ImageBox", "Starting load: $uri") },
-                    onSuccess = {  _, _ ->
-                        Log.v("Scout: ImageBox", "Success loading: $uri")
-                    }
-                )
                 .build()
         } else null
     }

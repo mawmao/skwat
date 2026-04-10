@@ -23,5 +23,6 @@ object DatabaseModule {
         klass = ScoutDatabase::class.java,
         name = "scout-database",
     ).createFromAsset("seed.db")
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
 }

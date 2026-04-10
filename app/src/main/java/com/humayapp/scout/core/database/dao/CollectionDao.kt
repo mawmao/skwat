@@ -2,138 +2,65 @@ package com.humayapp.scout.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
+import com.humayapp.scout.core.database.model.CollectionFormEntity
 import com.humayapp.scout.core.database.model.CollectionTaskEntity
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.database.model.FormImageEntity
-import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import kotlinx.coroutines.flow.Flow
-import kotlin.time.Clock
 import kotlin.time.Instant
 
 @Dao
 interface CollectionTaskDao {
 
-    @Query("SELECT * FROM collection_tasks WHERE retakeOf = :originalId AND status = :status LIMIT 1")
-    suspend fun getRetakeTaskByOriginalIdAndStatus(originalId: Int, status: String): CollectionTaskEntity?
-
-    @Query("SELECT * FROM collection_tasks WHERE retakeOf = :originalId AND status = :status AND verificationStatus = :verificationStatus LIMIT 1")
-    suspend fun getRetakeTaskByOriginalIdAndStatusAndVerification(
-        originalId: Int,
-        status: String,
-        verificationStatus: String
-    ): CollectionTaskEntity?
-
+    @Transaction
     @Query("SELECT * FROM collection_tasks")
-    suspend fun getAllTasksList(): List<CollectionTaskEntity>
+    fun observeTasks(): Flow<List<TaskWithFormRelation>>
 
-    @Query("SELECT * FROM collection_tasks ORDER BY collectedAt DESC")
-    fun getAllTasks(): Flow<List<CollectionTaskEntity>>
-
+    @Transaction
     @Query("SELECT * FROM collection_tasks WHERE id = :id")
-    suspend fun getTaskById(id: Int): CollectionTaskEntity?
-
-    @Query("SELECT * FROM collection_tasks WHERE mfid = :mfid AND activityType = :activityType LIMIT 1")
-    suspend fun getTaskByMfidAndActivity(mfid: String, activityType: String): CollectionTaskEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(tasks: List<CollectionTaskEntity>)
+    fun observeTaskById(id: Int): Flow<TaskWithFormRelation>
 
     @Transaction
-    suspend fun updateVerification(
-        id: Int,
-        status: String,
-        verifiedBy: String?,
-        remarks: String?
-    ) {
-        val task = getTaskById(id)?.copy(
-            verificationStatus = status,
-            verifiedBy = verifiedBy,
-            verifiedAt = Clock.System.now(),
-            remarks = remarks
-        ) ?: return
-        insertAll(listOf(task)) // triggers Flow
-    }
+    @Query("SELECT * FROM collection_tasks WHERE id = :id")
+    suspend fun getTaskById(id: Int): TaskWithFormRelation
 
-    @Transaction
-    suspend fun updateCollected(
-        mfid: String,
-        activityType: String,
-        collectorId: String,
-        collectedAt: Instant = Clock.System.now()
-    ) {
-        val task = getTaskByMfidAndActivity(mfid, activityType)?.copy(
-            collectedBy = collectorId,
-            collectedAt = collectedAt,
-            status = "completed"
-        ) ?: return
-        insertAll(listOf(task))
-    }
+    @Query("SELECT * FROM collection_tasks WHERE id IN (:ids)")
+    suspend fun getTasksByIds(ids: List<Int>): List<CollectionTaskEntity>
+
+    @Upsert
+    suspend fun upsert(tasks: List<CollectionTaskEntity>)
+
+    @Upsert
+    suspend fun upsert(task: CollectionTaskEntity)
 
     @Query("UPDATE collection_tasks SET status = 'completed', collectedBy = :collectorId, collectedAt = :collectedAt WHERE id = :taskId")
-    suspend fun markTaskCompleted(taskId: Int, collectorId: String, collectedAt: Instant)
+    suspend fun markTaskCompleted(taskId: Int, collectorId: String, collectedAt: Instant): Int
 
-    @Transaction
-    suspend fun completeTaskWithImages(
-        collectionTaskId: Int,
-        collectorId: String,
-        collectedAt: Instant,
-        formData: String,
-        images: List<FormImageEntity>
-    ) {
-        images.forEach { insertImage(it) }
-        markComplete(collectionTaskId, collectorId, collectedAt, formData)
-    }
+    @Query("""
+        DELETE FROM collection_tasks
+        WHERE id NOT IN (:ids)
+        """)
+    suspend fun deleteTasksNotIn(ids: List<Int>)
 
-    @Insert
-    suspend fun insertImage(image: FormImageEntity)
+}
 
 
-    @Query(
-        """
-            UPDATE collection_tasks 
-            SET status = 'completed', 
-                collectedBy = :collectorId, 
-                collectedAt = :collectedAt,
-                formData = :formData,
-                synced = 0
-            WHERE id = :taskId
-        """
-    )
-    suspend fun markComplete(
-        taskId: Int,
-        collectorId: String,
-        collectedAt: Instant,
-        formData: String
-    )
+@Dao
+interface CollectionFormDao {
+    @Upsert
+    suspend fun upsert(tasks: List<CollectionFormEntity>)
 
+    @Upsert
+    suspend fun upsert(task: CollectionFormEntity)
 
-    @Query(
-        """
-        UPDATE collection_tasks 
-        SET synced = 1
-        WHERE id = :taskId
-    """
-    )
+    @Query("UPDATE collection_forms SET synced = 1 WHERE taskId = :taskId")
     suspend fun markSynced(taskId: Int): Int
 
-    @Query("SELECT * FROM collection_tasks WHERE synced = 0 AND status = 'completed'")
-    suspend fun getUnsyncedTasks(): List<CollectionTaskEntity>
+    @Insert
+    suspend fun insert(form: CollectionFormEntity)
 
-    @Query("SELECT * FROM form_images WHERE collectionTaskId = :collectionTaskId")
-    suspend fun getImagesById(collectionTaskId: Int): List<FormImageEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertOrUpdate(entity: CollectionTaskEntity)
-
-    @Query("DELETE FROM collection_tasks WHERE id IN (:ids)")
-    suspend fun deleteTasksByIds(ids: List<Int>)
-
-    @Query("DELETE FROM form_images WHERE collectionTaskId IN (:taskIds)")
-    suspend fun deleteImagesByTaskIds(taskIds: List<Int>)
-
-    @Query("SELECT * FROM form_images WHERE collectionTaskId IN (:taskIds)")
-    suspend fun getImagesByTaskIds(taskIds: List<Int>): List<FormImageEntity>
+    @Query("SELECT * FROM collection_forms WHERE synced = 0")
+    suspend fun getUnsyncedForms(): List<CollectionFormEntity>
 }

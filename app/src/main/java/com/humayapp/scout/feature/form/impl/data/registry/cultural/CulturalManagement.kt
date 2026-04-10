@@ -1,11 +1,8 @@
 package com.humayapp.scout.feature.form.impl.data.registry.cultural
 
 import androidx.compose.runtime.Composable
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.feature.form.impl.FormState
-import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.overrides.RiceVarietyInformationPage
 import com.humayapp.scout.feature.form.impl.data.registry.cultural.review.CulturalManagementDetailsContent
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
@@ -18,7 +15,6 @@ import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.model.fieldThresholdRule
-import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
 sealed class CulturalManagement : WizardEntry() {
@@ -321,17 +317,6 @@ sealed class CulturalManagement : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
-
-
-        val mapper: FormMapper = object : FormMapper() {
-            override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
-                defaultMapping(
-                    table = SupabaseDBTables.CROP_ESTABLISHMENTS,
-                    entry = entry,
-                    client = client,
-                )
-            }
-        }
 
         const val MONITORING_FIELD_AREA_KEY = "monitoring_field_area_sqm"
         const val ECOSYSTEM_KEY = "ecosystem"

@@ -50,16 +50,6 @@ data class FieldActivities(
     val syncedAt: Instant
 )
 
-@Serializable
-data class FieldActivityUpdate(
-    val id: String,
-    @SerialName("verification_status") val verificationStatus: String,
-    @SerialName("verified_by") val verifiedBy: String? = null,
-    @SerialName("verified_at") val verifiedAt: Instant? = null,
-    val remarks: String? = null,
-    @SerialName("collected_by") val collectedBy: String
-)
-
 @OptIn(ExperimentalUuidApi::class)
 @Serializable
 data class CollectionTask(
@@ -124,20 +114,11 @@ data class CollectionTask(
     @SerialName("is_overdue")
     val isOverdue: Boolean,
 
-    @SerialName("verification_status")
-    val verificationStatus: String? = null, // verification status: pending / approved / rejected
-
     @SerialName("collected_by")
     val collectedBy: Uuid? = null,
 
     @SerialName("collected_at")
     val collectedAt: Instant? = null,
-
-    @SerialName("verified_by")
-    val verifiedBy: Uuid? = null,
-
-    @SerialName("verified_at")
-    val verifiedAt: Instant? = null,
 
     val remarks: String? = null,
 
@@ -146,8 +127,5 @@ data class CollectionTask(
 
     @SerialName("dependency_data")
     val dependencyData: JsonElement? = null,
-
-    @SerialName("form_data")
-    val formData: String? = null
 )
 

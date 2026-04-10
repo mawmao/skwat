@@ -1,8 +1,8 @@
 package com.humayapp.scout.core.common.scope.di
 
+import com.humayapp.scout.core.common.scope.ApplicationScope
 import dagger.Module
 import dagger.Provides
-import com.humayapp.scout.core.common.scope.ApplicationScope
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import jakarta.inject.Singleton

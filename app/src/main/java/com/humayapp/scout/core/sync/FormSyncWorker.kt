@@ -12,13 +12,17 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.humayapp.scout.core.common.dispatcher.Dispatcher
 import com.humayapp.scout.core.common.dispatcher.ScoutDispatchers
-import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.common.unreachable
+import com.humayapp.scout.core.data.sync.SyncRepository
+import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.database.model.SyncQueueEntity
+import com.humayapp.scout.core.database.model.SyncType
+import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.form.api.FormType
-import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
-import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
+import com.humayapp.scout.feature.main.data.CollectionRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.jan.supabase.SupabaseClient
@@ -29,6 +33,7 @@ import io.github.jan.supabase.storage.upload
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -41,28 +46,44 @@ import kotlin.uuid.ExperimentalUuidApi
 @Serializable
 data class UploadDataRequest(
     val mfid: String,
-    val collection_task_id: Int,
-    val activity_type: String,
-    val season_id: Int,
-    val collected_by: String,
-    val collected_at: String,
-    val synced_at: String?,
-    val image_urls: List<String>,
+
+    @SerialName("collection_task_id")
+    val collectionTaskId: Int,
+
+    @SerialName("activity_type")
+    val activityType: String,
+
+    @SerialName("season_id")
+    val seasonId: Int,
+
+    @SerialName("collected_by")
+    val collectedBy: String,
+
+    @SerialName("collected_at")
+    val collectedAt: String,
+
+    @SerialName("synced_at")
+    val syncedAt: String?,
+
+    @SerialName("image_urls")
+    val imageUrls: List<String>,
+
     val payload: JsonElement
 ) {
     companion object {
         @OptIn(ExperimentalUuidApi::class)
-        fun fromEntry(entry: CollectionTask, imageUrls: List<String>): UploadDataRequest = UploadDataRequest(
-            mfid = entry.mfid,
-            collection_task_id = entry.id,
-            activity_type = entry.activityType,
-            season_id = entry.seasonId,
-            collected_by = entry.collectedBy.toString(),
-            collected_at = entry.collectedAt.toString(),
-            synced_at = Clock.System.now().toString(),
-            image_urls = imageUrls,
-            payload = Json.parseToJsonElement(entry.formData!!)
-        )
+        fun fromQueue(task: TaskWithFormRelation, imageUrls: List<String>, payload: String?): UploadDataRequest =
+            UploadDataRequest(
+                mfid = task.task.mfid,
+                collectionTaskId = task.task.id,
+                activityType = task.task.activityType,
+                seasonId = task.task.seasonId,
+                collectedBy = task.task.collectedBy.toString(),
+                collectedAt = task.task.collectedAt.toString(),
+                syncedAt = Clock.System.now().toString(),
+                imageUrls = imageUrls,
+                payload = Json.parseToJsonElement(payload ?: unreachable("payload in this context must be available"))
+            )
     }
 }
 
@@ -71,10 +92,10 @@ class FormSyncWorker @AssistedInject constructor(
     @Assisted val appContext: Context,
     @Assisted val workerParams: WorkerParameters,
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
-    private val formRepository: FormRepository,
     private val supabase: SupabaseClient,
     private val authRepository: AuthRepository,
     private val networkMonitor: NetworkMonitor,
+    private val syncRepository: SyncRepository,
     private val collectionRepository: CollectionRepository,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
 
@@ -84,16 +105,22 @@ class FormSyncWorker @AssistedInject constructor(
         if (!isReadyToSync()) return@withContext Result.success()
 
         Log.i(LOG_TAG, "[Sync] Doing sync work.")
-        return@withContext try {
 
-            val pending = getPendingEntries()
-            if (pending.isEmpty()) {
+        return@withContext try {
+            val queue = syncRepository.getPendingQueue()
+
+            if (queue.isEmpty()) {
                 Log.i(LOG_TAG, "[Sync] No pending forms found. Exiting sync.")
                 return@withContext Result.success()
             }
 
-            Log.i(LOG_TAG, "[Sync] Trying to sync ${pending.size} entries.")
-            val hasError = syncEntries(pending)
+            var hasError = false
+            Log.i(LOG_TAG, "[Sync] Trying to sync ${queue.size} entries.")
+
+            for (item in queue) {
+                val success = processQueueItem(item)
+                if (!success) hasError = true
+            }
 
             if (hasError) {
                 Log.w(LOG_TAG, "[Sync] Partial sync failure. Requesting retry.")
@@ -115,6 +142,10 @@ class FormSyncWorker @AssistedInject constructor(
             Log.i(LOG_TAG, "    Device is offline. Skipping sync.")
             return false
         }
+        if (!authRepository.isAuthReady.first { it }) {
+            Log.i(LOG_TAG, "    Auth not ready. Skipping sync.")
+            return false
+        }
 
         val authState = authRepository.authState.first {
             it !is ScoutAuthState.Initializing
@@ -125,14 +156,17 @@ class FormSyncWorker @AssistedInject constructor(
                 Log.i(LOG_TAG, "    Authenticated online. Proceeding.")
                 return true
             }
+
             is ScoutAuthState.AuthenticatedOffline -> {
                 Log.i(LOG_TAG, "    Offline session. Skipping sync.")
                 return false
             }
+
             is ScoutAuthState.SessionExpired -> {
                 Log.i(LOG_TAG, "    Session expired. Skipping sync.")
                 return false
             }
+
             else -> {
                 Log.i(LOG_TAG, "    Not authenticated. Skipping sync.")
                 return false
@@ -140,61 +174,70 @@ class FormSyncWorker @AssistedInject constructor(
         }
     }
 
-    private suspend fun getPendingEntries(): List<CollectionTask> {
-        val entryId = inputData.getInt("ENTRY_ID", -1)
-        return if (entryId != -1) {
-            listOfNotNull(collectionRepository.getCollectionTaskById(entryId))
-        } else {
-            collectionRepository.getUnsyncedTasks()
-        }
-    }
-
-    private suspend fun syncEntries(entries: List<CollectionTask>): Boolean {
-        var hasError = false
-        for (entry in entries) {
-            val success = syncEntry(entry)
-            if (!success) hasError = true
-        }
-        return hasError
-    }
-
-    private suspend fun syncEntry(task: CollectionTask): Boolean {
-        val formType = FormType.fromActivityType(task.activityType)
-        val timestamp = Clock.System.now()
-
-        Log.i(LOG_TAG, "[Sync] Starting sync for task MFID ${task.mfid}.")
+    private suspend fun processQueueItem(item: SyncQueueEntity): Boolean {
         return try {
-            val imageUrls = uploadImages(task, timestamp)
-            val request = UploadDataRequest.fromEntry(task, imageUrls)
-            supabase.postgrest.rpc("upload_form_data", mapOf("data" to Json.encodeToJsonElement(request)))
-            Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${task.mfid} - ${formType.label}.")
-            markSynced(task.id, timestamp)
+            syncRepository.markInProgress(item.id)
+
+            when (item.type) {
+                SyncType.FORM_SUBMISSION -> {
+                    handleFormSubmission(item)
+                }
+
+                SyncType.TASK_UPDATE -> {
+                    // future
+                }
+            }
+
+            syncRepository.markDone(item.id)
             true
+
         } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Sync] Upload failed for MFID ${task.mfid} - ${formType.label}: ${e.message}.")
+            Log.e(LOG_TAG, "[Sync] Failed queue item ${item.id}", e)
+            syncRepository.markFailed(item.id, e.message)
             false
         }
     }
 
-    private suspend fun uploadImages(entry: CollectionTask, timestamp: Instant): List<String> {
-        val images = collectionRepository.getImagesById(entry.id)
+    private suspend fun handleFormSubmission(item: SyncQueueEntity) {
+        val timestamp = Clock.System.now()
+
+        val taskId = item.refId.toInt()
+        val task = collectionRepository.getTaskById(taskId)
+        val images = collectionRepository.getImagesById(taskId)
+
+        val formType = FormType.fromActivityType(task.task.activityType)
+
+        Log.i(LOG_TAG, "[Sync] Starting sync for task MFID ${task.task.mfid}.")
+
+        val imageUrls = uploadImages(task, images, timestamp)
+
+        val request = UploadDataRequest.fromQueue(
+            task = task,
+            imageUrls = imageUrls,
+            payload = item.payload
+        )
+
+        supabase.postgrest.rpc(
+            function = "upload_form_data",
+            parameters = mapOf("data" to Json.encodeToJsonElement(request))
+        )
+
+        collectionRepository.markFormAsSynced(taskId)
+        Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${task.task.mfid} - ${formType.label}.")
+    }
+
+    private suspend fun uploadImages(
+        task: TaskWithFormRelation,
+        images: List<FormImageEntity>,
+        timestamp: Instant
+    ): List<String> {
         val imageBucket = supabase.storage.from("form-images")
         return images.map { image ->
             val file = File(image.localPath)
-            val remotePath = "${entry.seasonId}/${entry.activityType}/${entry.mfid}/$timestamp/${file.name}"
+            val remotePath = "${task.task.seasonId}/${task.task.activityType}/${task.task.mfid}/$timestamp/${file.name}"
             imageBucket.upload(remotePath, file) { upsert = true }
-            formRepository.updateImageRemotePath(image.id, remotePath)
+            collectionRepository.updateImageRemotePath(image.id, remotePath)
             remotePath
-        }
-    }
-
-    private suspend fun markSynced(entryId: Int, timestamp: Instant) {
-        val rowsUpdated = collectionRepository.markSynced(entryId)
-        if (rowsUpdated > 0) {
-            Log.i(LOG_TAG, "[Sync] Local sync mark successful for entry $entryId.")
-        } else {
-            Log.e(LOG_TAG, "[Sync] Local sync mark FAILED for entry $entryId: no rows updated")
-            throw Exception("Mark synced failed")
         }
     }
 

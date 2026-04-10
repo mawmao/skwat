@@ -22,40 +22,39 @@ fun Context.getFormImageFolder(
 }
 
 fun Context.saveImagesToFolder(
-    answers: Map<String, Any?>,
+    images: Map<String, String>,
     folder: File,
     maxDim: Int = 1440,
     quality: Int = 80,
-): Map<String, Any?> {
-    return answers.mapValues { (key, value) ->
-        if (key.startsWith("img_") && value is String) {
-            val uri = value.toUri()
-            val outFile = File(folder, "$key.webp")
+): Map<String, String> {
+    return images.mapValues { (key, uriString) ->
+        val uri = uriString.toUri()
+        val outFile = File(folder, "$key.webp")
 
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            contentResolver.openInputStream(uri)?.use { input ->
-                BitmapFactory.decodeStream(input, null, options)
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, options)
+        }
+
+        val (w, h) = options.outWidth to options.outHeight
+        var sampleSize = 1
+        if (w > 0 && h > 0) {
+            val largest = maxOf(w, h)
+            while (largest / sampleSize > maxDim) sampleSize *= 2
+        }
+
+        val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val savedPath = contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, decodeOptions)
+        }?.let { bmp ->
+            FileOutputStream(outFile).use { out ->
+                bmp.compress(Bitmap.CompressFormat.WEBP, quality, out)
             }
+            bmp.recycle()
+            outFile.absolutePath
+        }
 
-            val (w, h) = options.outWidth to options.outHeight
-            var sampleSize = 1
-            if (w > 0 && h > 0) {
-                val largest = maxOf(w, h)
-                while (largest / sampleSize > maxDim) sampleSize *= 2
-            }
-
-            val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-            val savedPath = contentResolver.openInputStream(uri)?.use { input ->
-                BitmapFactory.decodeStream(input, null, decodeOptions)
-            }?.let { bmp ->
-                FileOutputStream(outFile).use { out ->
-                    bmp.compress(Bitmap.CompressFormat.WEBP, quality, out)
-                }
-                bmp.recycle()
-                outFile.absolutePath
-            }
-
-            savedPath ?: value
-        } else value
+        savedPath ?: uriString
     }
 }
+

@@ -1,15 +1,11 @@
 package com.humayapp.scout.feature.form.impl.data.registry.damage
 
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.network.SupabaseDBTables
 import com.humayapp.scout.core.network.util.asJson
-import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
 import com.humayapp.scout.feature.form.impl.model.field
-import io.github.jan.supabase.SupabaseClient
 import kotlinx.serialization.json.JsonObject
 
 sealed class DamageAssessment : WizardEntry() {
@@ -90,16 +86,6 @@ sealed class DamageAssessment : WizardEntry() {
 
         val startEntry = CropStageAndSoilType
         val entries = listOf(CropStageAndSoilType, CauseOfDamage, DamageImpact)
-
-        val mapper: FormMapper = object : FormMapper() {
-            override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
-                defaultMapping(
-                    table = SupabaseDBTables.DAMAGE_ASSESSMENTS,
-                    entry = entry,
-                    client = client,
-                )
-            }
-        }
 
         const val CROP_STAGE_KEY = "crop_stage"
         const val SOIL_TYPE_KEY = "soil_type"

@@ -1,29 +1,13 @@
 package com.humayapp.scout.feature.form.impl.data.registry.monitoring
 
 import android.util.Log
-import com.humayapp.scout.core.database.model.FormEntryEntity
-import com.humayapp.scout.core.network.SupabaseDBTables
-import com.humayapp.scout.core.network.util.asJson
-import com.humayapp.scout.core.network.util.getFieldIdByMfid
-import com.humayapp.scout.core.network.util.upsert
 import com.humayapp.scout.feature.form.impl.FormState
-import com.humayapp.scout.feature.form.impl.data.mapper.FormMapper
-import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
-import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.model.FieldType
 import com.humayapp.scout.feature.form.impl.model.Validators
 import com.humayapp.scout.feature.form.impl.model.WizardEntry
-import com.humayapp.scout.feature.form.impl.model.WizardPageOverrides
 import com.humayapp.scout.feature.form.impl.model.field
 import com.humayapp.scout.feature.form.impl.model.validateIf
-import io.github.jan.supabase.SupabaseClient
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonIgnoreUnknownKeys
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
 
 sealed class MonitoringVisit : WizardEntry() {
 
@@ -114,41 +98,7 @@ sealed class MonitoringVisit : WizardEntry() {
 
     companion object {
 
-        fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson()
-
-        val pageOverrides: WizardPageOverrides = mapOf(
-            Conditions to { page -> ConditionPage(page as Conditions) },
-            Images to { page -> ImagesPage(page as Images) }
-        )
-
-        val startEntry = MonitoringDate
         val entries = listOf(MonitoringDate, Conditions, Images)
-
-        val mapper: FormMapper = object : FormMapper() {
-            override suspend fun upload(entry: FormEntryEntity, client: SupabaseClient) {
-
-                val payload = Json.decodeFromString<MonitoringVisitPayload>(entry.payloadJson)
-
-                Log.d("Scout: MonitoringVisitMapper", "entry payload $entry")
-
-                val fieldId = client.getFieldIdByMfid(entry.mfid)
-
-                val parentId = upsertParent(fieldId = fieldId, entry = entry, client = client)
-
-                client.upsert(
-                    table = SupabaseDBTables.MONITORING_VISITS,
-                    item = Json.encodeToJsonElement(
-                        MonitoringVisits(
-                            id = parentId,
-                            dateMonitored = payload.dateMonitored,
-                            cropStage = payload.cropStage,
-                            soilMoistureStatus = payload.soilMoistureStatus,
-                            avgPlantHeight = payload.avgPlantHeight
-                        )
-                    ),
-                )
-            }
-        }
 
         const val MONITORING_DATE_KEY = "date_monitored"
         const val CROP_STAGE_KEY = "crop_stage"
@@ -163,22 +113,3 @@ sealed class MonitoringVisit : WizardEntry() {
     }
 }
 
-@OptIn(ExperimentalSerializationApi::class)
-@Serializable
-@JsonIgnoreUnknownKeys
-data class MonitoringVisitPayload(
-    @SerialName("date_monitored") val dateMonitored: String,
-    @SerialName("crop_stage") val cropStage: String,
-    @SerialName("soil_moisture_status") val soilMoistureStatus: String,
-    @SerialName("avg_plant_height") val avgPlantHeight: String = "N/A",
-)
-
-
-@Serializable
-data class MonitoringVisits(
-    val id: Int? = null, // used only for DB
-    @SerialName("date_monitored") val dateMonitored: String,
-    @SerialName("crop_stage") val cropStage: String,
-    @SerialName("soil_moisture_status") val soilMoistureStatus: String,
-    @SerialName("avg_plant_height") val avgPlantHeight: String = "N/A",
-)

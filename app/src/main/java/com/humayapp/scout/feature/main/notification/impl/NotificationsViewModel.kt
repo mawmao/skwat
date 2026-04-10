@@ -9,8 +9,8 @@ import com.humayapp.scout.core.data.notification.NotificationRepository
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.data.ensureSession
+import com.humayapp.scout.feature.auth.model.ScoutUser
 import com.humayapp.scout.feature.auth.model.toScoutUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.exceptions.HttpRequestException

@@ -5,10 +5,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.humayapp.scout.core.common.unreachable
-import com.humayapp.scout.core.sync.enqueueSyncWork
+import com.humayapp.scout.core.data.sync.SyncRepository
+import com.humayapp.scout.core.database.model.SyncQueueEntity
+import com.humayapp.scout.core.database.model.SyncType
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
-import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
+import com.humayapp.scout.feature.form.api.id
+import com.humayapp.scout.feature.main.data.CollectionRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -21,9 +24,11 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 @HiltViewModel(assistedFactory = FormReviewViewModel.Factory::class)
 class FormReviewViewModel @AssistedInject constructor(
     private val authRepository: AuthRepository,
+    private val syncRepository: SyncRepository,
     private val collectionRepository: CollectionRepository,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
@@ -57,19 +62,34 @@ class FormReviewViewModel @AssistedInject constructor(
         viewModelScope.launch {
             try {
                 val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null")
+
                 Log.d(LOG_TAG, "Trying to save form with images $answers by $userId")
 
-                collectionRepository.saveTaskWithImages(
+                val imageAnswers = answers
+                    .filter { it.key.startsWith("img_") && it.value is String }
+                    .mapValues { it.value as String }
+
+                val success = collectionRepository.saveTaskWithImages(
+                    activityType = formType.id,
                     context = context,
-                    answers = answers,
+                    images = imageAnswers,
                     collectionTaskId = collectionTaskId,
                     userId = userId,
                     formData = serializedString
                 )
 
-                context.enqueueSyncWork(entryId = collectionTaskId)
-                _uiEvent.send(FormReviewEvent.SubmitSuccess)
 
+                if (success) {
+                    syncRepository.queueSync(
+                        SyncQueueEntity(
+                            type = SyncType.FORM_SUBMISSION,
+                            refId = collectionTaskId.toString(),
+                            payload = serializedString
+                        )
+                    )
+                }
+
+                _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
                 Log.e(LOG_TAG, "Database insert failed", e)
             } finally {
@@ -119,3 +139,6 @@ sealed class FormReviewAction {
     data class FormSubmit(val answers: Map<String, Any?>) : FormReviewAction()
 }
 
+sealed class FormSaveResult {
+    data class Success(val taskId: Int) : FormSaveResult()
+}

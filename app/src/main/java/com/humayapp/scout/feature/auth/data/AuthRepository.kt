@@ -7,6 +7,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.exceptions.HttpRequestException
@@ -14,6 +15,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -33,16 +35,17 @@ class AuthRepository(
 ) {
     private val _isLoggingOut = MutableStateFlow(false)
 
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    val currentUserId = _currentUserId.asStateFlow()
+
     val authState: Flow<ScoutAuthState> = combine(
-        store.sessionFlow,
-        offlineStore.offlineUserFlow,
-        networkMonitor.isOnline,
-        offlineStore.hasOfflineCredentials
+        store.sessionFlow.distinctUntilChanged(),
+        offlineStore.offlineUserFlow.distinctUntilChanged(),
+        networkMonitor.isOnline.distinctUntilChanged(),
+        offlineStore.hasOfflineCredentials.distinctUntilChanged()
     ) { onlineSession, offlineUser, isOnline, hasOffline ->
 
-        if (onlineSession != null) {
-            return@combine resolveAuthState(onlineSession, isOnline, hasOffline)
-        }
+        if (onlineSession != null) return@combine resolveAuthState(onlineSession, isOnline, hasOffline)
 
         if (!isOnline && offlineUser != null) {
             val dummySession = UserSession(
@@ -54,7 +57,8 @@ class AuthRepository(
                     id = offlineUser.id,
                     email = offlineUser.email,
                     userMetadata = offlineUser.userMetadata,
-                    aud = "authenticated"
+                    aud = "authenticated",
+                    role = "authenticated",
                 ),
                 expiresAt = Clock.System.now() + 365.days
             )
@@ -64,18 +68,27 @@ class AuthRepository(
         ScoutAuthState.Unauthenticated
     }
         .distinctUntilChanged()
+        .onEach { state ->
+            val userId = when (state) {
+                is ScoutAuthState.AuthenticatedOnline -> state.session.user?.id
+                is ScoutAuthState.AuthenticatedOffline -> state.session?.user?.id
+                else -> null
+            }
+            _currentUserId.value = userId
+        }
         .onEach {
             logAuthStateTransition(it)
         }
 
-    suspend fun getCurrentUserId(): String? {
-        return when (val currentState = authState.first()) {
-            is ScoutAuthState.AuthenticatedOnline -> currentState.session.user?.id
-            is ScoutAuthState.AuthenticatedOffline -> currentState.session?.user?.id
-            is ScoutAuthState.SessionExpired -> currentState.session?.user?.id
-            else -> null
-        }
+
+    val isAuthReady: Flow<Boolean> = combine(
+        store.sessionFlow,
+        supabase.auth.sessionStatus
+    ) { local, remote ->
+        local != null && remote !is SessionStatus.Initializing
     }
+
+    fun getCurrentUserId(): String? = _currentUserId.value
 
     suspend fun login(email: String, password: String): AuthResult {
         val isOnline = networkMonitor.isOnline.first()
@@ -151,7 +164,6 @@ class AuthRepository(
         Log.i(LOG_TAG, "[Auth] Logout attempt detected.")
 
         _isLoggingOut.value = true
-//        _offlineSessionFlow.value = null
 
         runCatching {
             val isOnline = networkMonitor.isOnline.first()
@@ -175,6 +187,7 @@ class AuthRepository(
         _isLoggingOut.value = false
         Log.i(LOG_TAG, "    User logged out successfully.")
     }
+
 
     suspend fun restoreSession() {
         if (_isLoggingOut.value) return

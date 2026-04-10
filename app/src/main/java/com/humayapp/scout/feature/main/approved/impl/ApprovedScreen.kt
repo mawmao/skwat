@@ -15,7 +15,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.common.EmptyState
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.main.MainSectionViewModel
 import com.humayapp.scout.feature.main.ui.TaskCard
 import com.humayapp.scout.navigation.navigateToDetail

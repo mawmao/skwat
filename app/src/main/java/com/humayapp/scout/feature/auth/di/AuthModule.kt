@@ -19,7 +19,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.jan.supabase.SupabaseClient
 import jakarta.inject.Singleton
-import kotlin.jvm.java
 
 private val Context.userPrefsStore by preferencesDataStore(name = "session_store")
 private val Context.offlineAuthPrefsStore by preferencesDataStore(name = "offline_auth_store")

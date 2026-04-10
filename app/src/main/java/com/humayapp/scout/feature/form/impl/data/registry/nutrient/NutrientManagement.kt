@@ -7,7 +7,6 @@ import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.Im
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.MonitoringVisit
 import com.humayapp.scout.feature.form.impl.data.registry.monitoring.overrides.ConditionPage
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.NutrientManagement.Companion.APPLIED_AREA_KEY
-import com.humayapp.scout.feature.form.impl.data.registry.nutrient.mapper.NutrientManagementMapper
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.overrides.application.FertilizerApplicationPage
 import com.humayapp.scout.feature.form.impl.data.registry.nutrient.review.NutrientManagementReviewContent
 import com.humayapp.scout.feature.form.impl.model.FieldType
@@ -162,8 +161,6 @@ sealed class NutrientManagement : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
-
-        val mapper = NutrientManagementMapper
 
         val reviewContent: @Composable ((FormState) -> Unit) = { state -> NutrientManagementReviewContent(state) }
 

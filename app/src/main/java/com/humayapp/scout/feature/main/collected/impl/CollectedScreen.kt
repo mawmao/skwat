@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,7 +17,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.ui.common.EmptyState
 import com.humayapp.scout.core.ui.theme.ScoutTheme
-import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.main.MainSectionViewModel
 import com.humayapp.scout.feature.main.ui.TaskCard
 import com.humayapp.scout.navigation.navigateToDetail
@@ -27,8 +27,13 @@ fun CollectedScreen(
     vm: MainSectionViewModel,
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
-    val collectedTasks = uiState.tasks.filter { it.status == "completed" && it.verificationStatus == "pending" }
+
+    val collectedTasks = uiState.tasks.filter { it.status == "completed" && it.verificationStatus == null }
     val rootNavigator = LocalRootStackNavigator.current
+
+    LaunchedEffect(collectedTasks) {
+        Log.d("Scout: CollectedScreen", "tasks: ${uiState.tasks}")
+    }
 
     Box(
         modifier = modifier
@@ -49,7 +54,6 @@ fun CollectedScreen(
             ) {
                 items(collectedTasks) { task ->
                     TaskCard(task = task, onClick = {
-                        Log.d("Scout: CollectedScreen", "Navigating to detail screen - task $task")
                         rootNavigator.navigateToDetail(collectionTaskId = task.id, activityId = task.activityId)
                     })
                 }

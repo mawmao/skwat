@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.humayapp.scout.core.network.CollectionTask
+import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format
@@ -41,9 +41,10 @@ val dateFormatter = LocalDate.Format {
 @OptIn(ExperimentalUuidApi::class)
 @Composable
 fun TaskCard(
-    task: CollectionTask,
+    task: CollectionTaskUiModel,
     onClick: () -> Unit
 ) {
+
     val statusColor = when (task.status.lowercase()) {
         "pending" -> Color(0xFFFFC107)
         "collected", "completed" -> Color(0xFF2196F3)
@@ -70,8 +71,6 @@ fun TaskCard(
             ?: listOfNotNull(task.barangay, task.cityMunicipality, task.province)
                 .joinToString(", ")
     }
-
-    val isRetake = task.retakeOf != null
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -108,7 +107,7 @@ fun TaskCard(
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        if (isRetake) {
+                        if (task.isRetake) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
                                 shape = ScoutTheme.shapes.cornerLarge,
@@ -159,7 +158,7 @@ fun TaskCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "${task.startDate.format(dateFormatter)} → ${task.endDate.format(dateFormatter)}",
+                        text = "${task.startDate.format(dateFormatter)} → ${task.endDate?.format(dateFormatter)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

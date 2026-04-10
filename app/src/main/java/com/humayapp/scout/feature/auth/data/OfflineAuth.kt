@@ -1,23 +1,22 @@
 package com.humayapp.scout.feature.auth.data
 
+import android.util.Base64
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import android.util.Base64
-import android.util.Log
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.google.crypto.tink.Aead
 import com.humayapp.scout.core.util.PasswordHasher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 @Serializable
 data class OfflineUser(

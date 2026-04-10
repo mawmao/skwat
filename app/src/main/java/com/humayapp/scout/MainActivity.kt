@@ -2,7 +2,6 @@ package com.humayapp.scout
 
 import android.graphics.Color.TRANSPARENT
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -18,15 +17,12 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
-import com.humayapp.scout.core.data.settings.SettingsRepository
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
-import com.humayapp.scout.feature.form.impl.data.repository.CollectionRepository
-import com.humayapp.scout.feature.form.impl.data.repository.FormRepository
 import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -41,16 +37,7 @@ class MainActivity : ComponentActivity() {
     lateinit var authRepository: AuthRepository
 
     @Inject
-    lateinit var settingsRepository: SettingsRepository
-
-    @Inject
-    lateinit var formRepository: FormRepository
-
-    @Inject
     lateinit var networkMonitor: NetworkMonitor
-
-    @Inject
-    lateinit var collectionRepository: CollectionRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -95,11 +82,8 @@ class MainActivity : ComponentActivity() {
                 val state = rememberScoutAppState(
                     rootNavigator = rootNavigator,
                     snackbarHostState = snackbarHostState,
-                    settingsRepository = settingsRepository,
-                    formRepository = formRepository,
                     coroutineScope = scope,
                     networkMonitor = networkMonitor,
-                    collectionRepository = collectionRepository
                 )
 
                 ScoutTheme {

@@ -4,7 +4,6 @@ package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 import androidx.compose.ui.text.input.ImeAction
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.core.network.util.transformField
-import com.humayapp.scout.feature.form.impl.data.registry.fielddata.mapper.FieldDataMapper
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
@@ -233,8 +232,6 @@ sealed class FieldData : WizardEntry() {
             MonitoringVisit.Conditions,
             MonitoringVisit.Images
         )
-
-        val mapper = FieldDataMapper
 
         const val FIRST_NAME_KEY = "first_name"
         const val LAST_NAME_KEY = "last_name"

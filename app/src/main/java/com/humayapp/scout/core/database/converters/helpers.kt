@@ -10,7 +10,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun CollectionTask.toEntity(synced: Boolean = false) = CollectionTaskEntity(
+fun CollectionTask.toEntity() = CollectionTaskEntity(
     id = id,
     activityId = activityId,
     retakeOf = retakeOf,
@@ -33,16 +33,11 @@ fun CollectionTask.toEntity(synced: Boolean = false) = CollectionTaskEntity(
     barangay = barangay,
     fullAddress = fullAddress,
     isOverdue = isOverdue,
-    verificationStatus = verificationStatus,
     collectedBy = collectedBy?.toString(),
     collectedAt = collectedAt,
-    verifiedBy = verifiedBy?.toString(),
-    verifiedAt = verifiedAt,
     remarks = remarks,
     imageUrls = imageUrls,
-    synced = synced,
     dependencyData = dependencyData?.toString(),
-    formData = formData,
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -69,13 +64,9 @@ fun CollectionTaskEntity.toDomain() = CollectionTask(
     barangay = barangay,
     fullAddress = fullAddress,
     isOverdue = isOverdue,
-    verificationStatus = verificationStatus,
     collectedBy = collectedBy?.let { Uuid.parse(it) },
     collectedAt = collectedAt,
-    verifiedBy = verifiedBy?.let { Uuid.parse(it) },
-    verifiedAt = verifiedAt,
     remarks = remarks,
     imageUrls = imageUrls,
     dependencyData = dependencyData?.let { Json.decodeFromString(it) },
-    formData = formData,
 )

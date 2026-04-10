@@ -22,15 +22,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
-import com.humayapp.scout.core.network.CollectionTask
 import com.humayapp.scout.core.ui.common.EmptyState
 import com.humayapp.scout.core.ui.component.ScoutConfirmDialog
 import com.humayapp.scout.core.ui.component.ScoutDialog
 import com.humayapp.scout.core.ui.component.ScoutDialogButton
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.core.ui.theme.ScoutTypography
-import com.humayapp.scout.feature.form.impl.ui.screens.detail.FormDetailsScreen
 import com.humayapp.scout.feature.main.MainSectionViewModel
 import com.humayapp.scout.feature.main.ui.TaskCard
 import com.humayapp.scout.navigation.navigateToDetail
@@ -45,7 +44,7 @@ fun PendingScreen(
     val pendingTasks = uiState.tasks.filter { it.status.equals("pending", true) }
     val rootNavigator = LocalRootStackNavigator.current
 
-    var selectedTask by remember { mutableStateOf<CollectionTask?>(null) }
+    var selectedTask by remember { mutableStateOf<CollectionTaskUiModel?>(null) }
     var showSimpleDialog by remember { mutableStateOf(false) }
     var showRetakeDialog by remember { mutableStateOf(false) }
 

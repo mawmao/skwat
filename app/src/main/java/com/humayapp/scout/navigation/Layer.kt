@@ -1,9 +1,7 @@
 package com.humayapp.scout.navigation
 
-import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.StackNavigator
-import com.humayapp.scout.core.network.CollectionTask
 import kotlinx.serialization.Serializable
 
 @Serializable
