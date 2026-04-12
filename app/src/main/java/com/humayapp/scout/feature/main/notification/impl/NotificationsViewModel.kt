@@ -38,100 +38,24 @@ import kotlin.time.Duration.Companion.seconds
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
-    private val networkMonitor: NetworkMonitor,
     private val authRepository: AuthRepository
 ) : ViewModel() {
-
-    private val pollingInterval = 15.seconds
 
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications = _notifications.asStateFlow()
 
-    private val _isOnline = MutableStateFlow(false)
-    private val _authState = MutableStateFlow<ScoutAuthState>(ScoutAuthState.Initializing)
-    private val _currentUser = MutableStateFlow<ScoutUser?>(null)
-
     init {
-        observeNetworkState()
-        observeAuthState()
-
         viewModelScope.launch {
-            val userId = _currentUser.value?.id
-            if (userId != null) {
-                notificationRepository.getLocalNotifications(userId).collect { local ->
-                    _notifications.value = local
-                }
+            val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
+            notificationRepository.getLocalNotifications(userId).collect { local ->
+                _notifications.value = local
             }
         }
     }
 
-
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-    private fun observeAuthState() {
+    fun markAllAsRead() {
         viewModelScope.launch {
-            authRepository.authState.onEach { state ->
-                _authState.value = state
-                val user = when (state) {
-                    is ScoutAuthState.AuthenticatedOffline -> state.session?.user
-                    is ScoutAuthState.SessionExpired -> state.session?.user
-                    else -> null
-                }
-                _currentUser.value = user?.toScoutUser()
-            }.flatMapLatest { state ->
-                if (state is ScoutAuthState.AuthenticatedOnline) {
-                    pollWhenOnline(state.session.user?.id ?: unreachable("should always have an id"))
-                } else {
-                    emptyFlow()
-                }
-            }
-                .debounce(100.milliseconds)
-                .collect()
-        }
-    }
-
-    private fun observeNetworkState() {
-        viewModelScope.launch {
-            val initialOnline = withTimeoutOrNull(2000L) {
-                networkMonitor.isOnline.first { it }
-            } ?: run {
-                false
-            }
-            _isOnline.value = initialOnline
-
-            networkMonitor.isOnline.collect { online ->
-                _isOnline.value = online
-            }
-        }
-    }
-
-    private fun pollWhenOnline(userId: String): Flow<Unit> = flow {
-        pullNotifications(userId)
-        while (true) {
-            delay(pollingInterval)
-            if (networkMonitor.isOnline.first()) {
-                pullNotifications(userId)
-            }
-        }
-    }
-
-    private suspend fun pullNotifications(userId: String) {
-        try {
-            ensureSession(onSessionExpired = authRepository::logout) {
-                notificationRepository.pullNotifications(userId)
-            }
-            Log.d(LOG_TAG, "Polling: tasks pulled successfully")
-        } catch (e: CancellationException) {
-            Log.w(LOG_TAG, "[Poll] Polling cancelled because user left or app backgrounded.")
-            throw e
-        } catch (e: HttpRequestException) {
-            Log.w(LOG_TAG, "[Poll] Network error during polling: ${e.message}")
-        } catch (e: Exception) {
-            Log.e(LOG_TAG, "[Poll] Unexpected polling failure", e)
-        }
-    }
-
-    fun markAllAsRead(userId: String) {
-        viewModelScope.launch {
+            val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
             notificationRepository.markAllAsRead(userId)
         }
     }

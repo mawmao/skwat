@@ -1,7 +1,9 @@
 package com.humayapp.scout.core.data.notification
 
 import android.util.Log
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.database.dao.NotificationDao
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Order
@@ -11,18 +13,16 @@ import kotlinx.coroutines.flow.map
 
 class NotificationRepository @Inject constructor(
     private val supabase: SupabaseClient,
+    private val authRepository: AuthRepository,
     private val dao: NotificationDao,
 ) {
-    suspend fun pullNotifications(userId: String) {
-        val latestTimestamp = dao.getLatestCreatedAt(userId)
+    suspend fun pullNotifications() {
+        val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
         val query = supabase.from("notifications").select {
             filter {
                 and {
                     eq("user_id", userId)
                     eq("target_role", "data_collector")
-                }
-                if (latestTimestamp != null) {
-                    gt("created_at", latestTimestamp.toString())
                 }
             }
             order(column = "created_at", order = Order.ASCENDING)
@@ -39,12 +39,28 @@ class NotificationRepository @Inject constructor(
             val entities = newNotifications.map { notif ->
                 notif.copy(userId = userId).toEntity()
             }
-            dao.insertAll(entities)
+            try {
+                dao.insertAll(entities)
+                Log.d(LOG_TAG, "Inserted ${entities.size} notifications into database")
+            } catch (e: Exception) {
+                Log.e(LOG_TAG, "Failed to insert notifications", e)
+            }
         }
     }
 
     fun getLocalNotifications(userId: String): Flow<List<Notification>> =
-        dao.getNotifications(userId).map { list -> list.map { it.toDomain() } }
+        dao.getNotifications(userId)
+            .map { entities ->
+                Log.d(LOG_TAG, "Room emitted ${entities.size} entities for user $userId")
+                entities.mapNotNull { entity ->
+                    try {
+                        entity.toDomain()
+                    } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Failed to convert entity ${entity.id}", e)
+                        null
+                    }
+                }
+            }
 
     suspend fun markAsRead(id: Int) {
         dao.markAsRead(id)

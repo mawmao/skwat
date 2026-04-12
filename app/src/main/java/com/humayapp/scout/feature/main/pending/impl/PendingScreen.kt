@@ -61,10 +61,9 @@ fun PendingScreen(
                     CircularProgressIndicator()
                 }
             }
+
             pendingTasks.isEmpty() -> EmptyState(message = "No pending tasks")
-            else -> LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)
-            ) {
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.smallMedium)) {
                 items(pendingTasks) { task ->
                     TaskCard(
                         isRefreshing = isRefreshing,
@@ -136,7 +135,10 @@ fun PendingScreen(
                             showRetakeDialog = false
                             selectedTask = null
                             if (originalTask != null) {
-                                rootNavigator.navigateToDetail(collectionTaskId = originalTask.id, activityId = originalTask.activityId)
+                                rootNavigator.navigateToDetail(
+                                    collectionTaskId = originalTask.id,
+                                    activityId = originalTask.activityId
+                                )
                             }
                         }
                     )

@@ -85,6 +85,16 @@ class MainSectionViewModel @Inject constructor(
         observeNetworkState()
         observeTasks()
         observeAuthState()
+        observeNotifications()
+    }
+
+    private fun observeNotifications() {
+        viewModelScope.launch {
+            val userId = authRepository.getCurrentUserId() ?: unreachable("can never be null. if null, then bug wahaha.")
+            notificationRepository.getLocalNotifications(userId).collect { local ->
+                _notifications.value = local
+            }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -102,7 +112,7 @@ class MainSectionViewModel @Inject constructor(
                 }
                 .flatMapLatest { state ->
                     if (state is ScoutAuthState.AuthenticatedOnline) {
-                        pollWhenOnline(state.session.user?.id ?: unreachable("should always have an id"))
+                        pollWhenOnline()
                     } else {
                         emptyFlow()
                     }
@@ -157,8 +167,7 @@ class MainSectionViewModel @Inject constructor(
 
             _uiState.update { it.copy(isRefreshing = true) }
             try {
-                val userId = _currentUser.value?.id ?: unreachable("user id must be available in this context")
-                syncManager.syncNow(userId)
+                syncManager.syncNow()
                 FormSyncWorker.startUpSyncWork()
                 delay(300)
             } catch (e: Exception) {
@@ -182,21 +191,20 @@ class MainSectionViewModel @Inject constructor(
         }
     }
 
-    private fun pollWhenOnline(userId: String): Flow<Unit> = flow {
-        pullTaskAndNotifications(userId)
+    private fun pollWhenOnline(): Flow<Unit> = flow {
+        pullTaskAndNotifications()
         while (true) {
             delay(pollingInterval)
             if (networkMonitor.isOnline.first()) {
-                pullTaskAndNotifications(userId)
+                pullTaskAndNotifications()
             }
         }
     }
 
-    private suspend fun pullTaskAndNotifications(userId: String) {
+    private suspend fun pullTaskAndNotifications() {
         try {
             ensureSession(onSessionExpired = ::handleSessionExpired) {
-                syncManager.syncNow(userId)
-                notificationRepository.pullNotifications(userId)
+                syncManager.syncNow()
             }
         } catch (e: CancellationException) {
             Log.w(LOG_TAG, "[Poll] Polling cancelled because user left or app backgrounded.")

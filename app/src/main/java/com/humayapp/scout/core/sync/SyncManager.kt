@@ -37,7 +37,7 @@ class SyncManager(
     private val supabase: SupabaseClient
 ) {
 
-    suspend fun syncNow(userId: String) = syncOrchestrator.runSync {
+    suspend fun syncNow() = syncOrchestrator.runSync {
 
         if (!networkMonitor.isOnline.first()) return@runSync
         if (!authRepository.isAuthReady.first { it }) return@runSync
@@ -50,7 +50,7 @@ class SyncManager(
         }
 
         collectionRepository.fullSync()
-        notificationRepository.pullNotifications(userId)
+        notificationRepository.pullNotifications()
     }
 
     private suspend fun processPendingQueue() {

@@ -1,6 +1,8 @@
 package com.humayapp.scout.core.network.di
 
 import android.content.Context
+import androidx.compose.ui.graphics.vector.PathNode
+import androidx.compose.ui.graphics.vector.addPathNodes
 import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
@@ -20,6 +22,7 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
+import io.ktor.client.engine.okhttp.OkHttpEngine
 import jakarta.inject.Singleton
 
 @Module

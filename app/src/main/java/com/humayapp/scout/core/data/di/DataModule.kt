@@ -8,6 +8,7 @@ import com.humayapp.scout.core.data.sync.SyncRepository
 import com.humayapp.scout.core.database.dao.NotificationDao
 import com.humayapp.scout.core.database.dao.SyncQueueDao
 import com.humayapp.scout.core.database.dao.SyncStateDao
+import com.humayapp.scout.feature.auth.data.AuthRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,8 +39,9 @@ object DataModule {
     @Singleton
     fun providesNotificationRepository(
         supabase: SupabaseClient,
+        authRepository: AuthRepository,
         dao: NotificationDao,
     ): NotificationRepository {
-        return NotificationRepository(supabase, dao)
+        return NotificationRepository(supabase, authRepository, dao)
     }
 }

@@ -1,6 +1,7 @@
 package com.humayapp.scout.core.ui.theme
 
 import com.humayapp.scout.R
+import org.junit.internal.Checks
 
 object ScoutIcons {
     val Home = R.drawable.home_24px
@@ -34,4 +35,7 @@ object ScoutIcons {
     val VisibilityOff = R.drawable.visibility_off_24px
     val Notification = R.drawable.notifications_24px
     val AccountCircle = R.drawable.account_circle_24px
+    val Check = R.drawable.check_24px
+    val CheckCircle = R.drawable.check_circle_24px
+    val Assignment = R.drawable.assignment_24px
 }
