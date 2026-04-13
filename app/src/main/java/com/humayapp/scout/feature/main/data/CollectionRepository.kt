@@ -25,6 +25,8 @@ import com.humayapp.scout.feature.main.data.collection.TaskNetworkDataSource
 import com.humayapp.scout.feature.main.data.util.ImageResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
@@ -150,6 +152,7 @@ class CollectionRepository(
             taskDataSource.getTasks(updatedAfter = null)
         } catch (e: Exception) {
             Log.w(LOG_TAG, "[Sync] Task fetch failed. Aborting pipeline.")
+            Log.d(LOG_TAG, "error =", e)
             return
         }
 

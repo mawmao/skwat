@@ -63,7 +63,7 @@ fun NotificationsScreen(viewModel: NotificationsViewModel = hiltViewModel()) {
     val rootNavigator = LocalRootStackNavigator.current
 
     LaunchedEffect(Unit) {
-         viewModel.markAllAsRead()
+        viewModel.markAllAsRead()
     }
 
     Scaffold(
@@ -120,14 +120,11 @@ fun NotificationCard(
             .animateContentSize(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (notification.isRead)
-                MaterialTheme.colorScheme.surface
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f)
+            containerColor = if (notification.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.95f
+            )
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (notification.isRead) 0.dp else 2.dp
-        )
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -159,7 +156,9 @@ fun NotificationCard(
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).padding(bottom = ScoutTheme.spacing.extraSmall)
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = ScoutTheme.spacing.extraSmall)
                     )
 
                     if (!notification.isRead) {
@@ -221,14 +220,6 @@ fun String.getIconRes(): Int = when (this) {
     "verification_approved" -> ScoutIcons.CheckCircle
     "verification_rejected" -> ScoutIcons.Error
     else -> ScoutIcons.Notification
-}
-
-@Composable
-fun String.getIconBackgroundColor(): Color = when (this) {
-    "task_assigned" -> MaterialTheme.colorScheme.primary
-    "verification_approved" -> Color(0xFF4CAF50) // Green
-    "verification_rejected" -> Color(0xFFE53935) // Red
-    else -> MaterialTheme.colorScheme.secondary
 }
 
 fun Instant.toRelativeTime(): String {

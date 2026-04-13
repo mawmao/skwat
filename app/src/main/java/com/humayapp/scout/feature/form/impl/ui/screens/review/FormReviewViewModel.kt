@@ -9,6 +9,7 @@ import com.humayapp.scout.core.data.sync.SyncRepository
 import com.humayapp.scout.core.database.model.SyncQueueEntity
 import com.humayapp.scout.core.database.model.SyncType
 import com.humayapp.scout.core.sync.SyncOrchestrator
+import com.humayapp.scout.core.system.SnackbarManager
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
@@ -31,6 +32,7 @@ class FormReviewViewModel @AssistedInject constructor(
     private val authRepository: AuthRepository,
     private val syncRepository: SyncRepository,
     private val collectionRepository: CollectionRepository,
+    private val snackbarManager: SnackbarManager,
     @Assisted("formType") private val formType: FormType,
     @Assisted("mfid") private val mfid: String,
     @Assisted("collection_task_id") private val collectionTaskId: Int,
@@ -56,8 +58,8 @@ class FormReviewViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             try {
-                // handle this cleanly when session expires
-                val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null. session expiry not handled yet tho")
+                val userId = authRepository.getCurrentUserId()
+                    ?: unreachable("user id in this context must never be null. session expiry not handled yet tho")
 
                 val serializedString = formType.serializeAnswers(answers).toString()
 
@@ -85,10 +87,14 @@ class FormReviewViewModel @AssistedInject constructor(
                             payload = serializedString
                         )
                     )
+                    snackbarManager.show("Form saved locally")
+                } else {
+                    snackbarManager.show("Failed to save form")
                 }
 
                 _uiEvent.send(FormReviewEvent.SubmitSuccess)
             } catch (e: Exception) {
+                snackbarManager.show("Something went wrong while saving")
                 Log.e(LOG_TAG, "Database insert failed", e)
             } finally {
                 _uiState.update { it.copy(isLoading = false) }

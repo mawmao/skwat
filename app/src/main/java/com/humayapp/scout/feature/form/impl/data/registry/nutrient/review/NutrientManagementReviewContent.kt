@@ -121,7 +121,6 @@ fun NutrientManagementReviewContent(state: FormState) {
         }
     }
 
-    // Images section (if any)
     if (imageFields.isNotEmpty()) {
         FormImagesLayout(
             items = imageFields,

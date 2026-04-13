@@ -147,6 +147,8 @@ class SyncManager(
             payload = item.payload
         )
 
+        Log.d(LOG_TAG, "[Sync-Debug] Upload payload = ${Json.encodeToJsonElement(request)}")
+
         supabase.postgrest.rpc(
             function = "upload_form_data",
             parameters = mapOf("data" to Json.encodeToJsonElement(request))

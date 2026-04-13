@@ -24,7 +24,8 @@ data class ScoutExtras(
         val danger: Color = ScoutColors.Red500,
         val white: Color = ScoutColors.White,
         val hoveredWhite: Color = ScoutColors.Gray150,
-        val warning: Color = ScoutColors.Amber
+        val warning: Color = ScoutColors.Amber,
+        val bluey: Color = Color(0xFF2196F3) // transfer to ScoutColors
     )
 }
 
@@ -39,6 +40,7 @@ data class ScoutShapes(
 
 @Immutable
 data class ScoutSpacing(
+    val doubleExtraSmall: Dp = 2.dp,
     val extraSmall: Dp = 4.dp,
     val small: Dp = 8.dp,
     val smallMedium: Dp = 12.dp,

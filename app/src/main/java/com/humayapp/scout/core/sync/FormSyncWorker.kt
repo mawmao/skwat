@@ -19,6 +19,7 @@ import com.humayapp.scout.core.database.model.SyncQueueEntity
 import com.humayapp.scout.core.database.model.SyncType
 import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.core.system.SnackbarManager
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.form.api.FormType
@@ -50,6 +51,7 @@ class FormSyncWorker @AssistedInject constructor(
     @Assisted val workerParams: WorkerParameters,
     private val syncRepository: SyncRepository,
     private val syncManager: SyncManager,
+    private val snackbarManager: SnackbarManager,
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : CoroutineWorker(appContext, workerParams), Synchronizer {
 
@@ -77,13 +79,16 @@ class FormSyncWorker @AssistedInject constructor(
             }
 
             if (hasError) {
+                snackbarManager.show("Sync failed - Retrying")
                 Log.w(LOG_TAG, "[Sync] Partial sync failure. Requesting retry.")
                 Result.retry()
             } else {
+                snackbarManager.show("Sync complete")
                 Log.i(LOG_TAG, "[Sync] All entries synced successfully.")
                 Result.success()
             }
         } catch (e: Exception) {
+            snackbarManager.show("Sync failed")
             Log.e(LOG_TAG, "[Sync] Fatal sync error", e)
             Result.failure()
         }

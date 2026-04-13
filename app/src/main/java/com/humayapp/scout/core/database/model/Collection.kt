@@ -22,7 +22,11 @@ data class CollectionTaskEntity(
     val collectorId: String,
     val activityId: Int? = null,
     val retakeOf: Int? = null,
+
     val seasonId: Int,
+    val seasonStartDate: LocalDate,
+    val seasonEndDate: LocalDate,
+
     val mfidId: Int,
     val activityType: String,
     val startDate: LocalDate,
@@ -85,7 +89,11 @@ data class CollectionTaskUiModel(
     val collectorId: String,
     val activityId: Int?,
     val retakeOf: Int?,
+
     val seasonId: Int,
+    val seasonStartDate: LocalDate,
+    val seasonEndDate: LocalDate,
+
     val mfidId: Int,
     val activityType: String,
 
@@ -132,7 +140,11 @@ fun TaskWithFormRelation.toUiModel(): CollectionTaskUiModel = CollectionTaskUiMo
     collectorId = task.collectorId,
     activityId = task.activityId,
     retakeOf = task.retakeOf,
+
     seasonId = task.seasonId,
+    seasonStartDate = task.seasonStartDate,
+    seasonEndDate = task.seasonEndDate,
+
     mfidId = task.mfidId,
     activityType = task.activityType,
 

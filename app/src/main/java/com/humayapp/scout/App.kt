@@ -18,6 +18,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -52,6 +53,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 
 val LocalScoutAppState = staticCompositionLocalOf<ScoutAppState> {
@@ -108,13 +110,6 @@ class ScoutAppState(
 
 @Composable
 fun ScoutApp(state: ScoutAppState) {
-
-    // LaunchedEffect(Unit) {
-    //     merge(state.formRepository.syncEvents, state.snackbarMessages).collect { message ->
-    //         state.snackbarHostState.showSnackbar(message = message)
-    //     }
-    // }
-
     Box(modifier = Modifier.fillMaxSize()) {
         NavDisplay(
             modifier = Modifier.fillMaxSize(),
@@ -171,8 +166,8 @@ private fun ReconSnackbar(
     Snackbar(
         shape = RoundedCornerShape(32.dp),
         modifier = modifier
-            .widthIn(max = 220.dp)
-            .heightIn(max = 40.dp)
+            .widthIn(min = 220.dp, max = 240.dp)
+            .heightIn(max = 36.dp)
             .wrapContentHeight(Alignment.CenterVertically)
             .wrapContentWidth(Alignment.CenterHorizontally),
         action = {

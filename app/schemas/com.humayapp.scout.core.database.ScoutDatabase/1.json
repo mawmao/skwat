@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "bd8e6c3fabcdaa023715552f3bacf6ec",
+    "identityHash": "4e8b1a2143b61f142443bbbf0dc3c5db",
     "entities": [
       {
         "tableName": "form_entries",
@@ -304,7 +304,7 @@
       },
       {
         "tableName": "collection_tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `dependencyData` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `collectorId` TEXT NOT NULL, `activityId` INTEGER, `retakeOf` INTEGER, `seasonId` INTEGER NOT NULL, `seasonStartDate` TEXT NOT NULL, `seasonEndDate` TEXT NOT NULL, `mfidId` INTEGER NOT NULL, `activityType` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT, `status` TEXT NOT NULL, `assignedAt` TEXT, `mfid` TEXT NOT NULL, `collectorName` TEXT NOT NULL, `farmerName` TEXT, `province` TEXT NOT NULL, `cityMunicipality` TEXT NOT NULL, `barangay` TEXT, `fullAddress` TEXT, `isOverdue` INTEGER NOT NULL, `canRetake` INTEGER NOT NULL, `remarks` TEXT, `collectedBy` TEXT, `collectedAt` TEXT, `imageUrls` TEXT, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, `dependencyData` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -332,6 +332,18 @@
             "fieldPath": "seasonId",
             "columnName": "seasonId",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seasonStartDate",
+            "columnName": "seasonStartDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seasonEndDate",
+            "columnName": "seasonEndDate",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -694,7 +706,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bd8e6c3fabcdaa023715552f3bacf6ec')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4e8b1a2143b61f142443bbbf0dc3c5db')"
     ]
   }
 }

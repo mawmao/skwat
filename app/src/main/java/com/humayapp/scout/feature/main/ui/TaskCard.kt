@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,20 +25,45 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.humayapp.scout.core.database.model.CollectionTaskUiModel
+import com.humayapp.scout.core.ui.theme.ScoutColors
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import java.time.format.DateTimeFormatter
 import kotlin.uuid.ExperimentalUuidApi
 
 val dateFormatter = LocalDate.Format {
     monthName(MonthNames.ENGLISH_ABBREVIATED); char(' '); day(); chars(", "); year()
+}
+
+val seasonFormatter = LocalDate.Format {
+    monthName(MonthNames.ENGLISH_ABBREVIATED)
+    char(' ')
+    year()
+}
+
+fun LocalDate.seasonHalfLabel(): String {
+    val year = this.year
+
+    val firstStart = LocalDate(year, 9, 16)
+    val firstEnd = LocalDate(year + 1, 3, 15)
+
+    val secondStart = LocalDate(year, 3, 16)
+    val secondEnd = LocalDate(year, 9, 15)
+
+    return when {
+        this in firstStart..firstEnd -> "First Semester"
+        this >= secondStart || this <= secondEnd -> "Second Semester"
+        else -> "Second Semester"
+    }
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -49,7 +76,7 @@ fun TaskCard(
 
     val statusColor = when (task.status.lowercase()) {
         "pending" -> Color(0xFFFFC107)
-        "collected", "completed" -> Color(0xFF2196F3)
+        "collected", "completed" -> ScoutTheme.extras.colors.bluey
         "approved" -> Color(0xFF4CAF50)
         "rejected", "cancelled" -> Color(0xFFF44336)
         else -> Color.Gray
@@ -100,10 +127,12 @@ fun TaskCard(
             )
 
             Column(
+                verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.extraSmall),
                 modifier = Modifier
                     .padding(12.dp)
-                    .weight(1f)
-            ) {
+                    .weight(1f),
+
+                ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -112,43 +141,47 @@ fun TaskCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = formattedActivity,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
                         )
-                        if (task.isRetake) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = ScoutTheme.shapes.cornerLarge,
-                                color = Color(0xFFFFC107),
-                                contentColor = Color.Black
-                            ) {
-                                Text(
-                                    text = "Retake",
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
                     }
 
                     Text(
-                        text = "Season ${task.seasonId}",
+                        text = "${task.seasonStartDate.format(seasonFormatter)} - ${task.seasonEndDate.format(seasonFormatter)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!task.farmerName.isNullOrBlank()) {
+                        Text(
+                            text = task.farmerName,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                    } else {
+                        Text(
+                            text = "Unassigned",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = ScoutTheme.extras.colors.warning
+                        )
+                    }
 
-                task.farmerName?.let {
+
                     Text(
-                        text = it,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
+                        text = task.seasonStartDate.seasonHalfLabel(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(ScoutTheme.spacing.doubleExtraSmall))
 
                 if (address.isNotBlank()) {
                     Text(
@@ -158,42 +191,69 @@ fun TaskCard(
                         maxLines = 1
                     )
                 }
-
-                Spacer(Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         text = "${task.startDate.format(dateFormatter)} → ${task.endDate?.format(dateFormatter)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    if (task.isOverdue) {
-                        Text(
-                            text = "OVERDUE",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFF44336),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(ScoutTheme.spacing.doubleExtraSmall))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "#${task.mfid}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    TaskCardBadge(text = task.mfid)
+                    if (task.isRetake) {
+                        TaskCardBadge(
+                            text = "Retake",
+                            containerColor = ScoutTheme.extras.colors.warning,
+                        )
+                    }
+
+                    if (task.isOverdue) {
+                        TaskCardBadge(
+                            text = "Overdue",
+                            containerColor = ScoutTheme.extras.colors.danger,
+                        )
+                    }
+
+                    if (task.status == "completed" && (task.verificationStatus == "pending" || task.verificationStatus == null)) {
+                        if (task.synced == true) {
+                            TaskCardBadge(
+                                text = "Synced",
+                                containerColor = ScoutTheme.extras.colors.bluey,
+                            )
+                        } else {
+                            TaskCardBadge(
+                                text = "Not Synced",
+                                containerColor = ScoutTheme.extras.colors.bluey,
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun TaskCardBadge(
+    modifier: Modifier = Modifier,
+    text: String,
+    containerColor: Color = ScoutTheme.extras.colors.mutedOnSurfaceVariant,
+    textColor: Color = ScoutTheme.extras.colors.white,
+) {
+    Box(
+        modifier = modifier
+            .clip(ScoutTheme.shapes.cornerMedium)
+            .background(containerColor)
+            .padding(horizontal = ScoutTheme.spacing.small, vertical = 3.dp)
+    ) {
+        Text(
+            text = text,
+            style = ScoutTheme.material.typography.labelSmall,
+            color = textColor
+        )
     }
 }

@@ -11,6 +11,7 @@ import com.humayapp.scout.core.sync.FormSyncWorker
 import com.humayapp.scout.core.sync.SyncManager
 import com.humayapp.scout.core.sync.SyncOrchestrator
 import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.core.system.SnackbarManager
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
 import com.humayapp.scout.feature.auth.data.ensureSession
@@ -55,7 +56,8 @@ class MainSectionViewModel @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val networkMonitor: NetworkMonitor,
     private val authRepository: AuthRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val snackbarManager: SnackbarManager
 ) : ViewModel() {
 
     private val pollingInterval = 5.seconds
@@ -166,10 +168,12 @@ class MainSectionViewModel @Inject constructor(
             }
 
             _uiState.update { it.copy(isRefreshing = true) }
+
             try {
                 syncManager.syncNow()
                 FormSyncWorker.startUpSyncWork()
                 delay(300)
+                snackbarManager.show("Refresh successful")
             } catch (e: Exception) {
                 Log.e("Scout: MainSectionViewModel", "Refresh error:", e)
                 _uiError.update { e.message ?: "Failed to refresh tasks" }

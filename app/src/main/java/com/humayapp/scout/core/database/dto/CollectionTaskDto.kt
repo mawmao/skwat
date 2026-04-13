@@ -17,6 +17,12 @@ data class CollectionTaskDto(
     @SerialName("season_id")
     val seasonId: Int,
 
+    @SerialName("season_start_date")
+    val seasonStartDate: String,
+
+    @SerialName("season_end_date")
+    val seasonEndDate: String,
+
     @SerialName("mfid_id")
     val mfidId: Int,
 
@@ -111,6 +117,9 @@ fun CollectionTaskDto.toTaskEntity(): CollectionTaskEntity {
         retakeOf = retakeOf,
 
         seasonId = seasonId,
+        seasonStartDate = seasonStartDate.toLocalDateSafe(),
+        seasonEndDate = seasonEndDate.toLocalDateSafe(),
+
         mfidId = mfidId,
 
         activityType = activityType,

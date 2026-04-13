@@ -36,7 +36,7 @@ class AuthRepository(
     private val _isLoggingOut = MutableStateFlow(false)
 
     private val _currentUserId = MutableStateFlow<String?>(null)
-    val currentUserId = _currentUserId.asStateFlow()
+    // val currentUserId = _currentUserId.asStateFlow()
 
     val authState: Flow<ScoutAuthState> = combine(
         store.sessionFlow.distinctUntilChanged(),

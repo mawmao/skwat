@@ -25,35 +25,51 @@ class ConnectivityManagerNetworkMonitor @Inject constructor(
     @ApplicationContext private val context: Context,
     @Dispatcher(ScoutDispatchers.IO) private val ioDispatcher: CoroutineDispatcher,
 ) : NetworkMonitor {
+
     override val isOnline: Flow<Boolean> = callbackFlow {
         val connectivityManager = context.getSystemService<ConnectivityManager>()
         if (connectivityManager == null) {
-            channel.trySend(false)
-            channel.close()
+            trySend(false)
+            close()
             return@callbackFlow
         }
 
+        fun ConnectivityManager.currentlyHasInternet(): Boolean {
+            val network = activeNetwork ?: return false
+            val caps = getNetworkCapabilities(network) ?: return false
+
+            return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        }
+
+        fun emitCurrentState() {
+            trySend(connectivityManager.currentlyHasInternet())
+        }
+
         val callback = object : ConnectivityManager.NetworkCallback() {
-
-            private val networks = mutableSetOf<Network>()
-
             override fun onAvailable(network: Network) {
-                networks += network
-                channel.trySend(true)
+                emitCurrentState()
             }
 
             override fun onLost(network: Network) {
-                networks -= network
-                channel.trySend(networks.isNotEmpty())
+                emitCurrentState()
+            }
+
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: NetworkCapabilities
+            ) {
+                emitCurrentState()
             }
         }
 
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
+
         connectivityManager.registerNetworkCallback(request, callback)
 
-        channel.trySend(connectivityManager.isCurrentlyConnected())
+        emitCurrentState()
 
         awaitClose {
             connectivityManager.unregisterNetworkCallback(callback)
@@ -61,9 +77,4 @@ class ConnectivityManagerNetworkMonitor @Inject constructor(
     }
         .flowOn(ioDispatcher)
         .conflate()
-
-    @Suppress("DEPRECATION")
-    private fun ConnectivityManager.isCurrentlyConnected() = activeNetwork
-        ?.let(::getNetworkCapabilities)
-        ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ?: false
 }

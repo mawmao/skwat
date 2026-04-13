@@ -8,6 +8,7 @@ import com.humayapp.scout.core.system.ConnectivityManagerNetworkMonitor
 import com.humayapp.scout.core.system.LocationMonitor
 import com.humayapp.scout.core.system.LocationProviderMonitor
 import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.core.system.SnackbarManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,6 +23,10 @@ import java.util.concurrent.Executors
 @Module
 @InstallIn(SingletonComponent::class)
 object SystemModule {
+
+    @Provides
+    @Singleton
+    fun provideSnackbarManager(): SnackbarManager = SnackbarManager()
 
     @Provides
     @Singleton

@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,9 +21,11 @@ import androidx.navigation3.runtime.NavKey
 import com.humayapp.scout.core.navigation.LocalRootStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.system.NetworkMonitor
+import com.humayapp.scout.core.system.SnackbarManager
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.auth.data.ScoutAuthState
+import com.humayapp.scout.feature.main.data.CollectionRepository
 import com.humayapp.scout.navigation.RootNavKey
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -39,14 +42,15 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var networkMonitor: NetworkMonitor
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    @Inject
+    lateinit var snackbarManager: SnackbarManager
 
+    override fun onCreate(savedInstanceState: Bundle?) {
 
         var keepSplash = true
 
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-
 
         splashScreen.setKeepOnScreenCondition { keepSplash }
 
@@ -85,6 +89,12 @@ class MainActivity : ComponentActivity() {
                     coroutineScope = scope,
                     networkMonitor = networkMonitor,
                 )
+
+                LaunchedEffect(Unit) {
+                    snackbarManager.messages.collect { message ->
+                        state.snackbarHostState.showSnackbar(message)
+                    }
+                }
 
                 ScoutTheme {
                     CompositionLocalProvider(

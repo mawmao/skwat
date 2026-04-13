@@ -27,7 +27,14 @@ interface SyncQueueDao {
     @Insert
     suspend fun insert(item: SyncQueueEntity)
 
-    @Query("SELECT * FROM sync_queue WHERE status = 'PENDING' ORDER BY createdAt ASC")
+    @Query(
+        """
+            SELECT * FROM sync_queue 
+            WHERE status IN ('PENDING', 'FAILED') 
+            AND attempts < 3  
+            ORDER BY createdAt ASC
+        """
+    )
     suspend fun getPending(): List<SyncQueueEntity>
 
     @Query("UPDATE sync_queue SET status = :status WHERE id = :id")
