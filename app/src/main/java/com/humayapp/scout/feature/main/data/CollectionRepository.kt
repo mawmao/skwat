@@ -16,7 +16,6 @@ import com.humayapp.scout.core.database.model.FormImageEntity
 import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import com.humayapp.scout.core.database.model.toUiModel
 import com.humayapp.scout.core.database.util.toInstantSafeOrNull
-import com.humayapp.scout.core.sync.SyncOrchestrator
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.core.system.saveImagesToFolder
 import com.humayapp.scout.feature.form.impl.model.toFormImages
@@ -25,8 +24,6 @@ import com.humayapp.scout.feature.main.data.collection.TaskNetworkDataSource
 import com.humayapp.scout.feature.main.data.util.ImageResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
@@ -78,7 +75,7 @@ class CollectionRepository(
         return imagesDao.updateRemotePath(id, remotePath)
     }
 
-    suspend fun saveTaskWithImages(
+    suspend fun saveTaskLocally(
         context: Context,
         images: Map<String, String>,
         collectionTaskId: Int,
@@ -116,7 +113,7 @@ class CollectionRepository(
                 )
                 Log.d(LOG_TAG, "[SUCCESS] Form inserted")
 
-                Log.d(LOG_TAG, "[STEP] Marking task as completed...")
+                Log.d(LOG_TAG, "[STEP] Marking task as completed with userId = $userId, timestamp = ${Clock.System.now()}")
                 val updated = taskDao.markTaskCompleted(collectionTaskId, userId, Clock.System.now())
 
                 val success = updated == 1

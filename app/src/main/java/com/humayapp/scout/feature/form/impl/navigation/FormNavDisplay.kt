@@ -28,10 +28,7 @@ fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
     val formTransition = NavTransition.anchoredRight()
     val state = LocalFormState.current
 
-    BackHandler(enabled = true) {
-        onBack()
-    }
-
+    BackHandler(enabled = true) { onBack() }
     Scaffold(
         modifier = modifier,
         topBar = { FormSectionTopAppBar(onBack = onBack) }
@@ -40,12 +37,8 @@ fun FormNavDisplay(modifier: Modifier, onBack: () -> Unit) {
             modifier = Modifier.padding(innerPadding),
             backStack = formNavigator.asBackStack(),
             onBack = onBack,
-            entryDecorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator()
-            ),
+            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), rememberViewModelStoreNavEntryDecorator()),
             entryProvider = entryProvider {
-                entry<FormConfirmNavKey>(metadata = formTransition) { FormConfirmScreen() }
                 entry<FormWizardNavKey>(metadata = formTransition) { FormWizardScreen() }
                 entry<FormReviewNavKey>(metadata = formTransition) {
                     val vm = hiltViewModel<FormReviewViewModel, FormReviewViewModel.Factory>(

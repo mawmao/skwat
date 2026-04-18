@@ -4,6 +4,7 @@ package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 import androidx.compose.ui.text.input.ImeAction
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.core.network.util.transformField
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ConfirmFarmerPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.FieldLocationPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.GpsCoordinatesPage
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ImagesPage
@@ -25,6 +26,29 @@ import java.time.Period
 
 @Serializable
 sealed class FieldData : WizardEntry() {
+
+    @Serializable
+    data object ConfirmFarmer : FieldData() {
+        override val title = "Confirm Farmer"
+        override val description = "Verify farmer information"
+        override val fields = listOf(
+            field(
+                key = "confirm_farmer",
+                type = FieldType.CARD_RADIO,
+                label = "Is this the correct farmer?",
+                options = listOf("Yes", "No"),
+                validator = Validators.nonEmpty
+            )
+        )
+
+        override fun nextScreen(answers: Map<String, Any?>): WizardEntry {
+            return if (answers["confirm_farmer"] == "Yes") {
+                FieldTiming
+            } else {
+                FarmerInformation
+            }
+        }
+    }
 
     @Serializable
     data object FarmerInformation : FieldData() {
@@ -205,7 +229,7 @@ sealed class FieldData : WizardEntry() {
 
     companion object {
         fun serialize(answers: Map<String, Any?>): JsonObject = answers.asJson(
-            includeKey = { key -> !key.startsWith("img_") && key != "season_id" },
+            includeKey = { key -> !key.startsWith("img_") && key != "season_id" && key != "confirm_farmer" },
             rules = listOf(
                 transformField(GENDER_KEY) {
                     when (it) {
@@ -220,6 +244,7 @@ sealed class FieldData : WizardEntry() {
         )
 
         val pageOverrides: WizardPageOverrides = mapOf(
+            ConfirmFarmer to { page -> ConfirmFarmerPage(page as ConfirmFarmer) },
             FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
             GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) },
             MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
@@ -228,6 +253,7 @@ sealed class FieldData : WizardEntry() {
 
         val startEntry = FarmerInformation
         val entries = listOf(
+            ConfirmFarmer,
             FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
             FieldCondition, FieldLocation, GpsCoordinates
         ) + listOf(

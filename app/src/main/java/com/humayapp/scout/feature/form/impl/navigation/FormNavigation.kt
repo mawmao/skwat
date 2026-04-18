@@ -39,7 +39,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
@@ -66,13 +69,9 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         LaunchedEffect(collectionTaskId) {
             isLoading = true
             error = null
-            try {
-                collectionTask = collectionRepository.getUiTaskById(collectionTaskId)
-            } catch (e: Exception) {
-                error = e.message
-            } finally {
-                isLoading = false
-            }
+            try { collectionTask = collectionRepository.getUiTaskById(collectionTaskId) }
+            catch (e: Exception) { error = e.message }
+            finally { isLoading = false }
         }
 
         if (isLoading) {
@@ -90,9 +89,24 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         }
 
         val task = collectionTask!!
-
+        val dependencyJson = task.dependencyData?.let { Json.parseToJsonElement(it) } as JsonObject
         val formType = FormType.fromActivityType(task.activityType)
-        val formState = rememberFormState(formType, task.mfid, task.id)
+
+        val hasFarmerDetails = formType == FormType.FIELD_DATA &&
+                getDependencyString(dependencyJson, FieldData.FIRST_NAME_KEY) != null &&
+                getDependencyString(dependencyJson, FieldData.LAST_NAME_KEY) != null &&
+                getDependencyString(dependencyJson, FieldData.GENDER_KEY) != null &&
+                getDependencyString(dependencyJson, FieldData.DATE_OF_BIRTH_KEY) != null &&
+                getDependencyString(dependencyJson, FieldData.CELLPHONE_NO_KEY) != null
+
+        val formState = rememberFormState(
+            formType = formType,
+            mfid = task.mfid,
+            collectionTaskId = task.id,
+            entries = formType.entries,
+            startEntry = if (hasFarmerDetails) FieldData.ConfirmFarmer else formType.startEntry
+        )
+
         val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormWizardNavKey)
 
         var showExitDialog by remember { mutableStateOf(false) }
@@ -100,41 +114,54 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         var pendingExitAction by remember { mutableStateOf<(() -> Unit)?>(null) }
 
         LaunchedEffect(Unit) {
-            // FIXED: Use 'task' instead of 'key.collectionTask'
             formState.setFieldData("season_id", task.seasonId)
 
             when (formType) {
                 FormType.FIELD_DATA -> {
                     formState.setFieldData(FieldData.PROVINCE_KEY, task.province)
                     formState.setFieldData(FieldData.MUNICIPALITY_OR_CITY_KEY, task.cityMunicipality)
-                }
 
+                    dependencyJson.getString(FieldData.FIRST_NAME_KEY)?.let {
+                        formState.setFieldData(FieldData.FIRST_NAME_KEY, it)
+                    }
+                    dependencyJson.getString(FieldData.LAST_NAME_KEY)?.let {
+                        formState.setFieldData(FieldData.LAST_NAME_KEY, it)
+                    }
+                    dependencyJson.getString(FieldData.GENDER_KEY)?.let {
+                        formState.setFieldData(FieldData.GENDER_KEY, it)
+                    }
+                    dependencyJson.getString(FieldData.DATE_OF_BIRTH_KEY)?.let {
+                        formState.setFieldData(FieldData.DATE_OF_BIRTH_KEY, it)
+                    }
+                    dependencyJson.getString(FieldData.CELLPHONE_NO_KEY)?.let {
+                        formState.setFieldData(FieldData.CELLPHONE_NO_KEY, it)
+                    }
+                }
                 FormType.CULTURAL_MANAGEMENT,
                 FormType.NUTRIENT_MANAGEMENT,
                 FormType.PRODUCTION,
                 FormType.DAMAGE_ASSESSMENT -> {
-                    val dependency = task.dependencyData?.let { Json.parseToJsonElement(it) } as JsonObject
                     when (formType) {
                         FormType.CULTURAL_MANAGEMENT -> {
-                            dependency.getDouble(FieldData.TOTAL_FIELD_AREA_KEY)?.let {
+                            dependencyJson.getDouble(FieldData.TOTAL_FIELD_AREA_KEY)?.let {
                                 formState.setFieldData(FieldData.TOTAL_FIELD_AREA_KEY, it)
                             }
-                            dependency.getString(FieldData.EST_CROP_ESTABLISHMENT_KEY)?.let {
+                            dependencyJson.getString(FieldData.EST_CROP_ESTABLISHMENT_KEY)?.let {
                                 formState.setFieldData(FieldData.EST_CROP_ESTABLISHMENT_KEY, it)
                             }
-                            dependency.getDouble(CulturalManagement.MONITORING_FIELD_AREA_KEY)?.let {
+                            dependencyJson.getDouble(CulturalManagement.MONITORING_FIELD_AREA_KEY)?.let {
                                 formState.setFieldData(CulturalManagement.MONITORING_FIELD_AREA_KEY, it)
                             }
                         }
 
                         FormType.NUTRIENT_MANAGEMENT -> {
-                            dependency.getDouble(CulturalManagement.MONITORING_FIELD_AREA_KEY)?.let {
+                            dependencyJson.getDouble(CulturalManagement.MONITORING_FIELD_AREA_KEY)?.let {
                                 formState.setFieldData(CulturalManagement.MONITORING_FIELD_AREA_KEY, it)
                             }
                         }
 
                         FormType.PRODUCTION, FormType.DAMAGE_ASSESSMENT -> {
-                            dependency.getDouble(FieldData.TOTAL_FIELD_AREA_KEY)?.let {
+                            dependencyJson.getDouble(FieldData.TOTAL_FIELD_AREA_KEY)?.let {
                                 formState.setFieldData(FieldData.TOTAL_FIELD_AREA_KEY, it)
                             }
                         }
@@ -201,3 +228,6 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
 interface CollectionRepositoryEntryPoint {
     fun collectionRepository(): CollectionRepository
 }
+
+fun getDependencyString(json: JsonElement?, key: String): String? =
+    json?.jsonObject?.get(key)?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }

@@ -8,7 +8,6 @@ import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.data.sync.SyncRepository
 import com.humayapp.scout.core.database.model.SyncQueueEntity
 import com.humayapp.scout.core.database.model.SyncType
-import com.humayapp.scout.core.sync.SyncOrchestrator
 import com.humayapp.scout.core.system.SnackbarManager
 import com.humayapp.scout.feature.auth.data.AuthRepository
 import com.humayapp.scout.feature.form.api.FormType
@@ -58,19 +57,17 @@ class FormReviewViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             try {
-                val userId = authRepository.getCurrentUserId()
-                    ?: unreachable("user id in this context must never be null. session expiry not handled yet tho")
-
+                val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null.")
                 val serializedString = formType.serializeAnswers(answers).toString()
 
-                Log.d("Scout: FormReviewViewModel", "answers = $answers")
-                Log.d("Scout: FormReviewViewModel", serializedString)
+                Log.d(LOG_TAG, "answers = $answers")
+                Log.d(LOG_TAG, serializedString)
 
                 val imageAnswers = answers
                     .filter { it.key.startsWith("img_") && it.value is String }
                     .mapValues { it.value as String }
 
-                val success = collectionRepository.saveTaskWithImages(
+                val success = collectionRepository.saveTaskLocally(
                     activityType = formType.id,
                     context = context,
                     images = imageAnswers,

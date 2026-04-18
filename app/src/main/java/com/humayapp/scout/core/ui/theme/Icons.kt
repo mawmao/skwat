@@ -38,4 +38,6 @@ object ScoutIcons {
     val Check = R.drawable.check_24px
     val CheckCircle = R.drawable.check_circle_24px
     val Assignment = R.drawable.assignment_24px
+    val Wifi = R.drawable.wifi_24px
+    val WifiOff = R.drawable.wifi_off_24px
 }

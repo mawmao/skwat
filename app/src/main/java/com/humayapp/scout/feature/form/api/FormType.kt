@@ -19,8 +19,7 @@ enum class FormType(
     val label: String,
     val description: String,
 ) {
-    @Serializable
-    FIELD_DATA(label = "Farmer's Profile", description = "Register farmers") {
+    FIELD_DATA(label = "Field Data", description = "Register farmers") {
         override val startEntry = FieldData.startEntry
         override val entries = FieldData.entries
         override val overrides = FieldData.pageOverrides
@@ -41,7 +40,7 @@ enum class FormType(
         override fun serializeAnswers(answers: Map<String, Any?>) = CulturalManagement.serialize(answers)
     },
 
-    NUTRIENT_MANAGEMENT(label = "Fertilization", description = "Fertilizer & soil data") {
+    NUTRIENT_MANAGEMENT(label = "Nutrient Management", description = "Fertilizer & soil data") {
         override val startEntry = NutrientManagement.startEntry
         override val entries = NutrientManagement.entries
         override val overrides = NutrientManagement.pageOverrides

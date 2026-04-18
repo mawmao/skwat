@@ -38,7 +38,6 @@ class SyncManager(
 ) {
 
     suspend fun syncNow() = syncOrchestrator.runSync {
-
         if (!networkMonitor.isOnline.first()) return@runSync
         if (!authRepository.isAuthReady.first { it }) return@runSync
 
@@ -63,7 +62,6 @@ class SyncManager(
             }
         }
     }
-
 
     suspend fun isReadyToSync(): Boolean {
         Log.i(LOG_TAG, "[Sync] Checking if device can sync.")

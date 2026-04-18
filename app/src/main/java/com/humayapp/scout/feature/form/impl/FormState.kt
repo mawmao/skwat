@@ -22,7 +22,11 @@ val LocalFormState = staticCompositionLocalOf<FormState> {
 }
 
 @Composable
-fun rememberFormState(formType: FormType, mfid: String, collectionTaskId: Int): FormState {
+fun rememberFormState(
+    formType: FormType,
+    mfid: String,
+    collectionTaskId: Int
+): FormState {
 
     val pagerState = rememberPagerState(pageCount = { formType.entries.size })
 
@@ -38,12 +42,32 @@ fun rememberFormState(formType: FormType, mfid: String, collectionTaskId: Int): 
     }
 }
 
+@Composable
+fun rememberFormState(
+    formType: FormType,
+    mfid: String,
+    collectionTaskId: Int,
+    entries: List<WizardEntry>,
+    startEntry: WizardEntry
+): FormState {
+    val pagerState = rememberPagerState(pageCount = { entries.size })
+    return remember(formType, mfid, collectionTaskId, entries, startEntry) {
+        FormState(
+            initialWizardEntry = startEntry,
+            pagerEntries = entries,
+            formType = formType,
+            pagerState = pagerState,
+            mfid = mfid,
+            collectionTaskId = collectionTaskId
+        )
+    }
+}
+
 
 @Stable
 class FormState(
     initialWizardEntry: WizardEntry,
-    pagerEntries: List<WizardEntry>,
-
+    val pagerEntries: List<WizardEntry>,
     val formType: FormType,
     val pagerState: PagerState,
     val mfid: String,
@@ -91,6 +115,7 @@ class FormState(
         dialogState = null
     }
 
+    @Stable
     data class Dialog(
         val title: String = "",
         val message: String = "",

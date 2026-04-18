@@ -69,7 +69,7 @@ fun WizardEntry(
                 verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.extraSmall)
             ) {
                 Text(text = key.title, style = ScoutTheme.material.typography.headlineMedium)
-                Spacer(Modifier.height(ScoutTheme.spacing.extraSmall))
+                Spacer(Modifier.height(ScoutTheme.spacing.doubleExtraSmall))
                 Text(
                     text = key.description,
                     style = MaterialTheme.typography.bodyLarge,

@@ -78,7 +78,7 @@ fun FormWizardScreen() {
 @Composable
 fun WizardPager(modifier: Modifier = Modifier) {
     val formState = LocalFormState.current
-    val entries = formState.formType.entries
+    val entries = formState.pagerEntries
     val pagerState = formState.pagerState
     val currentScreen = formState.currentScreen
     val formOverrides = formState.formType.overrides
@@ -94,7 +94,6 @@ fun WizardPager(modifier: Modifier = Modifier) {
     }
 
     WizardProgressBar(currentCount = pagerState.currentPage + 1, totalCount = pagerState.pageCount)
-
     HorizontalPager(modifier = modifier, state = pagerState, userScrollEnabled = false) { page ->
         val pageKey = entries[page]
         val renderer = formOverrides?.get(pageKey) ?: { DefaultWizardEntry(it) }

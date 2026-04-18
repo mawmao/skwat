@@ -145,10 +145,7 @@ class MainSectionViewModel @Inject constructor(
             .onStart { _uiState.update { it.copy(isLoading = true) } }
             .onEach { tasks ->
                 _uiState.update {
-                    it.copy(
-                        tasks = tasks,
-                        isLoading = false
-                    )
+                    it.copy(tasks = tasks, isLoading = false)
                 }
             }
             .launchIn(viewModelScope)

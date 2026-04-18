@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
+import com.humayapp.scout.core.ui.common.ConnectivityIndicator
 import com.humayapp.scout.core.ui.component.ScoutIconButton
 import com.humayapp.scout.core.ui.component.ScoutLogo
 import com.humayapp.scout.core.ui.theme.ScoutIcons
@@ -48,6 +49,7 @@ import com.humayapp.scout.feature.main.rejected.api.navigation.RejectedNavKey
 fun MainSectionTopAppBar(
     currentKey: NavKey,
     modifier: Modifier = Modifier,
+    isOnline: Boolean,
     onProfileClick: () -> Unit,
     canRefresh: Boolean = false,
     isRefreshing: Boolean = false,
@@ -101,6 +103,13 @@ fun MainSectionTopAppBar(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.width(ScoutTheme.spacing.small))
+                    ConnectivityIndicator(
+                        isOffline = !isOnline,
+                        hideLabel = true,
+                        iconSize = 15.dp
+                    )
                 }
             }
         },

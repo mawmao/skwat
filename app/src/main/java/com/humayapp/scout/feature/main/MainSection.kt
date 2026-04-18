@@ -139,6 +139,7 @@ fun MainSection(vm: MainSectionViewModel = hiltViewModel()) {
             topBar = {
                 MainSectionTopAppBar(
                     currentKey = mainNavigator.current,
+                    isOnline = isOnline,
                     onProfileClick = { vm.onAction(MainSectionAction.ToggleProfile(true)) },
                     onRefreshClick = vm::refreshTasks,
                     isRefreshing = uiState.isLoading || uiState.isRefreshing,
