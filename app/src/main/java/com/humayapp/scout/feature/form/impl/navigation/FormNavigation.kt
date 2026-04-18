@@ -22,6 +22,7 @@ import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.rememberStackNavigator
 import com.humayapp.scout.core.network.util.getDouble
 import com.humayapp.scout.core.network.util.getString
+import com.humayapp.scout.core.network.util.getStringIfNotBlank
 import com.humayapp.scout.core.ui.component.ScoutConfirmDialog
 import com.humayapp.scout.feature.form.api.FormType
 import com.humayapp.scout.feature.form.api.id
@@ -69,9 +70,13 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         LaunchedEffect(collectionTaskId) {
             isLoading = true
             error = null
-            try { collectionTask = collectionRepository.getUiTaskById(collectionTaskId) }
-            catch (e: Exception) { error = e.message }
-            finally { isLoading = false }
+            try {
+                collectionTask = collectionRepository.getUiTaskById(collectionTaskId)
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
+            }
         }
 
         if (isLoading) {
@@ -92,12 +97,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         val dependencyJson = task.dependencyData?.let { Json.parseToJsonElement(it) } as JsonObject
         val formType = FormType.fromActivityType(task.activityType)
 
-        val hasFarmerDetails = formType == FormType.FIELD_DATA &&
-                getDependencyString(dependencyJson, FieldData.FIRST_NAME_KEY) != null &&
-                getDependencyString(dependencyJson, FieldData.LAST_NAME_KEY) != null &&
-                getDependencyString(dependencyJson, FieldData.GENDER_KEY) != null &&
-                getDependencyString(dependencyJson, FieldData.DATE_OF_BIRTH_KEY) != null &&
-                getDependencyString(dependencyJson, FieldData.CELLPHONE_NO_KEY) != null
+        val hasFarmerDetails = formType == FormType.FIELD_DATA && !task.farmerName.isNullOrBlank()
 
         val formState = rememberFormState(
             formType = formType,
@@ -120,23 +120,27 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
                 FormType.FIELD_DATA -> {
                     formState.setFieldData(FieldData.PROVINCE_KEY, task.province)
                     formState.setFieldData(FieldData.MUNICIPALITY_OR_CITY_KEY, task.cityMunicipality)
+                    formState.setFieldData(FieldData.BARANGAY_KEY, task.barangay)
 
-                    dependencyJson.getString(FieldData.FIRST_NAME_KEY)?.let {
-                        formState.setFieldData(FieldData.FIRST_NAME_KEY, it)
-                    }
-                    dependencyJson.getString(FieldData.LAST_NAME_KEY)?.let {
-                        formState.setFieldData(FieldData.LAST_NAME_KEY, it)
-                    }
-                    dependencyJson.getString(FieldData.GENDER_KEY)?.let {
-                        formState.setFieldData(FieldData.GENDER_KEY, it)
-                    }
-                    dependencyJson.getString(FieldData.DATE_OF_BIRTH_KEY)?.let {
-                        formState.setFieldData(FieldData.DATE_OF_BIRTH_KEY, it)
-                    }
-                    dependencyJson.getString(FieldData.CELLPHONE_NO_KEY)?.let {
-                        formState.setFieldData(FieldData.CELLPHONE_NO_KEY, it)
+                    if (hasFarmerDetails) {
+                        dependencyJson.getString(FieldData.FIRST_NAME_KEY)?.let {
+                            formState.setFieldData(FieldData.FIRST_NAME_KEY, it)
+                        }
+                        dependencyJson.getString(FieldData.LAST_NAME_KEY)?.let {
+                            formState.setFieldData(FieldData.LAST_NAME_KEY, it)
+                        }
+                        dependencyJson.getString(FieldData.GENDER_KEY)?.let {
+                            formState.setFieldData(FieldData.GENDER_KEY, it)
+                        }
+                        dependencyJson.getString(FieldData.DATE_OF_BIRTH_KEY)?.let {
+                            formState.setFieldData(FieldData.DATE_OF_BIRTH_KEY, it)
+                        }
+                        dependencyJson.getString(FieldData.CELLPHONE_NO_KEY)?.let {
+                            formState.setFieldData(FieldData.CELLPHONE_NO_KEY, it)
+                        }
                     }
                 }
+
                 FormType.CULTURAL_MANAGEMENT,
                 FormType.NUTRIENT_MANAGEMENT,
                 FormType.PRODUCTION,

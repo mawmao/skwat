@@ -6,21 +6,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import com.humayapp.scout.core.ui.theme.ScoutTheme
 import com.humayapp.scout.feature.form.impl.LocalFormState
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData
+import com.humayapp.scout.feature.form.impl.data.registry.fielddata.FieldData.Companion.CONFIRM_FARMER_KEY
 import com.humayapp.scout.feature.form.impl.ui.components.FormReviewItem
 import com.humayapp.scout.feature.form.impl.ui.components.WizardEntry
 import com.humayapp.scout.feature.form.impl.ui.components.WizardField
+import kotlinx.coroutines.delay
 
 @Composable
 fun ConfirmFarmerPage(
     page: FieldData.ConfirmFarmer
 ) {
     val formState = LocalFormState.current
-    val confirmKey = "confirm_farmer"
 
     WizardEntry(page) { entry ->
         Column(verticalArrangement = Arrangement.spacedBy(ScoutTheme.spacing.medium)) {
@@ -56,12 +60,12 @@ fun ConfirmFarmerPage(
 
         entry.fields.fastForEach { field ->
             when (field.key) {
-                confirmKey -> {
+                CONFIRM_FARMER_KEY -> {
                     Spacer(modifier = Modifier.height(ScoutTheme.spacing.small))
                     WizardField(
                         field = field,
-                        value = { formState.getFieldData(confirmKey) },
-                        onValueChange = { formState.setFieldData(confirmKey, it) },
+                        value = { formState.getFieldData(CONFIRM_FARMER_KEY) },
+                        onValueChange = { formState.setFieldData(CONFIRM_FARMER_KEY, it) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

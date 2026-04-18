@@ -26,8 +26,12 @@ fun JsonObject.getDouble(key: String): Double? =
 fun JsonObject.getString(key: String): String? =
     this[key]?.jsonPrimitive?.content
 
+fun JsonObject.getStringIfNotBlank(key: String): String? =
+    this[key]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+
 fun JsonObject.getInt(key: String): Int? =
     this[key]?.jsonPrimitive?.intOrNull
+
 
 typealias JsonTransformRule = (key: String, value: String) -> String
 

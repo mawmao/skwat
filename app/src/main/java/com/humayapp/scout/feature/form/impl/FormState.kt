@@ -28,7 +28,7 @@ fun rememberFormState(
     collectionTaskId: Int
 ): FormState {
 
-    val pagerState = rememberPagerState(pageCount = { formType.entries.size })
+    val pagerState = rememberPagerState( pageCount = { formType.entries.size }, )
 
     return remember(formType, mfid, collectionTaskId) {
         FormState(
@@ -50,7 +50,10 @@ fun rememberFormState(
     entries: List<WizardEntry>,
     startEntry: WizardEntry
 ): FormState {
-    val pagerState = rememberPagerState(pageCount = { entries.size })
+    val pagerState = rememberPagerState(
+        pageCount = { entries.size },
+        initialPage = entries.indexOf(startEntry).coerceAtLeast(0)
+    )
     return remember(formType, mfid, collectionTaskId, entries, startEntry) {
         FormState(
             initialWizardEntry = startEntry,

@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.SharedFlow
 
 class SnackbarManager @Inject constructor() {
     private val _messages = MutableSharedFlow<String>(
-        extraBufferCapacity = 1
+        extraBufferCapacity = 2
     )
     val messages: SharedFlow<String> = _messages
 

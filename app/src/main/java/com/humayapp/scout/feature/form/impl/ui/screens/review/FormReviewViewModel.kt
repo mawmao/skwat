@@ -57,7 +57,9 @@ class FormReviewViewModel @AssistedInject constructor(
 
         viewModelScope.launch {
             try {
+                // handle this cleanly when the session expires while on review screen
                 val userId = authRepository.getCurrentUserId() ?: unreachable("user id in this context must never be null.")
+
                 val serializedString = formType.serializeAnswers(answers).toString()
 
                 Log.d(LOG_TAG, "answers = $answers")

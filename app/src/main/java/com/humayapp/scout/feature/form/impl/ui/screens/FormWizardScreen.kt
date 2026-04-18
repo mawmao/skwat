@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import com.humayapp.scout.core.navigation.LocalStackNavigator
 import com.humayapp.scout.core.navigation.NavTransition
@@ -94,7 +96,14 @@ fun WizardPager(modifier: Modifier = Modifier) {
     }
 
     WizardProgressBar(currentCount = pagerState.currentPage + 1, totalCount = pagerState.pageCount)
-    HorizontalPager(modifier = modifier, state = pagerState, userScrollEnabled = false) { page ->
+
+    HorizontalPager(
+        modifier = modifier,
+        state = pagerState,
+        userScrollEnabled = false,
+        beyondViewportPageCount = 0,
+        pageSize = PageSize.Fill
+    ) { page ->
         val pageKey = entries[page]
         val renderer = formOverrides?.get(pageKey) ?: { DefaultWizardEntry(it) }
         renderer(pageKey)

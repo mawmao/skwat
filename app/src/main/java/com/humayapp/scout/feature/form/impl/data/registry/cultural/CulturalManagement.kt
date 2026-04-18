@@ -75,7 +75,7 @@ sealed class CulturalManagement : WizardEntry() {
         )
 
         override fun nextScreen(answers: Map<String, Any?>): WizardEntry? {
-            return when (val method = answers[ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY]) {
+            return when (answers[ACTUAL_CROP_ESTABLISHMENT_METHOD_KEY]) {
                 "Direct-seeded" -> DirectSeededDetails
                 "Transplanted" -> TransplantedDetails
                 else -> null

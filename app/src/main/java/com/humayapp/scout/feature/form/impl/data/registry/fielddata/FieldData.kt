@@ -2,6 +2,7 @@ package com.humayapp.scout.feature.form.impl.data.registry.fielddata
 
 
 import androidx.compose.ui.text.input.ImeAction
+import com.humayapp.scout.core.common.unreachable
 import com.humayapp.scout.core.network.util.asJson
 import com.humayapp.scout.core.network.util.transformField
 import com.humayapp.scout.feature.form.impl.data.registry.fielddata.overrides.ConfirmFarmerPage
@@ -41,11 +42,11 @@ sealed class FieldData : WizardEntry() {
             )
         )
 
-        override fun nextScreen(answers: Map<String, Any?>): WizardEntry {
-            return if (answers["confirm_farmer"] == "Yes") {
-                FieldTiming
-            } else {
-                FarmerInformation
+        override fun nextScreen(answers: Map<String, Any?>): WizardEntry? {
+            return when (answers[CONFIRM_FARMER_KEY]) {
+                "Yes" -> FieldTiming
+                "No" -> FarmerInformation
+                else -> null
             }
         }
     }
@@ -245,7 +246,7 @@ sealed class FieldData : WizardEntry() {
 
         val pageOverrides: WizardPageOverrides = mapOf(
             ConfirmFarmer to { page -> ConfirmFarmerPage(page as ConfirmFarmer) },
-            FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
+            // FieldLocation to { page -> FieldLocationPage(page as FieldLocation) },
             GpsCoordinates to { page -> GpsCoordinatesPage(page as GpsCoordinates) },
             MonitoringVisit.Conditions to { page -> ConditionPage(page as MonitoringVisit.Conditions) },
             MonitoringVisit.Images to { page -> ImagesPage(page as MonitoringVisit.Images) }
@@ -254,8 +255,24 @@ sealed class FieldData : WizardEntry() {
         val startEntry = FarmerInformation
         val entries = listOf(
             ConfirmFarmer,
-            FarmerInformation, PersonalDetails, FieldTiming, FieldArea,
-            FieldCondition, FieldLocation, GpsCoordinates
+            FarmerInformation,
+            PersonalDetails,
+            FieldTiming,
+            FieldArea,
+            FieldCondition,
+            GpsCoordinates
+        ) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
+        )
+
+        val withFarmerEntries = listOf(
+            ConfirmFarmer,
+            FieldTiming,
+            FieldArea,
+            FieldCondition,
+            GpsCoordinates
         ) + listOf(
             MonitoringVisit.MonitoringDate,
             MonitoringVisit.Conditions,
@@ -305,6 +322,8 @@ sealed class FieldData : WizardEntry() {
 
             return answers
         }
+
+        const val CONFIRM_FARMER_KEY = "confirm_farmer"
 
         const val FIRST_NAME_KEY = "first_name"
         const val LAST_NAME_KEY = "last_name"
