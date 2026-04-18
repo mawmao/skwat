@@ -109,6 +109,39 @@ object Validators {
         }
     }
 
+    fun floatRangeWithinMonitoringArea(
+        min: Float = 1f,
+        monitoringAreaKey: String,
+        unit: String = "sqm"
+    ): Validator = { value, answers ->
+        when {
+            value.isBlank() -> ValidationResult.Invalid("Required")
+            else -> {
+                val maxSqm = answers[monitoringAreaKey] as? Double
+                if (maxSqm == null) {
+                    ValidationResult.Invalid("Monitoring field area not available")
+                } else {
+                    try {
+                        val number = value.toFloat()
+                        when {
+                            number < min -> ValidationResult.Invalid(
+                                "Fertilized area must be at least $min $unit"
+                            )
+
+                            number > maxSqm -> ValidationResult.Invalid(
+                                "Fertilized area cannot exceed monitoring field area ($maxSqm $unit)"
+                            )
+
+                            else -> ValidationResult.Valid
+                        }
+                    } catch (e: Exception) {
+                        ValidationResult.Invalid("Invalid number")
+                    }
+                }
+            }
+        }
+    }
+
     fun notExceedMonitoringArea(monitoringAreaKey: String): Validator = { value, answers ->
         when {
             value.isBlank() -> ValidationResult.Invalid("Required")
@@ -336,7 +369,7 @@ object Validators {
 
     fun isAfterBy(
         otherKey: String,
-        after: Period? = null // Period.ofMonths()
+        after: Period? = null
     ): Validator = { value, answers ->
         when {
             value.isBlank() -> ValidationResult.Invalid("Required")
@@ -353,10 +386,10 @@ object Validators {
 
                     when {
                         !currentDate.isAfter(otherDate) ->
-                            ValidationResult.Invalid("Date must be after $otherKeyName")
+                            ValidationResult.Invalid("Date must be after $otherKeyName ($otherDate)")
 
                         after != null && currentDate.isAfter(otherDate.plus(after)) ->
-                            ValidationResult.Invalid("Date must be within ${after.toTotalMonthsOrDays()} after ${otherKeyName}")
+                            ValidationResult.Invalid("Date must be within ${after.toTotalMonthsOrDays()} after $otherKeyName (after $otherDate)")
 
                         else -> ValidationResult.Valid
                     }

@@ -38,17 +38,14 @@ sealed class NutrientManagement : WizardEntry() {
                 label = "Application Date",
                 validator = Validators.nonEmpty
             ),
-
             field(
                 key = APPLIED_AREA_KEY,
                 type = FieldType.NUM_DECIMAL,
                 label = "Fertilized Area (by square meters)",
-
-                validator = Validators.allOf(
-                    Validators.floatRange(min = 400.0f, max = 10_000_000f, unit = "sqm") { min, max, unit ->
-                        "Fertilized area must be between $min to $max $unit"
-                    },
-                    Validators.notExceedMonitoringArea(CulturalManagement.MONITORING_FIELD_AREA_KEY)
+                validator = Validators.floatRangeWithinMonitoringArea(
+                    min = 1f,
+                    monitoringAreaKey = CulturalManagement.MONITORING_FIELD_AREA_KEY,
+                    unit = "sqm"
                 )
             ),
 
