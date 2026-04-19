@@ -107,13 +107,8 @@ class SyncManager(
             syncRepository.markInProgress(item.id)
 
             when (item.type) {
-                SyncType.FORM_SUBMISSION -> {
-                    handleFormSubmission(item)
-                }
-
-                SyncType.TASK_UPDATE -> {
-                    // future
-                }
+                SyncType.FORM_SUBMISSION -> handleFormSubmission(item)
+                SyncType.TASK_UPDATE -> handleTaskUpdate(item)
             }
 
             syncRepository.markDone(item.id)
@@ -154,6 +149,20 @@ class SyncManager(
 
         collectionRepository.markFormAsSynced(taskId)
         Log.i(LOG_TAG, "[Sync] Upload successful for MFID ${task.task.mfid} - ${formType.label}.")
+    }
+
+    private suspend fun handleTaskUpdate(item: SyncQueueEntity) {
+        val taskId = item.refId.toInt()
+
+        Log.i(LOG_TAG, "[Sync] Updating task $taskId status to completed")
+
+        supabase.postgrest.rpc(
+            function = "update_task_status",
+            parameters = mapOf(
+                "task_id" to taskId,
+                "new_status" to "completed"
+            )
+        )
     }
 
     suspend fun uploadImages(

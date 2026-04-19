@@ -13,6 +13,8 @@ import com.humayapp.scout.core.database.dto.toTaskEntity
 import com.humayapp.scout.core.database.model.CollectionFormEntity
 import com.humayapp.scout.core.database.model.CollectionTaskUiModel
 import com.humayapp.scout.core.database.model.FormImageEntity
+import com.humayapp.scout.core.database.model.SyncQueueEntity
+import com.humayapp.scout.core.database.model.SyncType
 import com.humayapp.scout.core.database.model.TaskWithFormRelation
 import com.humayapp.scout.core.database.model.toUiModel
 import com.humayapp.scout.core.database.util.toInstantSafeOrNull
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.UUID
 import kotlin.time.Clock
@@ -120,6 +123,20 @@ class CollectionRepository(
 
                 if (success) {
                     Log.d(LOG_TAG, "[SUCCESS] Task marked completed (rowsUpdated=$updated)")
+                    syncRepository.queueSync(
+                        SyncQueueEntity(
+                            type = SyncType.TASK_UPDATE,
+                            refId = collectionTaskId.toString(),
+                            payload = Json.encodeToString(
+                                mapOf(
+                                    "status" to "completed",
+                                    "collectedBy" to userId,
+                                    "collectedAt" to Clock.System.now().toString()
+                                )
+                            ),
+                            createdAt = Clock.System.now()
+                        )
+                    )
                 } else {
                     Log.e(LOG_TAG, "[FAIL] Task NOT marked completed (rowsUpdated=$updated)")
                 }
