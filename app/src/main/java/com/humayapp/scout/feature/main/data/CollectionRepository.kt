@@ -149,7 +149,6 @@ class CollectionRepository(
             taskDataSource.getTasks(updatedAfter = null)
         } catch (e: Exception) {
             Log.w(LOG_TAG, "[Sync] Task fetch failed. Aborting pipeline.")
-            Log.d(LOG_TAG, "error =", e)
             return
         }
 
@@ -161,44 +160,27 @@ class CollectionRepository(
         }
 
         val remoteTaskIds = remoteTasks.map { it.id }
-        val canReconcile = remoteTasks.isNotEmpty()
 
         database.withTransaction {
-
-            Log.i(LOG_TAG, "[Sync] Applying tasks (${remoteTasks.size})")
-
             if (remoteTasks.isNotEmpty()) {
                 taskDao.upsert(remoteTasks.map { it.toTaskEntity() })
-
-                val maxTaskUpdated = remoteTasks
-                    .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
-                    .maxOrNull()
-
+                val maxTaskUpdated = remoteTasks.mapNotNull { it.updatedAt.toInstantSafeOrNull() }.maxOrNull()
                 if (maxTaskUpdated != null) {
                     syncRepository.updateSyncState("tasks", maxTaskUpdated)
                 }
             }
 
-            Log.i(LOG_TAG, "[Sync] Applying forms (${remoteForms.size})")
-
             if (remoteForms.isNotEmpty()) {
                 formDao.upsert(remoteForms.map { it.toFormEntity() })
-
-                val maxFormUpdated = remoteForms
-                    .mapNotNull { it.updatedAt.toInstantSafeOrNull() }
-                    .maxOrNull()
-
+                val maxFormUpdated = remoteForms.mapNotNull { it.updatedAt.toInstantSafeOrNull() }.maxOrNull()
                 if (maxFormUpdated != null) {
                     syncRepository.updateSyncState("forms", maxFormUpdated)
                 }
             }
 
-            if (canReconcile) {
-                Log.i(LOG_TAG, "[Sync] Reconciling tasks (${remoteTaskIds.size} ids)")
-                taskDao.deleteWhereNotIn(remoteTaskIds)
-            } else {
-                Log.i(LOG_TAG, "[Sync] Skipping reconciliation (empty id list)")
-            }
+            // Always reconcile – even if remoteTasks is empty
+            Log.i(LOG_TAG, "[Sync] Reconciling tasks (${remoteTaskIds.size} ids)")
+            taskDao.deleteWhereNotIn(remoteTaskIds)
         }
 
         Log.i(LOG_TAG, "[Sync] Pipeline completed")
