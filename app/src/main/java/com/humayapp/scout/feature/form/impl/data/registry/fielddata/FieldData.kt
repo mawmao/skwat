@@ -180,7 +180,7 @@ sealed class FieldData : WizardEntry() {
             ),
         )
 
-        override fun nextScreen(answers: Map<String, Any?>) = FieldLocation
+        override fun nextScreen(answers: Map<String, Any?>) = GpsCoordinates
     }
 
     @Serializable
@@ -267,7 +267,20 @@ sealed class FieldData : WizardEntry() {
             MonitoringVisit.Images
         )
 
-        val withFarmerEntries = listOf(
+        val entriesWithoutConfirm = listOf(
+            FarmerInformation,
+            PersonalDetails,
+            FieldTiming,
+            FieldArea,
+            FieldCondition,
+            GpsCoordinates
+        ) + listOf(
+            MonitoringVisit.MonitoringDate,
+            MonitoringVisit.Conditions,
+            MonitoringVisit.Images
+        )
+
+        val entriesWithConfirm = listOf(
             ConfirmFarmer,
             FieldTiming,
             FieldArea,

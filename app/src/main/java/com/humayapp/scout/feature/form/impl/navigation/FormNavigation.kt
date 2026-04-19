@@ -99,12 +99,18 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
 
         val hasFarmerDetails = formType == FormType.FIELD_DATA && !task.farmerName.isNullOrBlank()
 
+        val (entries, startEntry) = when {
+            formType != FormType.FIELD_DATA -> formType.entries to formType.startEntry
+            hasFarmerDetails -> FieldData.entriesWithConfirm to FieldData.ConfirmFarmer
+            else -> FieldData.entriesWithoutConfirm to FieldData.FarmerInformation
+        }
+
         val formState = rememberFormState(
             formType = formType,
             mfid = task.mfid,
             collectionTaskId = task.id,
-            entries = formType.entries,
-            startEntry = if (hasFarmerDetails) FieldData.ConfirmFarmer else formType.startEntry
+            entries = entries,
+            startEntry = startEntry
         )
 
         val formNavigator = rememberStackNavigator<NavKey>("${formType.id} form", FormWizardNavKey)

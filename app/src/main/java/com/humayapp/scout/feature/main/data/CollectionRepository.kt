@@ -178,7 +178,6 @@ class CollectionRepository(
                 }
             }
 
-            // Always reconcile – even if remoteTasks is empty
             Log.i(LOG_TAG, "[Sync] Reconciling tasks (${remoteTaskIds.size} ids)")
             taskDao.deleteWhereNotIn(remoteTaskIds)
         }
