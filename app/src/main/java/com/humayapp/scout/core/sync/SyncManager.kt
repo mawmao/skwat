@@ -7,6 +7,7 @@ import com.humayapp.scout.core.database.model.FormImageEntity
 import com.humayapp.scout.core.database.model.SyncQueueEntity
 import com.humayapp.scout.core.database.model.SyncType
 import com.humayapp.scout.core.database.model.TaskWithFormRelation
+import com.humayapp.scout.core.sync.model.TaskUpdateParams
 import com.humayapp.scout.core.sync.model.UploadDataRequest
 import com.humayapp.scout.core.system.NetworkMonitor
 import com.humayapp.scout.feature.auth.data.AuthRepository
@@ -153,15 +154,11 @@ class SyncManager(
 
     private suspend fun handleTaskUpdate(item: SyncQueueEntity) {
         val taskId = item.refId.toInt()
-
         Log.i(LOG_TAG, "[Sync] Updating task $taskId status to completed")
 
         supabase.postgrest.rpc(
             function = "update_task_status",
-            parameters = mapOf(
-                "task_id" to taskId,
-                "new_status" to "completed"
-            )
+            parameters = TaskUpdateParams(taskId, "completed")
         )
     }
 

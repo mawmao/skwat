@@ -52,3 +52,10 @@ data class UploadDataRequest(
             )
     }
 }
+
+
+@Serializable
+data class TaskUpdateParams(
+    @SerialName("task_id") val taskId: Int,
+    @SerialName("new_status") val newStatus: String
+)
