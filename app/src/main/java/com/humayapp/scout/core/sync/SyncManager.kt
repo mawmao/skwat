@@ -21,7 +21,10 @@ import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.storage.upload
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.put
+import org.slf4j.MDC.put
 import java.io.File
 import kotlin.collections.map
 import kotlin.collections.mapOf
@@ -156,9 +159,14 @@ class SyncManager(
         val taskId = item.refId.toInt()
         Log.i(LOG_TAG, "[Sync] Updating task $taskId status to completed")
 
+        val params = buildJsonObject {
+            put("task_id", taskId)
+            put("new_status", "completed")
+        }
+
         supabase.postgrest.rpc(
             function = "update_task_status",
-            parameters = TaskUpdateParams(taskId, "completed")
+            parameters = params
         )
     }
 
