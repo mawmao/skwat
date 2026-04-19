@@ -253,6 +253,7 @@ sealed class FieldData : WizardEntry() {
         )
 
         val startEntry = FarmerInformation
+
         val entries = listOf(
             ConfirmFarmer,
             FarmerInformation,
@@ -267,7 +268,7 @@ sealed class FieldData : WizardEntry() {
             MonitoringVisit.Images
         )
 
-        val entriesWithoutConfirm = listOf(
+        val fullEntries = listOf(
             FarmerInformation,
             PersonalDetails,
             FieldTiming,
@@ -282,6 +283,8 @@ sealed class FieldData : WizardEntry() {
 
         val entriesWithConfirm = listOf(
             ConfirmFarmer,
+            FarmerInformation,
+            PersonalDetails,
             FieldTiming,
             FieldArea,
             FieldCondition,

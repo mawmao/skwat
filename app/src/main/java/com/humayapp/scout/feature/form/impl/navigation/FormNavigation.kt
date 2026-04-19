@@ -102,7 +102,7 @@ fun EntryProviderScope<NavKey>.formSection(metadata: Map<String, Any>) {
         val (entries, startEntry) = when {
             formType != FormType.FIELD_DATA -> formType.entries to formType.startEntry
             hasFarmerDetails -> FieldData.entriesWithConfirm to FieldData.ConfirmFarmer
-            else -> FieldData.entriesWithoutConfirm to FieldData.FarmerInformation
+            else -> FieldData.fullEntries to FieldData.FarmerInformation
         }
 
         val formState = rememberFormState(
